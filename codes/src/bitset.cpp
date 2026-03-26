@@ -69,7 +69,7 @@ unsigned int BitSet::GetSize(void){
 
 
 //initialize *this randomly
-inline  void BitSet::SetRandom(unsigned int seed){
+void BitSet::SetRandom(unsigned int seed){
     
     gsl_rng* ran;
     
