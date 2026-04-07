@@ -764,7 +764,7 @@ int main(int argc, char *argv[]){
                 
                 for(i=0; i<N; i++){
                     //                    run through all spins in the network and try to flip S_i
-                    
+//                    convert 'delta' in binaryt form and write it in X_swe
                     for(s=0; s<bits_n_links_per_spin[i]; s++){X_swe[s] = 0;}
                     for(p=0; p<n_links_per_spin[i]; p++){
                         a_swe[p] = (J[i][p])^(S[a][i])^(S[a][ne[i][p]]);
@@ -818,7 +818,7 @@ int main(int argc, char *argv[]){
                          */
                         
                         /*Confronto X_rho[] con X_swe[] e scrivo in changer il risultato. changer è uguale a 1 se X_rho < X_swe e a 0 altrimenti.*/
-                        
+                        //                        initialize changer for the last bit
                         changer = (~(X_rho[bits_n_links_per_spin[i] - 1])) & (X_swe[bits_n_links_per_spin[i] - 1]);
                         check = ((X_rho[bits_n_links_per_spin[i] - 1]) ^ (X_swe[bits_n_links_per_spin[i] - 1]));
                         
