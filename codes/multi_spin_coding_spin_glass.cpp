@@ -50,7 +50,7 @@
 /*
  Notes:
  
- 
+ H = - \sum_{i j} J_{ij} S_i S_j
  
  */
 
@@ -763,6 +763,7 @@ int main(int argc, char *argv[]){
             for(a=0; a<nr; a++){
                 
                 for(i=0; i<N; i++){
+                    //                    run through all spins in the network and try to flip S_i
                     
                     for(s=0; s<bits_n_links_per_spin[i]; s++){X_swe[s] = 0;}
                     for(p=0; p<n_links_per_spin[i]; p++){
