@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <chrono>
 
-
 #include "gsl_rng.h"
 #include "gsl_math.h"
 #include "gsl_sf_log.h"
@@ -119,15 +118,13 @@ int main() {
 }
 */
 
-
-
 //all entries of BitSet_one are equal to 1
 BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
 
 
-const int N_sets = 50;
-const long long MAX_VALUE = 100000;
+const int N_sets = 50000;
+const long long MAX_VALUE = pow(2,30);
 
 int main() {
 
@@ -171,38 +168,54 @@ int main() {
         B_ref[i] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
     }
 
-    // =========================================
-    // BENCHMARK BITSET
-    // =========================================
+// =========================================
+// BENCHMARK BITSET
+// =========================================
 
-    double clock_bitset = 0.0;
+double clock_bitset = 0.0;
 
-    auto start_bit = chrono::high_resolution_clock::now();
+auto start_bit = chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < N_sets; i++) {
-        A_bit[i] += &B_bit[i];
+for (int i = 0; i < N_sets; i++) {
+    A_bit[i] += &B_bit[i];
+}
+
+auto end_bit = chrono::high_resolution_clock::now();
+chrono::duration<double> dt_bit = end_bit - start_bit;
+clock_bitset = dt_bit.count();
+
+// Print of each Bitset to force the loop
+for (int i = 0; i < N_sets; i++) {
+    vector<unsigned long long> C_tmp(n_bits);
+    A_bit[i].GetBase10(C_tmp);
+
+    cout << "BitSet addition " << i << ": ";
+    for (int s = 0; s < n_bits; s++) {
+        cout << C_tmp[s] << " ";
     }
+    cout << endl;
+}
 
-    auto end_bit = chrono::high_resolution_clock::now();
-    chrono::duration<double> dt_bit = end_bit - start_bit;
-    clock_bitset = dt_bit.count();
+// =========================================
+// BENCHMARK SCALAIRE
+// =========================================
 
-    // =========================================
-    // BENCHMARK SCALAIRE
-    // =========================================
+double clock_ref = 0.0;
 
-    double clock_ref = 0.0;
+auto start_ref = chrono::high_resolution_clock::now();
 
-    auto start_ref = chrono::high_resolution_clock::now();
+for (int i = 0; i < N_sets * n_bits; i++) {
+    A_ref[i] += B_ref[i];
+}
 
-    for (int i = 0; i < N_sets * n_bits; i++) {
-        A_ref[i] += B_ref[i];
-    }
+auto end_ref = chrono::high_resolution_clock::now();
+chrono::duration<double> dt_ref = end_ref - start_ref;
+clock_ref = dt_ref.count();
 
-    auto end_ref = chrono::high_resolution_clock::now();
-    chrono::duration<double> dt_ref = end_ref - start_ref;
-    clock_ref = dt_ref.count();
-
+// Print of each int to force the loop
+for (int i = 0; i < N_sets * n_bits; i++) {
+    cout << "Scalar addition " << i << ": " << A_ref[i] << endl;
+}
     // =========================================
     // RESULTATS
     // =========================================

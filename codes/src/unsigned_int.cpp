@@ -69,7 +69,7 @@ void UnsignedInt::PrintBase10(ostream& output_stream){
 }
 
 
-inline void UnsignedInt::GetBase10(vector<unsigned long long int>& v){
+void UnsignedInt::GetBase10(vector<unsigned long long int>& v){
     
     unsigned int p;
     for(p=0, v.resize(n_bits); p<n_bits; p++){
