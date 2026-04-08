@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip> 
 #include <cstdio>
 #include <cmath>
 #include <vector>
@@ -30,65 +31,109 @@ BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
 
 
-const int N_sets = 50000;
-const long long MAX_VALUE = pow(2,30);
-const int N_neurons=10;
-const int N_steps;
-const int J=1;
+#include <iostream>
+#include <vector>
+#include "gsl_rng.h"
+#include "gsl_randist.h"
 
-double DeltaE(int neuron, vector<int> connection, vector<int> neurons){
-    int sum=0
+using namespace std;
 
-    for (int j=0; j<neurons.size();j++){
-        if (connection[j]==1){sum+=neurons[j];}
+#include <iostream>
+#include <vector>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+
+using namespace std;
+const int col_width = 3;   
+const int sys_label_width = 12; // largeur fixée pour "System XX ; " + "before: "
+const int prefix_width = 12;
+
+const int N_neurons = 32;
+const int J = 1;
+const int Beta = 1;
+const int N_steps = 100;
+
+// DeltaE for a single neuron
+double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neurons) {
+    int sum = 0;
+    for (size_t j = 0; j < neurons.size(); j++) {
+        if (connection[j] == 1) sum += neurons[j];
     }
-    return neurons[neuron]*sum
+    return neurons[neuron] * sum;
 }
 
-void actualization(vector<vector<int>> connections){
-    for (int i=0; i<N_neurons;i++){
-        DeltaE=DeltaE(i,connection[i], neurons)
-        
+// Evolution of multiple neuron systems with pre-generated random numbers
+void evolve_systems(vector<vector<int>>& neurons_set,
+                    const vector<vector<int>>& connections_set,
+                    const vector<double>& random_numbers) {
 
+    for (int step = 0; step < N_steps; step++) {
+        double rho = random_numbers[step]; // same rho for all systems at this step
 
+        for (size_t sys = 0; sys < n_bits; sys++) {
+            vector<int>& neurons = neurons_set[sys];
+            const vector<int>& connections = connections_set[sys];
+
+            for (int i = 0; i < N_neurons; i++) {
+                double dE = DeltaE(i, connections, neurons);
+                if (rho >= dE) neurons[i] = -neurons[i];
+            }
+        }
     }
-
 }
 
 int main() {
-
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    gsl_rng_set(ran, 12345);
+    gsl_rng_set(ran, 123);
 
-
-    vector<int> Neurons(N_neurons); // ton vecteur de neurones
-    for(int i = 0; i < N_neurons; i++) Neurons[i] = 2*gsl_rng_uniform_int(ran, 2)-1;
-
-    // Exemple de matrice de connexions (adjacency matrix)
-    vector<vector<int>> connections(N_neurons, vector<int>(N_neurons, 0));
-
-    for(int i = 0; i < N_neurons; i++) {
-        for(int j = 0; j < N_neurons; j++) {
-            if (j!=i){connections[i][j] = gsl_rng_uniform_int(ran, 2);}
+    // Initialisation des neurones pour chaque système
+    vector<vector<int>> neurons_set(n_bits, vector<int>(N_neurons));
+    for (size_t sys = 0; sys < n_bits; sys++) {
+        for (int i = 0; i < N_neurons; i++) {
+            neurons_set[sys][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
         }
     }
 
-    vector<int> neighbors(N_neurons, 0);
-
-    for(int i = 0; i < N_neurons; i++) {
-        int count = 0;
-        for(int j = 0; j < N_neurons; j++) {
-            count += connections[i][j]; // additionne tous les 1 de la ligne i
+    // Initialisation des matrices de connexion pour chaque système
+    vector<vector<int>> connections_set(n_bits, vector<int>(N_neurons * N_neurons, 0));
+    for (size_t sys = 0; sys < n_bits; sys++) {
+        for (int i = 0; i < N_neurons; i++) {
+            for (int j = 0; j < N_neurons; j++) {
+                if (i != j) connections_set[sys][i * N_neurons + j] = gsl_rng_uniform_int(ran, 2);
+            }
         }
-        neighbors[i] = count;
     }
 
-        // Affichage
-    for(int i = 0; i < N_neurons; i++){
-        cout << "Neuron " << i << ": ";
-        for(int j = 0; j < N_neurons; j++){
-            cout << connections[i][j] << " ";
-        }
-        cout << endl;
+    // Génération d'une séquence de nombres aléatoires pour toutes les étapes
+    vector<double> random_numbers(N_steps);
+    for (int t = 0; t < N_steps; t++) {
+        random_numbers[t] = gsl_ran_exponential(ran, 1.0 / (2.0 * Beta * J));
     }
+
+    // Copier le set initial pour comparaison
+    std::vector<std::vector<int>> neurons_set_before = neurons_set;
+
+    // Evolution
+    evolve_systems(neurons_set, connections_set, random_numbers);
+
+
+    for (size_t sys = 0; sys < neurons_set.size(); sys++) {
+        // Affichage before
+        ostringstream oss_before;
+        oss_before << "System " << right << setw(3) << sys << " ; before: ";
+        cout << left << setw(prefix_width) << oss_before.str();
+        for (int i = 0; i < N_neurons; i++)
+            cout << right << setw(col_width) << neurons_set_before[sys][i] << " ";
+        cout << "\n";
+
+        // Affichage after
+        ostringstream oss_after;
+        oss_after << "          " << "  ; after: ";
+        cout << left << setw(prefix_width) << oss_after.str();
+        for (int i = 0; i < N_neurons; i++)
+            cout << right << setw(col_width) << neurons_set[sys][i] << " ";
+        cout << "\n\n";
+    }
+        gsl_rng_free(ran);
+    return 0;
 }
