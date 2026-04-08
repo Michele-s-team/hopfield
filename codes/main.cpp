@@ -52,72 +52,6 @@
  o is the path where to store the results
  */
 
-/*
- void UnsignedInt::SetRandom(unsigned long long int seed){
- 
- int i;
- gsl_rng* ran;
- 
- ran = gsl_rng_alloc(gsl_rng_gfsr4);
- gsl_rng_set(ran, seed);
- 
- 
- for(i=0; i<b.size(); i++){
- 
- 
- }
- 
- }
- */
-
-/*
- BitSet BitSet_one;
-Bits Bits_one, Bits_zero;
-
-// Constants
-const int MAX_VALUE = 127;   // maximum random value
-const int N_SETS = 6;        // number of sets of integers
-
-int main() {
-    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    gsl_rng_set(ran, 12345);
-
-    for (int game = 0; game < N_SETS; game++) {
-
-        vector<unsigned long long> A(n_bits);
-
-        // Generate random integers
-    for (int s = 0; s < n_bits; s++) {
-        A[s] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
-    }
-        UnsignedInt A_bit(MAX_VALUE), B_bit(MAX_VALUE);
-        A_bit.SetFromVector(&A);
-        string print = "A in the BitSet format";
-        A_bit.PrintBase10(cout);
-
-        // Reconstruct vector from Int
-        vector<unsigned long long> C(n_bits); // resize before filling
-        A_bit.GetBase10(C);
-
-        // Print results and compare
-        std::cout << "\n===== Game " << game << " =====\n";
-        for (int s = 0; s < n_bits; s++) {
-            cout << "s=" << s
-                      << " | Input =" << A[s]
-                      << " | Output =" << C[s];
-            if (A[s] != C[s]) {
-                cout << "  <-- ERROR";
-            }
-            else{cout << "   OK"; }
-            cout << std::endl;
-        }
-    }
-
-
-    return 0;
-}
-*/
-
 //all entries of BitSet_one are equal to 1
 BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
@@ -127,6 +61,10 @@ const int N_sets = 50000;
 const long long MAX_VALUE = pow(2,30);
 
 int main() {
+
+    clock_t start_bits, end_bits;
+    clock_t start_ref, end_ref;
+    double clock_bitset, clock_ref;
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 12345);
@@ -179,7 +117,7 @@ for (int i = 0; i < N_sets; i++) {
     A_bit[i] += &B_bit[i];
 }
 end_bits = clock();
-double dt_bit= end_bit - start_bit;
+clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
 
 // Print of each Bitset to force the loop
 for (int i = 0; i < N_sets; i++) {
@@ -203,7 +141,7 @@ for (int i = 0; i < N_sets * n_bits; i++) {
     A_ref[i] += B_ref[i];
 }
 end_ref = clock();
-double dt_ref= end_ref - start_ref;
+clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
 
 // Print of each int to force the loop
 for (int i = 0; i < N_sets * n_bits; i++) {
