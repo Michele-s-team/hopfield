@@ -25,33 +25,6 @@
 #include "system_bits.hpp"
 #include "system_nobits.hpp"
 
-
-/*
- compile on mac
- compile without optimization
-*/
-// clear; clear;  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O0 -Wno-deprecated -I/Users/michelecastellana/Documents/office_stuff/work/stages/stage_bastien_dumont_2026/hopfield/codes/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
- 
-
-/*
- compile with optimization
- */
-// g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O3 -Wno-deprecated  -I/Users/michelecastellana/Documents/gillespie/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
-
-//compile on calcsub
-//clear; clear;  g++ main.cpp src/*.cpp  -llapack -lgsl -lgslcblas -lm -O3 -Wno-deprecated -I /usr/include/gsl/ -I./include/ -o main.o -Wall -DHAVE_INLINE
-//compile on abacus
-//g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
-
-//run with
-//./main.o -N 128 -T 1 -S 5 -s 0 -o /Users/michelecastellana/Desktop
-/*
- N is the total perticle number in the Frank model
- S is log_10(total number of iterations)
- s is the seed of the random-number generator
- o is the path where to store the results
- */
-
 //all entries of BitSet_one are equal to 1
 BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
@@ -59,101 +32,63 @@ Bits Bits_one, Bits_zero;
 
 const int N_sets = 50000;
 const long long MAX_VALUE = pow(2,30);
+const int N_neurons=10;
+const int N_steps;
+const int J=1;
+
+double DeltaE(int neuron, vector<int> connection, vector<int> neurons){
+    int sum=0
+
+    for (int j=0; j<neurons.size();j++){
+        if (connection[j]==1){sum+=neurons[j];}
+    }
+    return neurons[neuron]*sum
+}
+
+void actualization(vector<vector<int>> connections){
+    for (int i=0; i<N_neurons;i++){
+        DeltaE=DeltaE(i,connection[i], neurons)
+        
+
+
+    }
+
+}
 
 int main() {
-
-    clock_t start_bits, end_bits;
-    clock_t start_ref, end_ref;
-    double clock_bitset, clock_ref;
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 12345);
 
-    // =========================================
-    // INITIALISATION (NON MESURÉE)
-    // =========================================
 
-    // --- Bitsets ---
-    vector<UnsignedInt> A_bit;
-    vector<UnsignedInt> B_bit;
+    vector<int> Neurons(N_neurons); // ton vecteur de neurones
+    for(int i = 0; i < N_neurons; i++) Neurons[i] = 2*gsl_rng_uniform_int(ran, 2)-1;
 
-    A_bit.reserve(N_sets);
-    B_bit.reserve(N_sets);
+    // Exemple de matrice de connexions (adjacency matrix)
+    vector<vector<int>> connections(N_neurons, vector<int>(N_neurons, 0));
 
-    for (int i = 0; i < N_sets; i++) {
-
-        vector<unsigned long long> A(n_bits), B(n_bits);
-
-        for (int s = 0; s < n_bits; s++) {
-            A[s] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
-            B[s] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
+    for(int i = 0; i < N_neurons; i++) {
+        for(int j = 0; j < N_neurons; j++) {
+            if (j!=i){connections[i][j] = gsl_rng_uniform_int(ran, 2);}
         }
-
-        UnsignedInt A_tmp(MAX_VALUE), B_tmp(MAX_VALUE);
-        A_tmp.SetFromVector(&A);
-        B_tmp.SetFromVector(&B);
-
-        A_bit.push_back(A_tmp);
-        B_bit.push_back(B_tmp);
     }
 
-    // --- Entiers scalaires ---
-    vector<long long> A_ref(N_sets * n_bits);
-    vector<long long> B_ref(N_sets * n_bits);
+    vector<int> neighbors(N_neurons, 0);
 
-    for (int i = 0; i < N_sets * n_bits; i++) {
-        A_ref[i] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
-        B_ref[i] = gsl_rng_uniform_int(ran, MAX_VALUE + 1);
+    for(int i = 0; i < N_neurons; i++) {
+        int count = 0;
+        for(int j = 0; j < N_neurons; j++) {
+            count += connections[i][j]; // additionne tous les 1 de la ligne i
+        }
+        neighbors[i] = count;
     }
 
-// =========================================
-// BENCHMARK BITSET
-// =========================================
-
-
-start_bits = clock();
-
-for (int i = 0; i < N_sets; i++) {
-    A_bit[i] += &B_bit[i];
-}
-end_bits = clock();
-clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
-
-// Print of each Bitset to force the loop
-for (int i = 0; i < N_sets; i++) {
-    vector<unsigned long long> C_tmp(n_bits);
-    A_bit[i].GetBase10(C_tmp);
-
-    cout << "BitSet addition " << i << ": ";
-    for (int s = 0; s < n_bits; s++) {
-        cout << C_tmp[s] << " ";
+        // Affichage
+    for(int i = 0; i < N_neurons; i++){
+        cout << "Neuron " << i << ": ";
+        for(int j = 0; j < N_neurons; j++){
+            cout << connections[i][j] << " ";
+        }
+        cout << endl;
     }
-    cout << endl;
-}
-
-// =========================================
-// BENCHMARK SCALAIRE
-// =========================================
-
-start_ref = clock();
-
-for (int i = 0; i < N_sets * n_bits; i++) {
-    A_ref[i] += B_ref[i];
-}
-end_ref = clock();
-clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
-
-// Print of each int to force the loop
-for (int i = 0; i < N_sets * n_bits; i++) {
-    cout << "Scalar addition " << i << ": " << A_ref[i] << endl;
-}
-    // =========================================
-    // RESULTATS
-    // =========================================
-
-    cout << "\nTotal clock_bitset: " << clock_bitset << " s\n";
-    cout << "Total clock_ref:    " << clock_ref << " s\n";
-
-    gsl_rng_free(ran);
-    return 0;
 }
