@@ -155,16 +155,16 @@ int main() {
     for (int i = 0; i < N_neurons; i++) {
         UnsignedInt Neuron_tmp(1);
         for (int r = 0; r < n_bits; r++) {
-            int bit = (neurons_set[i][r] + 1) / 2;
+            int bit = (neurons_set[r][i] + 1) / 2;
             Neuron_tmp.Set(r, bit);
         }
         Neurons_Set.push_back(Neuron_tmp);
 
         // Vérification
         cout << "Neuron " << i << " spins: ";
-        for (int r = 0; r < n_bits; r++) cout << (neurons_set[i][r] + 1) / 2;
+        for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
         cout << "\nNeuron " << i << " bits: ";
-        Neuron_tmp.Print(cout);
+        Neuron_tmp.Print("");
         cout << "\n";
     }
 
