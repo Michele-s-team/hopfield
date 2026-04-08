@@ -34,6 +34,7 @@ public:
     void RemoveFirstSignificantBit(void);
     void Replace(UnsignedInt*, Bits*);
     void Set(unsigned int, unsigned long long int);
+    void SetFromVector(const vector<unsigned long long>*);
 
     void operator = (BitSet);
     
