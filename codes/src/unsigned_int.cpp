@@ -86,3 +86,22 @@ inline void UnsignedInt::operator = (BitSet m){
     b = m.b;
     
 }
+
+void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
+    if (!vec) return; // safety check
+
+    size_t n_cols = vec->size();
+
+    if (GetSize() < n_bits) Resize(n_bits);
+
+    for (size_t p = 0; p < n_bits; p++) {
+        for (size_t s = 0; s < n_cols; s++) {
+            b[p].Set(s, ((*vec)[s] >> p) & 1ULL);
+        }
+    }
+
+    for (size_t p = n_bits; p < GetSize(); p++) {
+        b[p].SetAll(false);
+    }
+}
+
