@@ -31,7 +31,6 @@ public:
     
     void PrintBase10(ostream&);
     void GetBase10(vector<unsigned long long int>&);
-    void RemoveFirstSignificantBit(void);
     void Replace(UnsignedInt*, Bits*);
     void Set(unsigned int, unsigned long long int);
     void SetFromVector(const vector<unsigned long long>*);
