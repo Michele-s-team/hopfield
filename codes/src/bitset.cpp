@@ -61,7 +61,7 @@ void BitSet::Resize(unsigned long long int size){
 
 
 //inline
-unsigned int BitSet::GetSize(void) const{
+unsigned int BitSet::GetSize(void){
     
     return ((unsigned int)(b.size()));
     
@@ -111,25 +111,6 @@ void BitSet::SetAll(unsigned long long int i){
         (b[s]).SetAll(false);
     }
     
-}
-
-
-void BitSet::SetFromVector(const vector<unsigned long long>* vec) {
-    if (!vec) return; // safety check
-
-    size_t n_cols = vec->size();
-
-    if (GetSize() < n_bits) Resize(n_bits);
-
-    for (size_t p = 0; p < n_bits; p++) {
-        for (size_t s = 0; s < n_cols; s++) {
-            b[p].Set(s, ((*vec)[s] >> p) & 1ULL);
-        }
-    }
-
-    for (size_t p = n_bits; p < GetSize(); p++) {
-        b[p].SetAll(false);
-    }
 }
 
 
@@ -238,7 +219,7 @@ void BitSet::Print(ostream& output_stream){
 
 
 //return (bit-by-bit) true if *this == m, and false otherwise. This method requires *this and m to have the same size
-Bits BitSet::operator == (BitSet& m){
+inline Bits BitSet::operator == (BitSet& m){
     
     unsigned int p;
     Bits result;
@@ -265,7 +246,7 @@ Bits BitSet::operator == (BitSet& m){
 }
 
 //Confronto *this con m e scrivo in result il risultato. result è uguale a 1 se *this < m e a 0 altrimenti
-Bits BitSet::operator < (const BitSet& m){
+inline Bits BitSet::operator < (const BitSet& m){
     
     int s;
     Bits result, check;
@@ -315,11 +296,12 @@ unsigned long long int BitSet::Get(unsigned int p){
     }
     
     return result;
+    
 }
 
 
 //overload of [] operator. IT IS IMPORTANT THAT THIS RETURNS A REFERENCE, NOT AN UnsignedInt: OTHERWISE THE RETURNED OBJECT, WHEN MODIFIED, WILL NOT CHANGE *this
-Bits& BitSet::operator [] (const unsigned int& i){
+inline Bits& BitSet::operator [] (const unsigned int& i){
     
     return((b[i]));
     
@@ -328,7 +310,7 @@ Bits& BitSet::operator [] (const unsigned int& i){
 
 
 //return *this + *addend
-BitSet BitSet::operator + (BitSet* addend) {
+inline BitSet BitSet::operator + (BitSet* addend) {
     
     BitSet a;
     
@@ -341,7 +323,7 @@ BitSet BitSet::operator + (BitSet* addend) {
 
 
 //return *this - m
-BitSet BitSet::operator - (BitSet* addend) {
+inline BitSet BitSet::operator - (BitSet* addend) {
     
     BitSet t;
     
@@ -354,7 +336,7 @@ BitSet BitSet::operator - (BitSet* addend) {
 
 
 //return *this + *addend and write the carry in *carry
-BitSet BitSet::Add(BitSet* addend, Bits* carry) {
+inline BitSet BitSet::Add(BitSet* addend, Bits* carry) {
     
     BitSet a;
     
@@ -368,7 +350,7 @@ BitSet BitSet::Add(BitSet* addend, Bits* carry) {
 
 
 //return *this + *subrahend and write the borrow in *borrow
-BitSet BitSet::Substract(BitSet* subtrahend, Bits* borrow) {
+inline BitSet BitSet::Substract(BitSet* subtrahend, Bits* borrow) {
     
     BitSet t;
     
@@ -426,7 +408,7 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
 }
 
 //remove useless bits on the tail of *this that contain all 0s
-void BitSet::Normalize(void){
+inline void BitSet::Normalize(void){
     
     int p;
     
@@ -443,7 +425,7 @@ void BitSet::Normalize(void){
 }
 
 //remove useless bits on the tail of *this that contain all 0s, as long as this deletion does not make the size of *this < than n
-void BitSet::Normalize(unsigned int n){
+inline void BitSet::Normalize(unsigned int n){
     
     int p;
     
@@ -489,7 +471,7 @@ void BitSet::AddTo(Bits* addend, Bits* carry){
 
 
 //substract m to *this and write the result in *this
-void BitSet::operator -= (BitSet* subtrahend) {
+inline void BitSet::operator -= (BitSet* subtrahend) {
     
     
     BitSet subtrahend_t;
@@ -596,7 +578,7 @@ void BitSet::SubstractTo(Bits* subtrahend, Bits* borrow) {
 
 
 //write the one-complement of *this with respect to a size 'size' of the binary representation and write it into *this
-void BitSet::ComplementTo(unsigned int size){
+inline void BitSet::ComplementTo(unsigned int size){
     
     unsigned int s;
     
@@ -617,7 +599,7 @@ void BitSet::ComplementTo(unsigned int size){
 
 
 //write the one-complement of *this  and write it into *this
-void BitSet::ComplementTo(void){
+inline void BitSet::ComplementTo(void){
     
     for(unsigned int s=0; s<GetSize(); s++){
         (b[s]).ComplementTo();
@@ -628,7 +610,7 @@ void BitSet::ComplementTo(void){
 
 
 //set to zero the first bits of *this that is equal to one (starting from the last bit) and leave the others unchanged, write the result in *this
-void BitSet::RemoveFirstSignificantBit(void){
+inline void BitSet::RemoveFirstSignificantBit(void){
     
     int s;
     Bits check_old, check_new;
@@ -723,7 +705,7 @@ void BitSet::operator &= (Bits* m){
 
 
 //perform (bit-by-bit) an & between  b[s] and *m ,and write the result in b[s] for all s = start, ..., end-1
-void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end){
+inline void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end){
     
     for(unsigned int s=start; s<end; s++){
         

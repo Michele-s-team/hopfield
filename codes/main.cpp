@@ -126,7 +126,7 @@ BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
 
 
-const int N_sets = 50000;
+const int N_sets = 50;
 const long long MAX_VALUE = 100000;
 
 int main() {
