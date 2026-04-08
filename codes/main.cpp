@@ -172,17 +172,14 @@ int main() {
 // BENCHMARK BITSET
 // =========================================
 
-double clock_bitset = 0.0;
 
-auto start_bit = chrono::high_resolution_clock::now();
+start_bits = clock();
 
 for (int i = 0; i < N_sets; i++) {
     A_bit[i] += &B_bit[i];
 }
-
-auto end_bit = chrono::high_resolution_clock::now();
-chrono::duration<double> dt_bit = end_bit - start_bit;
-clock_bitset = dt_bit.count();
+end_bits = clock();
+double dt_bit= end_bit - start_bit;
 
 // Print of each Bitset to force the loop
 for (int i = 0; i < N_sets; i++) {
@@ -200,17 +197,13 @@ for (int i = 0; i < N_sets; i++) {
 // BENCHMARK SCALAIRE
 // =========================================
 
-double clock_ref = 0.0;
-
-auto start_ref = chrono::high_resolution_clock::now();
+start_ref = clock();
 
 for (int i = 0; i < N_sets * n_bits; i++) {
     A_ref[i] += B_ref[i];
 }
-
-auto end_ref = chrono::high_resolution_clock::now();
-chrono::duration<double> dt_ref = end_ref - start_ref;
-clock_ref = dt_ref.count();
+end_ref = clock();
+double dt_ref= end_ref - start_ref;
 
 // Print of each int to force the loop
 for (int i = 0; i < N_sets * n_bits; i++) {
