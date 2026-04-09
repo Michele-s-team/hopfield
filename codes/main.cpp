@@ -69,25 +69,35 @@ const int N_steps = 100;
 
 void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
 
-    for (size_t sys = 0; sys < neurons_set.size(); sys++) {
+    for (size_t r = 0; r < neurons_set.size(); r++) {
         for (int i = 0; i < N_neurons; i++) {
-            neurons_set[sys][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
+            neurons_set[r][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
         }
     }
 
 }
 
-void init_connections_set(vector<vector<int>>& connections_set, 
-                          vector<int>& neighbor_counts,
+void init_connections_set(std::vector<std::vector<int>>& connections,
+                          std::vector<int>& neighbor_counts,
                           gsl_rng* ran) {
-    for (size_t sys = 0; sys < connections_set.size(); sys++) {
-        for (int i = 0; i < N_neurons; i++) {
-            for (int j = 0; j < N_neurons; j++) {
-                if (i != j) {
-                    int connection = gsl_rng_uniform_int(ran, 2);
-                    connections_set[sys][i * N_neurons + j] = connection;
-                    neighbor_counts[i] += connection;  // [sys][i] -> [i]
-                }
+
+    // Initialize neighbor counts to zero
+    std::fill(neighbor_counts.begin(), neighbor_counts.end(), 0);
+
+    for (int i = 0; i < N_neurons; i++) {
+        for (int j = 0; j < N_neurons; j++) {
+
+            if (i != j) {
+                int connection = gsl_rng_uniform_int(ran, 2);
+
+                // Direct 2D access
+                connections[i][j] = connection;
+
+                // Count outgoing neighbors of neuron i
+                neighbor_counts[i] += connection;
+            } else {
+                // No self-connections
+                connections[i][j] = 0;
             }
         }
     }
@@ -104,18 +114,17 @@ double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neur
 
 // Evolution of multiple neuron systems with pre-generated random numbers
 void evolve_systems(vector<vector<int>>& neurons_set,
-                    const vector<vector<int>>& connections_set,
+                    const vector<vector<int>>& connections,
                     const vector<double>& random_numbers) {
 
     for (int step = 0; step < N_steps; step++) {
-        double rho = random_numbers[step]; // same rho for all systems at this step
+        double rho = random_numbers[step];
 
-        for (size_t sys = 0; sys < n_bits; sys++) {
-            vector<int>& neurons = neurons_set[sys];
-            const vector<int>& connections = connections_set[sys];
+        for (size_t r = 0; r < n_bits; r++) {
+            vector<int>& neurons = neurons_set[r];
 
             for (int i = 0; i < N_neurons; i++) {
-                double dE = DeltaE(i, connections, neurons);
+                double dE = DeltaE(i, connections[i], neurons);
                 if (rho >= dE) neurons[i] = -neurons[i];
             }
         }
@@ -123,26 +132,32 @@ void evolve_systems(vector<vector<int>>& neurons_set,
 }
 
 void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
-                    const vector<vector<int>>& connections_set,
+                    const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
                     const vector<double>& random_numbers) {
+    BitSet sum;
+    sum.(1);
+    BitSet and_ij;
+    and_ij.(1);
+    sum.SetAll(0);
+    and_ij.SetAll(0);
+    
 
     for (int step = 0; step < N_steps; step++) {
         for (int i = 0; i < N_neurons; i++) {
             if (random_numbers[step] >= neighbor_count[i]) {
                 Neurons_Set[i].ComplementTo();
             } else {
-                BitSet sum;
                 sum.SetAll(0);
+                and_ij.SetAll(0);
+
                 for (int j = 0; j < N_neurons; j++) {
-                    if (i != j && connections_set[i][j]) {
-                        BitSet and_ij;
-                        Bits bj = Neurons_Set[j][0];
-                        Neurons_Set[i].And(&bj, &and_ij);
+                    if (i != j && connections[i][j]) {  
+                        Neurons_Set[i].And(&Neurons_Set[j][0], &and_ij); //&Neurons_Set[j][0] extract the only Bits that constitutes the BitSet
                         sum += &and_ij;
                     }
                 }
-                Bits mask = sum < random_numbers[step];
+                Bits mask = sum < random_numbers[step]; //calculations yields the same comparison, even though the random variable changed
                 Neurons_Set[i] ^= &mask;  // flips only where mask==1, work only if Neurons_Set[i] is actually a bits 
             }
         }
@@ -155,13 +170,13 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
                    const vector<vector<int>>& neurons_set_bits,
                    int N_neurons, int prefix_width, int col_width) {
 
-    for (size_t sys = 0; sys < neurons_set.size(); sys++) {
+    for (size_t r = 0; r < neurons_set.size(); r++) {
         // Affichage before
         ostringstream oss_before;
-        oss_before << "System " << right << setw(3) << sys+1 << " ; before: ";
+        oss_before << "Realization" << right << setw(3) << r+1 << " ; before: ";
         cout << left << setw(prefix_width) << oss_before.str();
         for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_set_before[sys][i] << " ";
+            cout << right << setw(col_width) << neurons_set_before[r][i] << " ";
         cout << "\n";
 
         // Affichage after classic
@@ -169,7 +184,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
         oss_after << "          " << " ;  after: ";
         cout << left << setw(prefix_width) << oss_after.str();
         for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_set[sys][i] << " ";
+            cout << right << setw(col_width) << neurons_set[r][i] << " ";
         cout << "\n";
 
         // Affichage after bits
@@ -177,7 +192,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
         oss_after_bits << "          " << " ;   bits: ";
         cout << left << setw(prefix_width) << oss_after_bits.str();
         for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_set_bits[sys][i] << " ";
+            cout << right << setw(col_width) << neurons_set_bits[r][i] << " ";
         cout << "\n\n\n";
     }
 }
@@ -191,11 +206,10 @@ int main() {
     vector<vector<int>> neurons_set(n_bits, vector<int>(N_neurons));
     init_neurons_set(neurons_set, ran);
 
-    vector<vector<int>> connections_set(n_bits, vector<int>(N_neurons * N_neurons, 0));
+    vector<vector<int>> connections(N_neurons, vector<int>(N_neurons, 0));
     vector<int> neighbor_count(N_neurons, 0);  
 
-    init_connections_set(connections_set, neighbor_count, ran);
-
+    init_connections_set(connections, neighbor_count, ran);
 
     vector<UnsignedInt> Neurons_Set;
     Neurons_Set.reserve(N_neurons);
@@ -227,27 +241,20 @@ int main() {
     
     vector<vector<int>> neurons_set_before = neurons_set;
 
-    evolve_systems(neurons_set, connections_set, random_numbers);
+    evolve_systems(neurons_set, connections, random_numbers);
 
-    evolve_systems_bits(Neurons_Set, connections_set, neighbor_count, random_numbers);
+    evolve_systems_bits(Neurons_Set, connections, neighbor_count, random_numbers);
     
     vector<vector<int>> neurons_set_after_bits(n_bits, vector<int>(N_neurons)); 
-    /*
+
     for (int r=0; r<n_bits;r++){
         for (int i = 0; i < N_neurons; i++) {
             neurons_set_after_bits[r][i]=-1+2*Neurons_Set[i].Get(r);
         }
     }
-    */
 
     print_neurons(neurons_set_before, neurons_set, neurons_set_after_bits, N_neurons, prefix_width, col_width);
-
-
-
-
-
-
-    /*
+   /*
     for (int i = 0; i < N_neurons; i++) {
         UnsignedInt Neuron_tmp(1);
         for (int r = 0; r < n_bits; r++) {
@@ -264,11 +271,9 @@ int main() {
         cout << "\n";
     }
 
-    
-    
-
-    print_neurons(neurons_set, neurons_set_before, N_neurons, prefix_width, col_width);
+    print_neurons(neurons_set_before, neurons_set, neurons_set, N_neurons, prefix_width, col_width);
     */
+
     gsl_rng_free(ran);
     return 0;
 }
