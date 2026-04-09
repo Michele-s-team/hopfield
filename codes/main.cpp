@@ -135,11 +135,9 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
                     const vector<double>& random_numbers) {
-    BitSet sum;
-    sum.(1);
-    BitSet and_ij;
-    and_ij.(1);
+    BitSet sum(1);
     sum.SetAll(0);
+    BitSet and_ij(1);
     and_ij.SetAll(0);
     
 
