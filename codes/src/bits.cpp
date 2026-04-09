@@ -272,8 +272,7 @@ void Bits::operator &= (Bits* m){
     
 }
 
-
-inline void Bits::operator ^= (Bits* m){
+void Bits::operator ^= (Bits* m){
     
     n ^= (m->n);
     

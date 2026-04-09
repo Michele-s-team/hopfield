@@ -51,10 +51,20 @@ const int sys_label_width = 12; // largeur fixée pour "System XX ; " + "before:
 const int prefix_width = 12;
 
 const int N_neurons = 32;
-const int N_real=1;
 const int J = 1;
 const int Beta = 1;
 const int N_steps = 100;
+
+//CLASSIC IMPLEMENTATION
+// connections_set: Matrix of size N_neurons*N_neurons connections are the same across all 64 realisations, encodes the connections on the networks (1 if there is a connection, 0 else), built at random
+// neighbor_counts: List of size N_neurons, encodes the number of neighbors of each Neuron (identical across all realisations). No need for list of the netowrk is regular.
+// neurons_set: Matrix of n_bits row and N_neurons columns, encodes the initial value of each neuron for each realisation
+
+
+//BITSET IMPLEMENTATION
+// connexions_set: same as for the classic case
+// neighbor_counts: same as for the classic case
+// Neurons_Set: list of BitSets of size N_neurons. Each BitSet encodes the value of each neuron for all initial conditions. BitSet of the list are technically bits (line of bits) as Neurons only take value -1/1 --> 0/1 in bitwise arithmetic
 
 
 void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
@@ -67,21 +77,21 @@ void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
 
 }
 
-void init_connections_set(std::vector<std::vector<int>>& connections_set, gsl_rng* ran) {
-
+void init_connections_set(vector<vector<int>>& connections_set, 
+                          vector<int>& neighbor_counts,
+                          gsl_rng* ran) {
     for (size_t sys = 0; sys < connections_set.size(); sys++) {
         for (int i = 0; i < N_neurons; i++) {
             for (int j = 0; j < N_neurons; j++) {
                 if (i != j) {
-                    connections_set[sys][i * N_neurons + j] = gsl_rng_uniform_int(ran, 2);
+                    int connection = gsl_rng_uniform_int(ran, 2);
+                    connections_set[sys][i * N_neurons + j] = connection;
+                    neighbor_counts[i] += connection;  // [sys][i] -> [i]
                 }
             }
         }
     }
-
 }
-
-
 
 // DeltaE for a single neuron
 double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neurons) {
@@ -111,6 +121,34 @@ void evolve_systems(vector<vector<int>>& neurons_set,
         }
     }
 }
+
+void evolve_systems_bits(vector<BitSet>& Neurons_Set,
+                    const vector<vector<int>>& connections_set,
+                    const vector<int>& neighbor_count,
+                    const vector<double>& random_numbers) {
+
+    for (int step = 0; step < N_steps; step++) {
+        for (int i = 0; i < N_neurons; i++) {
+            if (random_numbers[step] >= neighbor_count[i]) {
+                Neurons_Set[i].ComplementTo();
+            } else {
+                BitSet sum;
+                sum.SetAll(0);
+                for (int j = 0; j < N_neurons; j++) {
+                    if (i != j && connections_set[i][j]) {
+                        BitSet and_ij;
+                        Bits bj = Neurons_Set[j][0];
+                        Neurons_Set[i].And(&bj, &and_ij);
+                        sum += &and_ij;
+                    }
+                }
+                Bits mask = sum < random_numbers[step];
+                Neurons_Set[i] ^= &mask;  // flips only where mask==1, work only if Neurons_Set[i] is actually a bits 
+            }
+        }
+    }
+}
+
 
 void print_neurons(const vector<vector<int>>& neurons_set,
                    const vector<vector<int>>& neurons_set_before,
@@ -145,11 +183,13 @@ int main() {
     init_neurons_set(neurons_set, ran);
 
     vector<vector<int>> connections_set(n_bits, vector<int>(N_neurons * N_neurons, 0));
-    init_connections_set(connections_set, ran);
+    vector<int> neighbor_count(N_neurons, 0);  
+
+    init_connections_set(connections_set, neighbor_count, ran);
 
 
     vector<UnsignedInt> Neurons_Set;
-    Neurons_Set.reserve(N_neurons * N_real);
+    Neurons_Set.reserve(N_neurons);
 
 
     for (int i = 0; i < N_neurons; i++) {
@@ -168,17 +208,56 @@ int main() {
         cout << "\n";
     }
 
+
     // Generation of a random sequence number
     vector<double> random_numbers(N_steps);
     for (int t = 0; t < N_steps; t++) {
         random_numbers[t] = gsl_ran_exponential(ran, 1.0 / (2.0 * Beta * J));
     }
-
+    
     vector<vector<int>> neurons_set_before = neurons_set;
 
     evolve_systems(neurons_set, connections_set, random_numbers);
 
+    //evolve_systems_bits(neurons_set, connections_set, neighbor_count, random_numbers);
+    
+    vector<vector<int>> neurons_set_after_bits(n_bits, vector<int>(N_neurons)); 
+
+    for (int r=0; r<n_bits;r++){
+        for (int i = 0; i < N_neurons; i++) {
+            neurons_set_after_bits[r][i]=-1+2*Neurons_Set[i].Get(r);
+        }
+    }
+
+    print_neurons(neurons_set_after_bits, neurons_set_before, N_neurons, prefix_width, col_width);
+
+
+
+
+
+
+    /*
+    for (int i = 0; i < N_neurons; i++) {
+        UnsignedInt Neuron_tmp(1);
+        for (int r = 0; r < n_bits; r++) {
+            int bit = (neurons_set[r][i] + 1) / 2;
+            Neuron_tmp.Set(r, bit);
+        }
+        Neurons_Set.push_back(Neuron_tmp);
+
+        // Vérification
+        cout << "Neuron " << i << " spins: ";
+        for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
+        cout << "\nNeuron " << i << " bits: ";
+        Neuron_tmp.Print("");
+        cout << "\n";
+    }
+
+    
+    
+
     print_neurons(neurons_set, neurons_set_before, N_neurons, prefix_width, col_width);
+    */
     gsl_rng_free(ran);
     return 0;
 }

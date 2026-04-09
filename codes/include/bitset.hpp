@@ -57,9 +57,9 @@ public:
     //bitwise sum and substraction
     void AddTo(BitSet*, Bits*), AddTo(Bits*, Bits*), SubstractTo(BitSet*, Bits*), SubstractTo(Bits*, Bits*), Multiply(UnsignedInt*, UnsignedInt*), MultiplyByTwoTo(void), DivideByTwoTo(void), AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
     BitSet operator + (BitSet*), operator - (BitSet*), operator << (Bits*), Add(BitSet*, Bits*), Substract(BitSet*, Bits*);
-    void operator += (BitSet*), operator -= (BitSet*), operator *= (BitSet*);
+    void operator += (BitSet*), operator -= (BitSet*), operator *= (BitSet*), operator ^= (Bits*);
     Bits& operator [] (const unsigned int&);
-    Bits operator == (BitSet&), operator < (const BitSet&), operator <= (BitSet&);
+    Bits operator == (BitSet&), operator < (const BitSet&), operator <= (BitSet&); 
     void operator >>= (UnsignedInt*), operator <<= (UnsignedInt*), operator >>= (Bits*), operator <<= (Bits*), operator &= (Bits*);
 
     friend class UnsignedInt;

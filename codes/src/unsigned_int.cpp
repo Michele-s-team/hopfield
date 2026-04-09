@@ -86,7 +86,11 @@ inline void UnsignedInt::operator = (BitSet m){
     b = m.b;
     
 }
-
+// Initializes the UnsignedInt from a vector of 64-bit unsigned integers.
+// Each element of the vector corresponds to one column (system),
+// and is decomposed bit by bit into the rows of b:
+// b[p][s] = p-th bit of vec[s], for p = 0..n_bits-1, s = 0..n_cols-1
+// Remaining rows above n_bits are zeroed out.
 void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
     if (!vec) return; // safety check
 

@@ -245,8 +245,8 @@ inline Bits BitSet::operator == (BitSet& m){
     
 }
 
-//Confronto *this con m e scrivo in result il risultato. result è uguale a 1 se *this < m e a 0 altrimenti
-inline Bits BitSet::operator < (const BitSet& m){
+//Compare *this with m and store the result in result. result is 1 if *this < m, and 0 otherwise
+Bits BitSet::operator < (const BitSet& m){
     
     int s;
     Bits result, check;
@@ -301,7 +301,7 @@ unsigned long long int BitSet::Get(unsigned int p){
 
 
 //overload of [] operator. IT IS IMPORTANT THAT THIS RETURNS A REFERENCE, NOT AN UnsignedInt: OTHERWISE THE RETURNED OBJECT, WHEN MODIFIED, WILL NOT CHANGE *this
-inline Bits& BitSet::operator [] (const unsigned int& i){
+Bits& BitSet::operator [] (const unsigned int& i){
     
     return((b[i]));
     
@@ -598,8 +598,8 @@ inline void BitSet::ComplementTo(unsigned int size){
 }
 
 
-//write the one-complement of *this  and write it into *this
-inline void BitSet::ComplementTo(void){
+//write the one-complement of *this and write it into *this
+void BitSet::ComplementTo(void){
     
     for(unsigned int s=0; s<GetSize(); s++){
         (b[s]).ComplementTo();
@@ -770,6 +770,13 @@ void BitSet::operator *= (BitSet* multiplicand){
     
 }
 
+
+// perform (bit-by-bit) a XOR between b[s] and *m, and write the result in b[s] for all s
+void BitSet::operator ^= (Bits* m){
+    for(unsigned int s = 0; s < GetSize(); s++){
+        b[s] ^= m;
+    }
+}
 
 
 
