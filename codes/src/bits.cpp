@@ -144,7 +144,7 @@ inline Bits Bits::Complement(void){
 
 
 //compute the one's complement of *this and write it into *this
-inline void Bits::ComplementTo(void){
+void Bits::ComplementTo(void){
     
     (*this) = (~(*this));
     
@@ -250,7 +250,7 @@ Bits Bits::operator ~ (void){
 
 
 //return (bit-by-bit) true if *this == m, false otherwise
-inline Bits Bits::operator == (Bits& m){
+ Bits Bits::operator == (Bits& m){
     
     return(Bits(~(n ^ (m.n))));
     

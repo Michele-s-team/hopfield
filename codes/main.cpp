@@ -122,7 +122,7 @@ void evolve_systems(vector<vector<int>>& neurons_set,
     }
 }
 
-void evolve_systems_bits(vector<BitSet>& Neurons_Set,
+void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     const vector<vector<int>>& connections_set,
                     const vector<int>& neighbor_count,
                     const vector<double>& random_numbers) {
@@ -150,8 +150,9 @@ void evolve_systems_bits(vector<BitSet>& Neurons_Set,
 }
 
 
-void print_neurons(const vector<vector<int>>& neurons_set,
-                   const vector<vector<int>>& neurons_set_before,
+void print_neurons(const vector<vector<int>>& neurons_set_before,
+                   const vector<vector<int>>& neurons_set,  
+                   const vector<vector<int>>& neurons_set_bits,
                    int N_neurons, int prefix_width, int col_width) {
 
     for (size_t sys = 0; sys < neurons_set.size(); sys++) {
@@ -163,12 +164,20 @@ void print_neurons(const vector<vector<int>>& neurons_set,
             cout << right << setw(col_width) << neurons_set_before[sys][i] << " ";
         cout << "\n";
 
-        // Affichage after
+        // Affichage after classic
         ostringstream oss_after;
         oss_after << "          " << " ;  after: ";
         cout << left << setw(prefix_width) << oss_after.str();
         for (int i = 0; i < N_neurons; i++)
             cout << right << setw(col_width) << neurons_set[sys][i] << " ";
+        cout << "\n";
+
+        // Affichage after bits
+        ostringstream oss_after_bits;
+        oss_after_bits << "          " << " ;   bits: ";
+        cout << left << setw(prefix_width) << oss_after_bits.str();
+        for (int i = 0; i < N_neurons; i++)
+            cout << right << setw(col_width) << neurons_set_bits[sys][i] << " ";
         cout << "\n\n\n";
     }
 }
@@ -199,13 +208,14 @@ int main() {
             Neuron_tmp.Set(r, bit);
         }
         Neurons_Set.push_back(Neuron_tmp);
-
+        /*
         // Vérification
         cout << "Neuron " << i << " spins: ";
         for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
         cout << "\nNeuron " << i << " bits: ";
         Neuron_tmp.Print("");
         cout << "\n";
+        */
     }
 
 
@@ -219,17 +229,18 @@ int main() {
 
     evolve_systems(neurons_set, connections_set, random_numbers);
 
-    //evolve_systems_bits(neurons_set, connections_set, neighbor_count, random_numbers);
+    evolve_systems_bits(Neurons_Set, connections_set, neighbor_count, random_numbers);
     
     vector<vector<int>> neurons_set_after_bits(n_bits, vector<int>(N_neurons)); 
-
+    /*
     for (int r=0; r<n_bits;r++){
         for (int i = 0; i < N_neurons; i++) {
             neurons_set_after_bits[r][i]=-1+2*Neurons_Set[i].Get(r);
         }
     }
+    */
 
-    print_neurons(neurons_set_after_bits, neurons_set_before, N_neurons, prefix_width, col_width);
+    print_neurons(neurons_set_before, neurons_set, neurons_set_after_bits, N_neurons, prefix_width, col_width);
 
 
 
