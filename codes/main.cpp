@@ -135,14 +135,23 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
                     const vector<double>& random_numbers) {
-    BitSet sum(1);
-    sum.SetAll(0);
+    BitSet sum(1000); //max value of the sum that can be stored
+    unsigned long long int somme=858;
+    sum.SetAll(somme);
     BitSet and_ij(1);
     and_ij.SetAll(0);
-    
+    cout << "\nsum ";
+    sum.Print("Initial value of the sum 858");
+    cout << "\nand ";
+    and_ij.Print("");
+    cout << "\n";
+    cout.flush();
 
     for (int step = 0; step < N_steps; step++) {
+        cout<<step<<endl;
+        cout.flush();
         for (int i = 0; i < N_neurons; i++) {
+            cout<< "Neuron i: "<< i+1<<endl;
             if (random_numbers[step] >= neighbor_count[i]) {
                 Neurons_Set[i].ComplementTo();
             } else {
@@ -150,13 +159,22 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                 and_ij.SetAll(0);
 
                 for (int j = 0; j < N_neurons; j++) {
+                    cout<< "Neuron j: "<< j+1<<endl;
+                    // Vérification
+                    cout << "\nsum ";
+                    sum.Print("");
+                    cout << "\nand ";
+                    and_ij.Print("");
+                    cout << "\n";
                     if (i != j && connections[i][j]) {  
                         Neurons_Set[i].And(&Neurons_Set[j][0], &and_ij); //&Neurons_Set[j][0] extract the only Bits that constitutes the BitSet
                         sum += &and_ij;
                     }
                 }
                 Bits mask = sum < random_numbers[step]; //calculations yields the same comparison, even though the random variable changed
+                cout<<"test mask creation"<<endl;
                 Neurons_Set[i] ^= &mask;  // flips only where mask==1, work only if Neurons_Set[i] is actually a bits 
+                cout<<"test mask application"<<endl;
             }
         }
     }
@@ -239,7 +257,7 @@ int main() {
     
     vector<vector<int>> neurons_set_before = neurons_set;
 
-    evolve_systems(neurons_set, connections, random_numbers);
+    //evolve_systems(neurons_set, connections, random_numbers);
 
     evolve_systems_bits(Neurons_Set, connections, neighbor_count, random_numbers);
     
