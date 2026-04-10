@@ -134,17 +134,14 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
                     const vector<double>& random_numbers) {
-    BitSet sum(1000); //max value of the sum that can be stored
-    unsigned long long int somme=858;
-    sum.SetAll(somme);
+    BitSet sum(1);
+    sum.SetAll(0);
     BitSet and_ij(1);
     and_ij.SetAll(0);
-    cout << "\nsum ";
-    sum.Print("Initial value of the sum 858");
-    cout << "\nand ";
+    cout << "\nsum initial value";
+    sum.Print("");
+    cout << "\nand initial value";
     and_ij.Print("");
-    cout << "\n";
-    cout.flush();
 
     for (int step = 0; step < N_steps; step++) {
         cout<<"step: "<<step<<endl;
@@ -158,14 +155,14 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                 and_ij.SetAll(0);
 
                 for (int j = 0; j < N_neurons; j++) {
-                    cout<< "Neuron j: "<< j+1<<endl;
-                    // Vérification
-                    cout << "\nsum ";
-                    sum.Print("");
-                    cout << "\nand ";
-                    and_ij.Print("");
-                    cout << "\n";
-                    if (i != j && connections[i][j]) {  
+                    cout<< "Neuron j: "<< j+1<< "  connection = "<< connections[i][j]<<endl;
+                    if (i != j && connections[i][j]) {
+                        // Vérification
+                        cout << "\nsum ";
+                        sum.Print("");
+                        cout << "\nand ";
+                        and_ij.Print("");
+                        cout << "\n";  
                         Neurons_Set[i].And(&Neurons_Set[j][0], &and_ij); //&Neurons_Set[j][0] extract the only Bits that constitutes the BitSet
                         sum += &and_ij;
                     }
@@ -213,6 +210,8 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 }
 
 int main() {
+    Bits_zero.Set(0);
+    Bits_one.Set(~0ULL);
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);
@@ -237,6 +236,7 @@ int main() {
             Neuron_tmp.Set(r, bit);
         }
         Neurons_Set.push_back(Neuron_tmp);
+
         /*
         // Vérification
         cout << "Neuron " << i << " spins: ";

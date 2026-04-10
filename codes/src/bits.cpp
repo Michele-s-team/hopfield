@@ -76,13 +76,18 @@ void Bits::Set(unsigned int s, bool bit){
 
 //set all n_bits entries of *this equal to bit
 //inline 
+/*
 void Bits::SetAll(bool bit){
     
     if(bit){(*this) = Bits_one;}
     else{(*this) = Bits_zero;}
     
 }
+*/
 
+void Bits::SetAll(bool bit){
+    n = bit ? ~0ULL : 0ULL;
+}
 
 //return the s-th bit ofinput
 //inline 

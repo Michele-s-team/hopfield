@@ -372,6 +372,7 @@ void BitSet::operator += (BitSet* addend){
     //    add the last extra bit
     //******** THIS MAY BE TIME CONSUMING ********
     b.push_back(carry);
+    Normalize(); // HAVE TO CHECK WHERE TO PUT IT (SHOULDN'T BE IN BOTH '+=' AND 'AddTo')
     
 }
 
@@ -401,9 +402,9 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
         t.Set((b[p]) ^ (*carry));
 //        (carry->Get()) = (((b[p]).Get()) & (carry->Get()));
         carry->Set((b[p]) & (*carry));
-        (b[p]).Set(t);
-        
+        (b[p]).Set(t);   
     }
+     Normalize();
     
 }
 
