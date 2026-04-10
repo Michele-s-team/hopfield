@@ -131,6 +131,7 @@ void BitSet::SetAll(Bits& m){
     for(unsigned int s=0; s<GetSize(); s++){
         b[s] = m;
     }
+    Normalize();
     
 }
 

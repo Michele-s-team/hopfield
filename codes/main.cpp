@@ -33,17 +33,32 @@ BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
 
 
-#include <iostream>
-#include <vector>
-#include "gsl_rng.h"
-#include "gsl_randist.h"
+/*
+ compile on mac
+ compile without optimization
+*/
+// clear; clear;  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O0 -Wno-deprecated -I/Users/michelecastellana/Documents/office_stuff/work/stages/stage_bastien_dumont_2026/hopfield/codes/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
+ 
 
+/*
+ compile with optimization
+ */
+// g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O3 -Wno-deprecated  -I/Users/michelecastellana/Documents/gillespie/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
 
+//compile on calcsub
+//clear; clear;  g++ main.cpp src/*.cpp  -llapack -lgsl -lgslcblas -lm -O3 -Wno-deprecated -I /usr/include/gsl/ -I./include/ -o main.o -Wall -DHAVE_INLINE
+//compile on abacus
+//g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
-#include <iostream>
-#include <vector>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
+//run with
+//./main.o -N 128 -T 1 -S 5 -s 0 -o /Users/michelecastellana/Desktop
+/*
+ N is the total perticle number in the Frank model
+ S is log_10(total number of iterations)
+ s is the seed of the random-number generator
+ o is the path where to store the results
+ */
+
 
 const int col_width = 3;   
 const int sys_label_width = 12; // largeur fixée pour "System XX ; " + "before: "
@@ -51,7 +66,9 @@ const int prefix_width = 12;
 
 const int N_neurons = 32;
 const int J = 1;
-const int Beta = 1;
+const double T=300;
+const double k_B=1.38*pow(10,3);  //has to be changed!!!!!!!! (test value, something worng with the random number generator)
+double Beta = 1/(T*k_B);
 const int N_steps = 100;
 
 //CLASSIC IMPLEMENTATION
@@ -131,9 +148,23 @@ void evolve_systems(vector<vector<int>>& neurons_set,
 }
 
 void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
+                    const vector<UnsignedInt>& Random_Numbers,
+                    const vector<double>& random_numbers,
                     const vector<vector<int>>& connections,
-                    const vector<int>& neighbor_count,
-                    const vector<double>& random_numbers) {
+                    const vector<int>& neighbor_count) {
+
+
+    /*
+                        
+    BitSet sum(1000); //max value of the sum that can be stored
+    unsigned long long int somme=858;
+    sum.SetAll(somme);
+    
+    cout << "\nsum ";
+    sum.Print("Initial value of the sum 858");
+    cout << "\nand ";
+    */
+                        
     BitSet sum(1);
     sum.SetAll(0);
     BitSet and_ij(1);
@@ -167,7 +198,7 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                         sum += &and_ij;
                     }
                 }
-                Bits mask = sum < random_numbers[step]; //calculations yields the same comparison, even though the random variable changed
+                Bits mask = sum < Random_Numbers[step]; //calculations yields the same comparison, even though the random variable changed
                 cout<<"test mask creation"<<endl;
                 Neurons_Set[i] ^= &mask;  // flips only where mask==1, work only if Neurons_Set[i] is actually a bits 
                 cout<<"test mask application"<<endl;
@@ -237,28 +268,37 @@ int main() {
         }
         Neurons_Set.push_back(Neuron_tmp);
 
-        /*
         // Vérification
         cout << "Neuron " << i << " spins: ";
         for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
         cout << "\nNeuron " << i << " bits: ";
         Neuron_tmp.Print("");
         cout << "\n";
-        */
+    
     }
 
 
     // Generation of a random sequence number
     vector<double> random_numbers(N_steps);
-    for (int t = 0; t < N_steps; t++) {
-        random_numbers[t] = gsl_ran_exponential(ran, 1.0 / (2.0 * Beta * J));
+    vector<UnsignedInt> Random_Numbers(N_steps);
+
+    for (int step = 0; step < N_steps; step++) {
+        random_numbers[step] = gsl_ran_exponential(ran, 1.0 / (2.0 * Beta * J));
+        cout<< "random number = "<<random_numbers[step];
+        UnsignedInt Random_tmp(N_neurons);
+        unsigned long long v = min((double)N_neurons, random_numbers[step]);
+        Random_tmp.SetAll((unsigned long long) v);
+        Random_tmp.Print("");
+        Random_Numbers.push_back(Random_tmp);
+
     }
+    
     
     vector<vector<int>> neurons_set_before = neurons_set;
 
     //evolve_systems(neurons_set, connections, random_numbers);
 
-    evolve_systems_bits(Neurons_Set, connections, neighbor_count, random_numbers);
+    evolve_systems_bits(Neurons_Set, Random_Numbers, random_numbers, connections,neighbor_count);
     
     vector<vector<int>> neurons_set_after_bits(n_bits, vector<int>(N_neurons)); 
 
