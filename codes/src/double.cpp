@@ -15,7 +15,7 @@
 #include "gsl_math.h"
 
 //default constructor
-inline Double::Double(void){
+Double::Double(void){
     
     b.Resize(52);
     e.Resize(11);
@@ -23,7 +23,7 @@ inline Double::Double(void){
 }
 
 //set the fraction to zero, the exponent to 1023 and the sign to +
-inline void Double::Clear(){
+void Double::Clear(){
     
     unsigned int p;
     
@@ -45,7 +45,7 @@ inline void Double::Clear(){
 
 
 //replace bit-by-bit *this with *replacer if *check=true, and leave *this unchanged otherwise
-inline void Double::Replace(Double* replacer, Bits* check){
+void Double::Replace(Double* replacer, Bits* check){
     
     unsigned int p;
     
@@ -66,7 +66,7 @@ inline void Double::Replace(Double* replacer, Bits* check){
 
 
 //swap bit-by-bit the pair {*this, *a} if *check = true and write the result in {*this, *a}, and leave *this and *a unchanged if *check = false, where *work_space is a temporary variable needed to store stuff. This method requires *a and *work_space to be allocated and *this and *a to have the same size
-inline void Double::Swap(Double* a, Bits& check, Bits* work_space){
+void Double::Swap(Double* a, Bits& check, Bits* work_space){
     
     //swap the sign
     s.Swap(&(a->s), check, work_space);
@@ -78,7 +78,7 @@ inline void Double::Swap(Double* a, Bits& check, Bits* work_space){
 }
 
 //initialize *this randomly with seed seed
-inline void Double::SetRandom(unsigned int seed){
+void Double::SetRandom(unsigned int seed){
     
     gsl_rng* ran;
     
@@ -96,7 +96,7 @@ inline void Double::SetRandom(unsigned int seed){
 
 
 //initialize *this randomly with the (already initialized) random generator *ran
-inline void Double::SetRandom(gsl_rng* ran){
+void Double::SetRandom(gsl_rng* ran){
     
     unsigned int i;
     
@@ -125,7 +125,7 @@ void Double::Print(string title){
 
 
 //set all entries of *this according to the double x, where x is written in binary according to the IEEE754 convention
-inline void Double::SetAll_IEEE754(double x){
+void Double::SetAll_IEEE754(double x){
     
     uint8_t *bytePointer = (uint8_t *)&x;
     size_t index;
@@ -181,7 +181,7 @@ inline void Double::SetAll_IEEE754(double x){
 
 
 //set all the n_bits entries of *this equal to the double given by (-1)^sign * 2^{exponent - 1023} * (mantissa[0] 2^0 + mantissa[1] 2^{-1} + ... ). Here exponent must be
-inline void Double::SetAll(bool sign, unsigned long long int exponent,  BitSet& mantissa){
+void Double::SetAll(bool sign, unsigned long long int exponent,  BitSet& mantissa){
     
     if((exponent < two_pow(n_bits_exponent+1)) && (mantissa.GetSize() == n_bits_mantissa)){
         
@@ -199,7 +199,7 @@ inline void Double::SetAll(bool sign, unsigned long long int exponent,  BitSet& 
 
 
 //set all the n_bits entries of s equal to sign, all n_bits entries of e equal to exponent, and all n_bits entries of b from the IEEE754 entries of mantissa
-inline void Double::SetAll(bool sign, unsigned long long int exponent,  double mantissa){
+void Double::SetAll(bool sign, unsigned long long int exponent,  double mantissa){
     
     if(exponent < two_pow(n_bits_exponent+1)){
         
@@ -223,7 +223,7 @@ inline void Double::SetAll(bool sign, unsigned long long int exponent,  double m
 
 
 //set the p-th bit entry of s equal to sign, the p-th entry of e equal to exponent, and the p-th entry of b from the IEEE754 entries of mantissa
-inline void Double::Set(unsigned int p, bool sign, unsigned long long int exponent,  double x){
+void Double::Set(unsigned int p, bool sign, unsigned long long int exponent,  double x){
     
     if(exponent < two_pow(n_bits_exponent+1)){
         
@@ -242,7 +242,7 @@ inline void Double::Set(unsigned int p, bool sign, unsigned long long int expone
 
 
 //print *this in base 10 according to the IEEE754 convention
-inline void Double::PrintBase10_IEEE754(void){
+void Double::PrintBase10_IEEE754(void){
     
     unsigned int i, p;
     double b_10, e_10/*, A*/;
@@ -267,7 +267,7 @@ inline void Double::PrintBase10_IEEE754(void){
 
 
 //print *this in base 10 according to the my convention, where the mantissa is \sum_{i=0}^{52-1} b_{52-1-i} 2^{-i}
-inline void Double::PrintBase10(string title){
+void Double::PrintBase10(string title){
     
     unsigned int p;
     vector<double> v;
@@ -285,7 +285,7 @@ inline void Double::PrintBase10(string title){
 
 
 //convert bit-by-bit *this in base 10 and write the result in v, which is resized
-inline void Double::GetBase10(vector<double>& v){
+void Double::GetBase10(vector<double>& v){
     
     unsigned int i, p;
     double b_10, e_10;
@@ -308,7 +308,7 @@ inline void Double::GetBase10(vector<double>& v){
 
 
 //sum *this to addend and write the result in *this. For the time being, this method assumes that this->s 0 = all_0 and addend.s = all_0 (*this and x contain all non-negative numbers)
-inline void Double::operator += (Double* addend){
+void Double::operator += (Double* addend){
     
     Double augend_t, addend_t;
     Bits compare, t, carry;
@@ -417,7 +417,7 @@ inline void Double::operator += (Double* addend){
 
 //sum *this to addend and write the result in *result, which need to be already allocated. For the time being, this method assumes that this->s 0 = all_0 and x.s = all_0 (*this and x contain all non-negative numbers). THIS METHOD ALTERS THE CONTENT OF *ADDEND
 //I wrote the time taken by each line when running the program with  ./main.o -s 0 -S 5
-inline void Double::AddTo(Double* addend){
+void Double::AddTo(Double* addend){
     
     Bits compare, borrow, carry_b, t;
     UnsignedInt de;
@@ -466,7 +466,7 @@ inline void Double::AddTo(Double* addend){
 
 
 //multiply *this by x and store the result in *this
-inline void Double::operator *= (Double& x){
+void Double::operator *= (Double& x){
     
     UnsignedInt t(1022);
     
@@ -491,7 +491,7 @@ inline void Double::operator *= (Double& x){
 
 
 //return (bit-by-bit) 1 if *this < x, 0 otherwise. This method assumes that this->s = x.s = 0
-inline Bits Double::operator < (Double& x){
+Bits Double::operator < (Double& x){
     
     //normalize the two Double(s) to make sure that the mantisa is of the form 1+....
     Normalize();
@@ -503,7 +503,7 @@ inline Bits Double::operator < (Double& x){
 
 
 //normalize *this by shifting the mantissa in such a way that its first bit is nonzero, and re-incorporrating the shift in e
-inline void Double::Normalize(void){
+void Double::Normalize(void){
     
     UnsignedInt n;
     

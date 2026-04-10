@@ -30,7 +30,7 @@ BitSet::BitSet(unsigned long long int N){
 
 
 //set *this to zero
-inline void BitSet::Clear(){
+void BitSet::Clear(){
     
     for(unsigned int s=0; s<b.size(); s++){
         (b[s]).Set(0);
@@ -40,7 +40,7 @@ inline void BitSet::Clear(){
 
 
 //swap bit-by-bit the pair {*this, *a} if *check = true and write the result in {*this, *a}, and leave *this and *a unchanged if *check = false, where *work_space is a temporary variable needed to store stuff. This method requires *a and *work_space to be allocated and *this and *a to have the same size
-inline void BitSet::Swap(BitSet* a, Bits& check, Bits* work_space){
+void BitSet::Swap(BitSet* a, Bits& check, Bits* work_space){
     
     for(unsigned int s=0; s<GetSize(); s++){
         
@@ -83,7 +83,7 @@ void BitSet::SetRandom(unsigned int seed){
 }
 
 
-inline  void BitSet::SetRandom(gsl_rng* ran){
+void BitSet::SetRandom(gsl_rng* ran){
     
     unsigned int s, p;
     
@@ -136,7 +136,7 @@ void BitSet::SetAll(Bits& m){
 
 
 //set the first m->GetSize() entries of *this equal to the respective entries of *m. This method requires this->Getsize() to be >= m->GetSize()
-inline void BitSet::Set(BitSet* m){
+void BitSet::Set(BitSet* m){
     
     unsigned int s;
     
@@ -151,7 +151,7 @@ inline void BitSet::Set(BitSet* m){
 
 
 //set all n_bits entries of *this equal to the entries stored (in IEEE754 format) in the mantissa of x. This requires b.size() = n_bits_mantissa and work_space->size() = n_bits_mantissa
-inline void BitSet::SetAllFromDoubleMantissa(double x, vector<bool>* work_space){
+void BitSet::SetAllFromDoubleMantissa(double x, vector<bool>* work_space){
     
     
     GetMantissaFromDouble(work_space, x);
@@ -165,7 +165,7 @@ inline void BitSet::SetAllFromDoubleMantissa(double x, vector<bool>* work_space)
 
 
 //set the s-th bit entry of *this equal to the entries stored (in IEEE754 format) in the mantissa of x. This requires b to be properly sized
-inline void BitSet::SetFromDoubleMantissa(unsigned int s, double x){
+void BitSet::SetFromDoubleMantissa(unsigned int s, double x){
     
     vector<bool> v;
     
@@ -219,7 +219,7 @@ void BitSet::Print(ostream& output_stream){
 
 
 //return (bit-by-bit) true if *this == m, and false otherwise. This method requires *this and m to have the same size
-inline Bits BitSet::operator == (BitSet& m){
+Bits BitSet::operator == (BitSet& m){
     
     unsigned int p;
     Bits result;
@@ -275,7 +275,7 @@ Bits BitSet::operator <= (BitSet& m){
 
 
 //shift bit-by-bit to the left the entries of  b[GetSize()-1], b[GetSize()-2] , ... b[0] in *this by *m (thus by either one position or zero positions), replace the remaining entries b[] by all zeros and write the result in *this
-inline BitSet BitSet::operator << (Bits* m){
+BitSet BitSet::operator << (Bits* m){
     
     BitSet t = (*this);
     t <<= m;
@@ -310,7 +310,7 @@ Bits& BitSet::operator [] (const unsigned int& i){
 
 
 //return *this + *addend
-inline BitSet BitSet::operator + (BitSet* addend) {
+BitSet BitSet::operator + (BitSet* addend) {
     
     BitSet a;
     
@@ -323,7 +323,7 @@ inline BitSet BitSet::operator + (BitSet* addend) {
 
 
 //return *this - m
-inline BitSet BitSet::operator - (BitSet* addend) {
+BitSet BitSet::operator - (BitSet* addend) {
     
     BitSet t;
     
@@ -336,7 +336,7 @@ inline BitSet BitSet::operator - (BitSet* addend) {
 
 
 //return *this + *addend and write the carry in *carry
-inline BitSet BitSet::Add(BitSet* addend, Bits* carry) {
+BitSet BitSet::Add(BitSet* addend, Bits* carry) {
     
     BitSet a;
     
@@ -350,7 +350,7 @@ inline BitSet BitSet::Add(BitSet* addend, Bits* carry) {
 
 
 //return *this + *subrahend and write the borrow in *borrow
-inline BitSet BitSet::Substract(BitSet* subtrahend, Bits* borrow) {
+BitSet BitSet::Substract(BitSet* subtrahend, Bits* borrow) {
     
     BitSet t;
     
@@ -408,7 +408,7 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
 }
 
 //remove useless bits on the tail of *this that contain all 0s
-inline void BitSet::Normalize(void){
+void BitSet::Normalize(void){
     
     int p;
     
@@ -425,7 +425,7 @@ inline void BitSet::Normalize(void){
 }
 
 //remove useless bits on the tail of *this that contain all 0s, as long as this deletion does not make the size of *this < than n
-inline void BitSet::Normalize(unsigned int n){
+void BitSet::Normalize(unsigned int n){
     
     int p;
     
@@ -471,7 +471,7 @@ void BitSet::AddTo(Bits* addend, Bits* carry){
 
 
 //substract m to *this and write the result in *this
-inline void BitSet::operator -= (BitSet* subtrahend) {
+void BitSet::operator -= (BitSet* subtrahend) {
     
     
     BitSet subtrahend_t;
@@ -578,7 +578,7 @@ void BitSet::SubstractTo(Bits* subtrahend, Bits* borrow) {
 
 
 //write the one-complement of *this with respect to a size 'size' of the binary representation and write it into *this
-inline void BitSet::ComplementTo(unsigned int size){
+void BitSet::ComplementTo(unsigned int size){
     
     unsigned int s;
     
@@ -610,7 +610,7 @@ void BitSet::ComplementTo(void){
 
 
 //set to zero the first bits of *this that is equal to one (starting from the last bit) and leave the others unchanged, write the result in *this
-inline void BitSet::RemoveFirstSignificantBit(void){
+void BitSet::RemoveFirstSignificantBit(void){
     
     int s;
     Bits check_old, check_new;
@@ -705,7 +705,7 @@ void BitSet::operator &= (Bits* m){
 
 
 //perform (bit-by-bit) an & between  b[s] and *m ,and write the result in b[s] for all s = start, ..., end-1
-inline void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end){
+void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end){
     
     for(unsigned int s=start; s<end; s++){
         
@@ -932,7 +932,7 @@ void BitSet::operator <<= (UnsignedInt* e){
 
 
 //return the position of the first signigificant bit in *this, starting from the last element of  b[]
-inline UnsignedInt BitSet::PositionOfFirstSignificantBit(void){
+UnsignedInt BitSet::PositionOfFirstSignificantBit(void){
     
     int s;
     Bits check_old, check_new, t, carry;

@@ -5,11 +5,11 @@
 
 #include "gsl_math.h"
 
-inline Fraction::Fraction(void) : BitSet(){}
+Fraction::Fraction(void) : BitSet(){}
 
 
 //construct a Fraction with size bits
-inline Fraction::Fraction(unsigned int size) : BitSet(){
+Fraction::Fraction(unsigned int size) : BitSet(){
 
     b.resize(size);
     
@@ -17,7 +17,7 @@ inline Fraction::Fraction(unsigned int size) : BitSet(){
 
 
 //obtain the mantissa from x (in the IEEE 754 format) and store it bit-by-bit in *this, by setting all n_bits entries of  b[s] equal
-inline void Fraction::SetAllFromDoubleMantissa(double x, vector<bool>* work_space){
+void Fraction::SetAllFromDoubleMantissa(double x, vector<bool>* work_space){
         
     unsigned int p;
     
@@ -33,7 +33,7 @@ inline void Fraction::SetAllFromDoubleMantissa(double x, vector<bool>* work_spac
 }
 
 //get  bit-by-bit the value in base 10 of *this and write it in *v
-inline void Fraction::GetBase10(vector<double>* v){
+void Fraction::GetBase10(vector<double>* v){
     
     unsigned int p, s;
     
@@ -49,7 +49,7 @@ inline void Fraction::GetBase10(vector<double>* v){
     
 }
 
-inline void Fraction::PrintBase10(string title){
+void Fraction::PrintBase10(string title){
     
     unsigned int p;
     vector<double> v;
@@ -69,7 +69,7 @@ inline void Fraction::PrintBase10(string title){
 
 
 //compute the floor of *this x *multiplicant and store the result in *result. This requires result->GetSize() = multiplicand->GetSize() and work_space->GetSize() = (this->GetSize()) + (multiplicand->GetSize())
-inline void Fraction::FloorMultiply(UnsignedInt* multiplicand, UnsignedInt* result, UnsignedInt* work_space){
+void Fraction::FloorMultiply(UnsignedInt* multiplicand, UnsignedInt* result, UnsignedInt* work_space){
     
     Multiply(multiplicand, work_space);
   

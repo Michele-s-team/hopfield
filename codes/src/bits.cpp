@@ -109,7 +109,7 @@ void Bits::GetBase10(vector<unsigned long long int>& v){
 
 
 //set *this randomly with seed seed
-inline void Bits::SetRandom(unsigned int seed){
+void Bits::SetRandom(unsigned int seed){
     
     gsl_rng* ran;
     
@@ -124,7 +124,7 @@ inline void Bits::SetRandom(unsigned int seed){
 
 
 //set *this randomly with random number generator ran
-inline void Bits::SetRandom(gsl_rng* ran){
+void Bits::SetRandom(gsl_rng* ran){
     
     unsigned int s;
     
@@ -136,7 +136,7 @@ inline void Bits::SetRandom(gsl_rng* ran){
 
 
 //return the one's complement of *this 
-inline Bits Bits::Complement(void){
+Bits Bits::Complement(void){
     
     return(~(*this));
     
@@ -161,7 +161,7 @@ void Bits::Replace(Bits* replacer,  Bits* check){
 
 
 //swap bit-by-bit the pair {*this, *a} if *check = true and write the result in {*this, *a}, and leave *this and *a unchanged if *check = false, where *work is a temporary variable needed to store stuff. This method requires *a and *work to be allocated
-inline void Bits::Swap(Bits* a, Bits& check, Bits* work_space){
+void Bits::Swap(Bits* a, Bits& check, Bits* work_space){
 
     //store temporarily *this in *work
     (*work_space) = (*this);

@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include <chrono>
 
+using namespace std;
+
 #include "gsl_rng.h"
 #include "gsl_math.h"
 #include "gsl_sf_log.h"
@@ -36,15 +38,12 @@ Bits Bits_one, Bits_zero;
 #include "gsl_rng.h"
 #include "gsl_randist.h"
 
-using namespace std;
+
 
 #include <iostream>
 #include <vector>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-
-
-using namespace std;
 
 const int col_width = 3;   
 const int sys_label_width = 12; // largeur fixée pour "System XX ; " + "before: "
@@ -148,7 +147,7 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
     cout.flush();
 
     for (int step = 0; step < N_steps; step++) {
-        cout<<step<<endl;
+        cout<<"step: "<<step<<endl;
         cout.flush();
         for (int i = 0; i < N_neurons; i++) {
             cout<< "Neuron i: "<< i+1<<endl;

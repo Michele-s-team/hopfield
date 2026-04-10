@@ -25,7 +25,7 @@ UnsignedInt::UnsignedInt(unsigned long long int N) : BitSet(N){}
 
 
 //if this->GetSize() == replacer->GetSize(), replace bit-by-bit all bs of *this with the respective bs of *replacer, and leave *this unchanged otherwise
-inline void UnsignedInt::Replace(UnsignedInt* replacer, Bits* check){
+void UnsignedInt::Replace(UnsignedInt* replacer, Bits* check){
     
     if((this->GetSize()) == (replacer->GetSize())){
         
@@ -81,7 +81,7 @@ void UnsignedInt::GetBase10(vector<unsigned long long int>& v){
 }
 
 
-inline void UnsignedInt::operator = (BitSet m){
+void UnsignedInt::operator = (BitSet m){
     
     b = m.b;
     

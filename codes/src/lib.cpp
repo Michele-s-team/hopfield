@@ -36,7 +36,7 @@ unsigned int bits(unsigned long long int n){
 
 
 //print bit-by-bit the double x
-inline void bitwise_print_double(const double& x){
+void bitwise_print_double(const double& x){
     
     uint8_t *bytePointer = (uint8_t*)&x;
     size_t index;
@@ -90,7 +90,7 @@ inline void bitwise_print_double(const double& x){
 
 
 //write the mantissa of x into *result by resizing *result properly. This method requires that result->size() = n_bits_mantissa
-inline void GetMantissaFromDouble(vector<bool>* result, double x){
+void GetMantissaFromDouble(vector<bool>* result, double x){
     
     uint64_t *pointer = (uint64_t*)&x;
     uint64_t byte;
@@ -301,7 +301,7 @@ inline void GetMantissaFromDouble(vector<bool>* result, double x){
 
 
 //speed test of UnsignedInt::AddTo method, with S samples and seed seed
-inline void SpeedTestUnsignedIntAddto(unsigned long long int maximum_value, unsigned long long int S, unsigned long long int seed){
+void SpeedTestUnsignedIntAddto(unsigned long long int maximum_value, unsigned long long int S, unsigned long long int seed){
         
     
     cout << " ***************************** Speed test for UnsignedInt::AddTo *****************************" << endl;
@@ -405,7 +405,7 @@ inline void SpeedTestUnsignedIntAddto(unsigned long long int maximum_value, unsi
 
 
 //test for BitSet::AddTo/SubstractTo
-inline void TestUnsignedIntAddTo(unsigned long long int S, unsigned long long int seed){
+void TestUnsignedIntAddTo(unsigned long long int S, unsigned long long int seed){
     
     UnsignedInt a, b;
     vector<unsigned long long int> v_a, v_b, v_a_minus_b;
@@ -471,7 +471,7 @@ inline void TestUnsignedIntAddTo(unsigned long long int S, unsigned long long in
 
 
 //test for    UnsignedInt *=
-inline void TestUnsignedIntMultiply(unsigned long long int S, unsigned long long int seed){
+void TestUnsignedIntMultiply(unsigned long long int S, unsigned long long int seed){
     
     //the maximum unsigned int that I will draw
     unsigned long long int max = 30;
@@ -548,7 +548,7 @@ inline void TestUnsignedIntMultiply(unsigned long long int S, unsigned long long
 
 
 
-inline void SpeedTestUnsignedIntMultiply(unsigned long long int maximum_value, unsigned long long int S, unsigned long long int seed){
+void SpeedTestUnsignedIntMultiply(unsigned long long int maximum_value, unsigned long long int S, unsigned long long int seed){
     
     
     cout << " ***************************** Speed test for UnsignedInt::Multiply *****************************" << endl;
@@ -640,7 +640,7 @@ inline void SpeedTestUnsignedIntMultiply(unsigned long long int maximum_value, u
 
 
 //test for   Fraction::FloorMultiply
-inline void TestFractionFloorMultiply(unsigned long long int S, unsigned long long int seed){
+void TestFractionFloorMultiply(unsigned long long int S, unsigned long long int seed){
     
     //the maximum unsigned int that I will draw
     unsigned long long int max = 1024;
@@ -701,7 +701,7 @@ inline void TestFractionFloorMultiply(unsigned long long int S, unsigned long lo
 
 
 
-inline void SpeedTestFractionFloorMultiply(unsigned int n_bits_factor, unsigned long long int maximum_value_multiplicand, unsigned long long int S, unsigned long long int seed){
+void SpeedTestFractionFloorMultiply(unsigned int n_bits_factor, unsigned long long int maximum_value_multiplicand, unsigned long long int S, unsigned long long int seed){
     
     
     cout << " ***************************** Speed test for Fraction::FloorMultiply *****************************" << endl;
@@ -783,7 +783,7 @@ inline void SpeedTestFractionFloorMultiply(unsigned int n_bits_factor, unsigned 
 
 
 
-inline void SpeedTestDoubleAddTo(unsigned long long int S, unsigned long long int seed){
+void SpeedTestDoubleAddTo(unsigned long long int S, unsigned long long int seed){
     
     
     cout << " ***************************** Speed test for Double::AddTo *****************************" << endl;
@@ -874,7 +874,7 @@ inline void SpeedTestDoubleAddTo(unsigned long long int S, unsigned long long in
 }
 
 //test for Double::operator +=
-inline void TestDoubleAddTo(unsigned long long int S, unsigned long long int seed){
+void TestDoubleAddTo(unsigned long long int S, unsigned long long int seed){
     
     
     Double A, B;
@@ -934,7 +934,7 @@ inline void TestDoubleAddTo(unsigned long long int S, unsigned long long int see
 
 
 ////this is not a method of the Bits class, but an ordinary function which had to be declared in this file because it need to know who the Bits type is
-//inline Bits operator ~ (const Bits& m){
+//Bits operator ~ (const Bits& m){
 //    
 //    return Bits((~(m.n)));
 //    
