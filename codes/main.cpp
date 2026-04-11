@@ -170,8 +170,7 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
 
             for (int i = 0; i < N_neurons; i++) {
 
-                // BRANCH 1: random threshold >= max possible sum for neuron i
-                // (all neighbor_count[i] neighbors are +1 at most, so sum <= neighbor_count[i])
+                // BRANCH 1: random threshold >= max possible sum for neuron i= neighbor_count[i]
                 // The flip is guaranteed for ALL realizations: complement the full bitset.
                 if (random_numbers[step] >= neighbor_count[i]) {
                     Neurons_Set[i].ComplementTo();
@@ -180,10 +179,7 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     // sum accumulates, across all n_bits realizations simultaneously, the count
                     // of +1 neighbors of neuron i. In realization r, bit r of sum encodes whether
                     // the neighbor count in that realization is below the threshold.
-                    // sum is initialized to neighbor_count[i] so that its internal storage is
-                    // pre-allocated to the maximum value it can reach, preventing += from
-                    // growing b unexpectedly during accumulation.
-                    UnsignedInt sum(neighbor_count[i]);
+                    UnsignedInt sum(1);
                     sum.SetAll(0);
 
                     // and_ij is a temporary: AND of neuron_i bits and neuron_j bits.
