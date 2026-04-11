@@ -61,7 +61,7 @@ void BitSet::Resize(unsigned long long int size){
 
 
 //inline
-unsigned int BitSet::GetSize(void){
+unsigned int BitSet::GetSize(void) const {
     
     return ((unsigned int)(b.size()));
     
@@ -131,7 +131,7 @@ void BitSet::SetAll(Bits& m){
     for(unsigned int s=0; s<GetSize(); s++){
         b[s] = m;
     }
-    Normalize();
+    Normalize(); 
     
 }
 
@@ -363,20 +363,18 @@ BitSet BitSet::Substract(BitSet* subtrahend, Bits* borrow) {
 }
 
 
-//add addend to *this,  and store the result in *this. This method requires this->GetSize() to be >= addend.GetSize()
+// add addend to *this, and store the result in *this.
+// This method requires this->GetSize() to be >= addend->GetSize()
 void BitSet::operator += (BitSet* addend){
-    
     Bits carry, t;
-    
     AddTo(addend, &carry);
-    
-    //    add the last extra bit
-    //******** THIS MAY BE TIME CONSUMING ********
+    // add the carry bit from the addition as a new entry in b
+    // ******** THIS MAY BE TIME CONSUMING ********
     b.push_back(carry);
-    Normalize(); // HAVE TO CHECK WHERE TO PUT IT (SHOULDN'T BE IN BOTH '+=' AND 'AddTo')
-    
+    // Only normalize if b has more than one entry: if b has exactly one entry,
+    // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
+    if (b.size() > 1) Normalize();
 }
-
 
 //same as BitSet::operator +=  but the last bit is not pushed back into b, but written into *carry. This method requires this->GetSize() to be >= addend->GetSize()
 //inline 
@@ -423,7 +421,6 @@ void BitSet::Normalize(void){
         }
         
     }
-    
 }
 
 //remove useless bits on the tail of *this that contain all 0s, as long as this deletion does not make the size of *this < than n

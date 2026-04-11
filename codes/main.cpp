@@ -61,13 +61,12 @@ Bits Bits_one, Bits_zero;
 
 
 const int col_width = 3;   
-const int sys_label_width = 12; // largeur fixée pour "System XX ; " + "before: "
 const int prefix_width = 12;
 
 const int N_neurons = 32;
 const int J = 1;
 const double T=300;
-const double k_B=1.38*pow(10,3);  //has to be changed!!!!!!!! (test value, something worng with the random number generator)
+const double k_B=1.38*pow(10,-1);  //has to be changed!!!!!!!! (test value, something worng with the random number generator)
 double Beta = 1/(T*k_B);
 const int N_steps = 100;
 
@@ -75,7 +74,6 @@ const int N_steps = 100;
 // connections_set: Matrix of size N_neurons*N_neurons connections are the same across all 64 realisations, encodes the connections on the networks (1 if there is a connection, 0 else), built at random
 // neighbor_counts: List of size N_neurons, encodes the number of neighbors of each Neuron (identical across all realisations). No need for list of the netowrk is regular.
 // neurons_set: Matrix of n_bits row and N_neurons columns, encodes the initial value of each neuron for each realisation
-
 
 //BITSET IMPLEMENTATION
 // connexions_set: same as for the classic case
@@ -90,7 +88,6 @@ void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
             neurons_set[r][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
         }
     }
-
 }
 
 void init_connections_set(std::vector<std::vector<int>>& connections,
@@ -102,14 +99,9 @@ void init_connections_set(std::vector<std::vector<int>>& connections,
 
     for (int i = 0; i < N_neurons; i++) {
         for (int j = 0; j < N_neurons; j++) {
-
             if (i != j) {
                 int connection = gsl_rng_uniform_int(ran, 2);
-
-                // Direct 2D access
                 connections[i][j] = connection;
-
-                // Count outgoing neighbors of neuron i
                 neighbor_counts[i] += connection;
             } else {
                 // No self-connections
@@ -117,9 +109,16 @@ void init_connections_set(std::vector<std::vector<int>>& connections,
             }
         }
     }
+
+    // DEBUG: print neighbor counts to verify distribution (expected mean ~ N_neurons/2)
+    cout << "[init_connections_set] Neighbor counts (expected mean ~" << N_neurons/2 << "): ";
+    for (int i = 0; i < N_neurons; i++) cout << neighbor_counts[i] << " ";
+    cout << endl;
 }
 
 // DeltaE for a single neuron
+// Returns sigma_i * sum_{j neighbor of i} sigma_j
+// Positive dE means flipping would cost energy (unfavorable)
 double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neurons) {
     int sum = 0;
     for (size_t j = 0; j < neurons.size(); j++) {
@@ -128,17 +127,17 @@ double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neur
     return neurons[neuron] * sum;
 }
 
-// Evolution of multiple neuron systems with pre-generated random numbers
+// Evolution of multiple neuron systems with pre-generated random numbers.
+// For each step, the same random threshold rho is applied to all realizations.
+// A neuron i flips if rho >= DeltaE(i), i.e. the random number exceeds the energy cost.
 void evolve_systems(vector<vector<int>>& neurons_set,
                     const vector<vector<int>>& connections,
                     const vector<double>& random_numbers) {
 
     for (int step = 0; step < N_steps; step++) {
         double rho = random_numbers[step];
-
         for (size_t r = 0; r < n_bits; r++) {
             vector<int>& neurons = neurons_set[r];
-
             for (int i = 0; i < N_neurons; i++) {
                 double dE = DeltaE(i, connections[i], neurons);
                 if (rho >= dE) neurons[i] = -neurons[i];
@@ -153,55 +152,73 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count) {
 
-
-    /*
-                        
-    BitSet sum(1000); //max value of the sum that can be stored
-    unsigned long long int somme=858;
-    sum.SetAll(somme);
-    
-    cout << "\nsum ";
-    sum.Print("Initial value of the sum 858");
-    cout << "\nand ";
-    */
-                        
-    BitSet sum(1);
-    sum.SetAll(0);
-    BitSet and_ij(1);
-    and_ij.SetAll(0);
-    cout << "\nsum initial value";
-    sum.Print("");
-    cout << "\nand initial value";
-    and_ij.Print("");
-
     for (int step = 0; step < N_steps; step++) {
-        cout<<"step: "<<step<<endl;
-        cout.flush();
-        for (int i = 0; i < N_neurons; i++) {
-            cout<< "Neuron i: "<< i+1<<endl;
-            if (random_numbers[step] >= neighbor_count[i]) {
-                Neurons_Set[i].ComplementTo();
-            } else {
-                sum.SetAll(0);
-                and_ij.SetAll(0);
 
-                for (int j = 0; j < N_neurons; j++) {
-                    cout<< "Neuron j: "<< j+1<< "  connection = "<< connections[i][j]<<endl;
-                    if (i != j && connections[i][j]) {
-                        // Vérification
-                        cout << "\nsum ";
-                        sum.Print("");
-                        cout << "\nand ";
-                        and_ij.Print("");
-                        cout << "\n";  
-                        Neurons_Set[i].And(&Neurons_Set[j][0], &and_ij); //&Neurons_Set[j][0] extract the only Bits that constitutes the BitSet
-                        sum += &and_ij;
+        // DEBUG: flag any unexpected size change in Random_Numbers (should always be constant)
+        if (Random_Numbers[step].GetSize() == 0)
+            cout << "[evolve_systems_bits] WARNING step=" << step
+                 << " Random_Numbers[step].GetSize()=0" << endl;
+
+        // BRANCH 0: random threshold >= N_neurons, which is the absolute maximum possible value
+        // of the neighbor sum (a neuron can have at most N_neurons-1 neighbors, all +1, giving
+        // a sum of at most N_neurons-1 < N_neurons). So rho >= sum is guaranteed for ALL neurons
+        // and ALL realizations: every neuron flips unconditionally.
+        // This avoids entering the per-neuron loop entirely, saving computation.
+        if (random_numbers[step] >= N_neurons) {
+            for (int i = 0; i < N_neurons; i++) {
+                Neurons_Set[i].ComplementTo();
+            }
+        } else {
+
+            for (int i = 0; i < N_neurons; i++) {
+
+                // BRANCH 1: random threshold >= max possible sum for neuron i
+                // (all neighbor_count[i] neighbors are +1 at most, so sum <= neighbor_count[i])
+                // The flip is guaranteed for ALL realizations: complement the full bitset.
+                if (random_numbers[step] >= neighbor_count[i]) {
+                    Neurons_Set[i].ComplementTo();
+                } else {
+                    // BRANCH 2: compute the bitwise sum of neighbors, then compare to threshold.
+                    // sum accumulates, across all n_bits realizations simultaneously, the count
+                    // of +1 neighbors of neuron i. In realization r, bit r of sum encodes whether
+                    // the neighbor count in that realization is below the threshold.
+                    // sum is initialized to neighbor_count[i] so that its internal storage is
+                    // pre-allocated to the maximum value it can reach, preventing += from
+                    // growing b unexpectedly during accumulation.
+                    UnsignedInt sum(neighbor_count[i]);
+                    sum.SetAll(0);
+
+                    // and_ij is a temporary: AND of neuron_i bits and neuron_j bits.
+                    // Gives 1 in realization r only if both neuron i and neuron j are +1 in r.
+                    UnsignedInt and_ij(1);
+                    and_ij.SetAll(0);
+
+                    for (int j = 0; j < N_neurons; j++) {
+                        if (i != j && connections[i][j]) {
+                            // AND neuron_i bits with neuron_j bits -> 1 where both are +1
+                            Neurons_Set[i].And(&Neurons_Set[j][0], &and_ij);
+                            // Accumulate into sum: requires sum.GetSize() >= and_ij.GetSize()
+                            sum += &and_ij;
+
+                            // DEBUG: flag if += has grown sum beyond its initial allocation,
+                            // which would mean neighbor_count[i] was underestimated
+                            if (sum.GetSize() > Random_Numbers[step].GetSize())
+                                cout << "[evolve_systems_bits] WARNING step=" << step
+                                     << " neuron=(" << i << "," << j << ")"
+                                     << " sum.GetSize()=" << sum.GetSize()
+                                     << " > Random_Numbers.GetSize()="
+                                     << Random_Numbers[step].GetSize()
+                                     << " — size mismatch will cause wrong result in '<'" << endl;
+                        }
                     }
+
+                    // mask[r]=1 if sum[r] < Random_Numbers[step]: neuron i flips in realization r
+                    Bits mask = sum < Random_Numbers[step];
+
+                    // Flip neuron i only in the realizations where mask==1.
+                    // Requires Neurons_Set[i] to be a single-entry BitSet (which it always is).
+                    Neurons_Set[i] ^= &mask;
                 }
-                Bits mask = sum < Random_Numbers[step]; //calculations yields the same comparison, even though the random variable changed
-                cout<<"test mask creation"<<endl;
-                Neurons_Set[i] ^= &mask;  // flips only where mask==1, work only if Neurons_Set[i] is actually a bits 
-                cout<<"test mask application"<<endl;
             }
         }
     }
@@ -224,7 +241,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 
         // Affichage after classic
         ostringstream oss_after;
-        oss_after << "          " << " ;  after: ";
+        oss_after << "          " << "     ;  after: ";
         cout << left << setw(prefix_width) << oss_after.str();
         for (int i = 0; i < N_neurons; i++)
             cout << right << setw(col_width) << neurons_set[r][i] << " ";
@@ -232,7 +249,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 
         // Affichage after bits
         ostringstream oss_after_bits;
-        oss_after_bits << "          " << " ;   bits: ";
+        oss_after_bits << "          " << "     ;   bits: ";
         cout << left << setw(prefix_width) << oss_after_bits.str();
         for (int i = 0; i < N_neurons; i++)
             cout << right << setw(col_width) << neurons_set_bits[r][i] << " ";
@@ -241,8 +258,14 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 }
 
 int main() {
-    Bits_zero.Set(0);
-    Bits_one.Set(~0ULL);
+
+    cout << "[main] Parameters: N_neurons=" << N_neurons
+         << " n_bits=" << n_bits
+         << " N_steps=" << N_steps
+         << " T=" << T
+         << " k_B=" << k_B
+         << " Beta=" << Beta
+         << " J=" << J << endl;
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);
@@ -253,13 +276,13 @@ int main() {
 
     vector<vector<int>> connections(N_neurons, vector<int>(N_neurons, 0));
     vector<int> neighbor_count(N_neurons, 0);  
-
     init_connections_set(connections, neighbor_count, ran);
 
+    // Build the bitwise neuron representation:
+    // Neurons_Set[i] is a UnsignedInt encoding neuron i across all n_bits realizations.
+    // Bit r of Neurons_Set[i] = 1 if neuron i is +1 in realization r, 0 if -1.
     vector<UnsignedInt> Neurons_Set;
     Neurons_Set.reserve(N_neurons);
-
-
     for (int i = 0; i < N_neurons; i++) {
         UnsignedInt Neuron_tmp(1);
         for (int r = 0; r < n_bits; r++) {
@@ -267,67 +290,41 @@ int main() {
             Neuron_tmp.Set(r, bit);
         }
         Neurons_Set.push_back(Neuron_tmp);
-
-        // Vérification
-        cout << "Neuron " << i << " spins: ";
-        for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
-        cout << "\nNeuron " << i << " bits: ";
-        Neuron_tmp.Print("");
-        cout << "\n";
-    
     }
 
-
-    // Generation of a random sequence number
+    // Generation of random thresholds.
+    // random_numbers[step] is the double threshold used in the classic implementation.
+    // Random_Numbers[step] is its integer version used in the bitwise implementation,
+    // capped at N_neurons (the maximum possible neighbor sum).
+    // NOTE: the exponential is artificially clamped to >= 1.0 — has to be checked.
     vector<double> random_numbers(N_steps);
-    vector<UnsignedInt> Random_Numbers(N_steps);
-
+    vector<UnsignedInt> Random_Numbers;
+    Random_Numbers.reserve(N_steps);
     for (int step = 0; step < N_steps; step++) {
-        random_numbers[step] = gsl_ran_exponential(ran, 1.0 / (2.0 * Beta * J));
-        cout<< "random number = "<<random_numbers[step];
-        UnsignedInt Random_tmp(N_neurons);
+        random_numbers[step] = max(1.0, 1.0 / (2.0 * Beta * J) * gsl_ran_exponential(ran, 1.0));
         unsigned long long v = min((double)N_neurons, random_numbers[step]);
-        Random_tmp.SetAll((unsigned long long) v);
-        Random_tmp.Print("");
+        // DEBUG: flag steps where the double value was capped
+        if (random_numbers[step] > N_neurons)
+            cout << "[main] step=" << step << " rho capped: raw="
+                 << random_numbers[step] << " -> " << N_neurons << endl;
+        UnsignedInt Random_tmp(N_neurons);
+        Random_tmp.SetAll(v);
         Random_Numbers.push_back(Random_tmp);
-
     }
-    
-    
+
     vector<vector<int>> neurons_set_before = neurons_set;
 
-    //evolve_systems(neurons_set, connections, random_numbers);
+    evolve_systems(neurons_set, connections, random_numbers);
+    evolve_systems_bits(Neurons_Set, Random_Numbers, random_numbers, connections, neighbor_count);
 
-    evolve_systems_bits(Neurons_Set, Random_Numbers, random_numbers, connections,neighbor_count);
-    
+    // Decode bitwise result back to spin representation for comparison with classic result.
+    // Convert bit {0,1} back to spin {-1,+1}: spin = -1 + 2*bit
     vector<vector<int>> neurons_set_after_bits(n_bits, vector<int>(N_neurons)); 
-
-    for (int r=0; r<n_bits;r++){
-        for (int i = 0; i < N_neurons; i++) {
-            neurons_set_after_bits[r][i]=-1+2*Neurons_Set[i].Get(r);
-        }
-    }
+    for (int r = 0; r < n_bits; r++)
+        for (int i = 0; i < N_neurons; i++)
+            neurons_set_after_bits[r][i] = -1 + 2 * Neurons_Set[i].Get(r);
 
     print_neurons(neurons_set_before, neurons_set, neurons_set_after_bits, N_neurons, prefix_width, col_width);
-   /*
-    for (int i = 0; i < N_neurons; i++) {
-        UnsignedInt Neuron_tmp(1);
-        for (int r = 0; r < n_bits; r++) {
-            int bit = (neurons_set[r][i] + 1) / 2;
-            Neuron_tmp.Set(r, bit);
-        }
-        Neurons_Set.push_back(Neuron_tmp);
-
-        // Vérification
-        cout << "Neuron " << i << " spins: ";
-        for (int r = n_bits-1; r >= 0; r--) cout << (neurons_set[r][i] + 1) / 2;  // ordre inverse
-        cout << "\nNeuron " << i << " bits: ";
-        Neuron_tmp.Print("");
-        cout << "\n";
-    }
-
-    print_neurons(neurons_set_before, neurons_set, neurons_set, N_neurons, prefix_width, col_width);
-    */
 
     gsl_rng_free(ran);
     return 0;
