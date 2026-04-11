@@ -52,7 +52,7 @@ const int J = 1;
 const double T = 300;
 const double k_B = 1.38 * pow(10, -1);  // has to be changed!!!!!!!!
 double Beta = 1 / (T * k_B);
-const int N_steps = 10000;
+const int N_steps = 1000;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
@@ -290,9 +290,10 @@ int main() {
     // Classic evolution: modifies neurons_set in place
     vector<vector<int>> neurons_set_classic = neurons_set;
     start_ref = clock();
-    evolve_systems(neurons_set_classic, connections, neighbor_count, random_numbers, N_steps);start_ref = clock();
+    evolve_systems(neurons_set_classic, connections, neighbor_count, random_numbers, N_steps);
     end_ref = clock();
     clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
+    cout<<"Classical evolution done"<<endl;
 
     // Bitwise evolution: takes the same inputs, writes result back into neurons_set_bits
     vector<vector<int>> neurons_set_bits = neurons_set;
@@ -300,11 +301,13 @@ int main() {
     evolve_systems_bits(neurons_set_bits, connections, neighbor_count, random_numbers, N_steps);
     end_bits = clock();
     clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
+    cout<<"Bitwise evolution done"<<endl;
 
-    //print_neurons(neurons_set_before, neurons_set_classic, neurons_set_bits, N_neurons, prefix_width, col_width);
+    print_neurons(neurons_set_before, neurons_set_classic, neurons_set_bits, N_neurons, prefix_width, col_width);
 
-    cout << "\nTotal clock_bitset: " << clock_bitset << " s\n";
     cout << "Total clock_ref:    " << clock_ref << " s\n";
+    cout << "\nTotal clock_bitset: " << clock_bitset << " s\n";
+    cout<< "Acceleration factor =" << clock_ref/clock_bitset << "\n";
 
     gsl_rng_free(ran);
     return 0;
