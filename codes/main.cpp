@@ -160,10 +160,8 @@ void evolve_systems_bits(vector<UnsignedInt>& Neurons_Set,
                  << " Random_Numbers[step].GetSize()=0" << endl;
 
         // BRANCH 0: random threshold >= N_neurons, which is the absolute maximum possible value
-        // of the neighbor sum (a neuron can have at most N_neurons-1 neighbors, all +1, giving
-        // a sum of at most N_neurons-1 < N_neurons). So rho >= sum is guaranteed for ALL neurons
+        // of the neighbor sum. So rho >= sum is guaranteed for ALL neurons
         // and ALL realizations: every neuron flips unconditionally.
-        // This avoids entering the per-neuron loop entirely, saving computation.
         if (random_numbers[step] >= N_neurons) {
             for (int i = 0; i < N_neurons; i++) {
                 Neurons_Set[i].ComplementTo();
