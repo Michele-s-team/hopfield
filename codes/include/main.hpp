@@ -1,5 +1,5 @@
 //
-//  main.h
+//  main.hpp
 //  gillespie
 //
 //  Created by Michele on 07/02/2024.

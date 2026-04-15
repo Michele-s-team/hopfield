@@ -28,7 +28,7 @@ unsigned int bits(unsigned long long int n){
     
     unsigned int s;
     
-    for(s=0; two_pow(s) <= (unsigned long long int)n; s++){}
+    for(s=1; two_pow(s) <= (unsigned long long int)n; s++){} //changed s=0 to s=1
     
     return s;
     

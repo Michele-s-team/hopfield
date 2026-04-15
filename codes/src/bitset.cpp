@@ -131,7 +131,8 @@ void BitSet::SetAll(Bits& m){
     for(unsigned int s=0; s<GetSize(); s++){
         b[s] = m;
     }
-    Normalize(); 
+    
+    if (b.size() > 1) Normalize();
     
 }
 
@@ -376,6 +377,22 @@ void BitSet::operator += (BitSet* addend){
     if (b.size() > 1) Normalize();
 }
 
+
+// add addend to *this, and store the result in *this.
+// This method requires this->GetSize() to be >= addend->GetSize()
+void BitSet::operator += (Bits* addend){
+    Bits carry, t;
+    AddTo(addend, &carry);
+    // add the carry bit from the addition as a new entry in b
+    // ******** THIS MAY BE TIME CONSUMING ********
+    b.push_back(carry);
+    // Only normalize if b has more than one entry: if b has exactly one entry,
+    // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
+    //if (b.size() > 1) Normalize();
+}
+
+
+
 //same as BitSet::operator +=  but the last bit is not pushed back into b, but written into *carry. This method requires this->GetSize() to be >= addend->GetSize()
 //inline 
 void BitSet::AddTo(BitSet* addend, Bits* carry){
@@ -403,7 +420,7 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
         carry->Set((b[p]) & (*carry));
         (b[p]).Set(t);   
     }
-     Normalize();
+    if (b.size() > 1) Normalize();
     
 }
 
@@ -411,7 +428,11 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
 void BitSet::Normalize(void){
     
     int p;
-    
+    if (b.empty()) {
+    cout << "BitSet became empty!" << endl;
+    abort();
+}
+
     for(p=GetSize()-1; p>=0; p--){
         
         if((b[p]).Get() == 0){
@@ -462,10 +483,8 @@ void BitSet::AddTo(Bits* addend, Bits* carry){
         (b[p]).Set(t);
         
     }
-        
     
 }
-
 
 
 

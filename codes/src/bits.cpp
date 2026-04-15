@@ -76,7 +76,6 @@ void Bits::Set(unsigned int s, bool bit){
 
 //set all n_bits entries of *this equal to bit
 //inline 
-
 void Bits::SetAll(bool bit){
     
     if(bit){(*this) = Bits_one;}
@@ -84,11 +83,6 @@ void Bits::SetAll(bool bit){
     
 }
 
-/*
-void Bits::SetAll(bool bit){
-    n = bit ? ~0ULL : 0ULL;
-}
-*/
 
 //return the s-th bit ofinput
 //inline 
@@ -233,7 +227,6 @@ Bits Bits::operator | (const Bits& m){
 Bits Bits::operator & (const Bits& m){
     
     return Bits((n & (m.n)));
-    
 }
 
 
@@ -256,7 +249,7 @@ Bits Bits::operator ~ (void){
 
 
 //return (bit-by-bit) true if *this == m, false otherwise
- Bits Bits::operator == (Bits& m){
+Bits Bits::operator == (Bits& m){
     
     return(Bits(~(n ^ (m.n))));
     
@@ -277,6 +270,7 @@ void Bits::operator &= (Bits* m){
     n &= (m->n);
     
 }
+
 
 void Bits::operator ^= (Bits* m){
     
