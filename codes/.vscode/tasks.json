@@ -7,7 +7,8 @@
       "command": "bash",
       "args": [
         "-lc",
-        "g++ main.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -Wno-deprecated -Iinclude -I/usr/include/gsl -Wall -DHAVE_INLINE -o main"
+        "g++ main.cpp src/*.cpp -llapack -lgsl -lgslcblas -g -O0 -lm -Wno-deprecated -Iinclude -I/usr/include/gsl -Wall -DHAVE_INLINE -o main"
+        //-O3
       ],
       "group": {
         "kind": "build",
