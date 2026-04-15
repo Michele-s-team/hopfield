@@ -132,8 +132,6 @@ void BitSet::SetAll(Bits& m){
         b[s] = m;
     }
     
-    if (b.size() > 1) Normalize();
-    
 }
 
 
@@ -374,7 +372,7 @@ void BitSet::operator += (BitSet* addend){
     b.push_back(carry);
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
-    if (b.size() > 1) Normalize();
+    //if (b.size() > 1) Normalize();
 }
 
 
@@ -420,7 +418,6 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
         carry->Set((b[p]) & (*carry));
         (b[p]).Set(t);   
     }
-    if (b.size() > 1) Normalize();
     
 }
 
