@@ -277,7 +277,7 @@ void Bits::operator ^= (Bits* m){
     n ^= (m->n);
     
 }
-
+//return true if the two Bits are equal
 bool Bits::equal(Bits& m){
     return n == m.n;
 }
