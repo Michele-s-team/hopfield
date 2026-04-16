@@ -177,7 +177,7 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
 
-            // BRANCH 1 IS NOT STRICLTY NECESSARY? COMMENTED FOR DEBUG
+            // BRANCH 1 IS NOT STRICLTY NECESSARY, COMMENTED FOR DEBUG
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
             //if (random_numbers[i][step] >= neighbor_count[i]) {Neurons_Set[i].ComplementTo();} 
