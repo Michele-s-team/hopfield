@@ -56,8 +56,8 @@ const int prefix_width = 12;
 const int N_neurons = 100;
 //const int J = 1;
 //const double k_B = 1.38 * pow(10, -23);  // has to be changed!!!!!!!!
-double Beta_times_J = 50;
-const int N_steps = 10000;
+double Beta_times_J = 100;
+const int N_steps = 1000;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
@@ -113,23 +113,17 @@ void evolve_systems(vector<vector<int>>& neurons_set,
                     const vector<int>& neighbor_count,
                     const vector<vector<double>>& random_numbers,
                     const int N_steps) {
-    int trigger_stop, trigger_stop_all;
     for (int step = 0; step < N_steps; step++) {
         cout << "step "<< step <<endl;
-        trigger_stop_all=0;
         for (int i = 0; i < N_neurons; i++) {
-            trigger_stop=0;
             double rho = random_numbers[i][step];
             for (size_t r = 0; r < n_bits; r++) {
                 vector<int>& neurons = neurons_set[r];
            
                 double dE = DeltaE(i, connections[i], neurons);
                 if (rho >= dE) neurons[i] = -neurons[i];
-                if (dE>0) trigger_stop+=1;
             }
-            if (trigger_stop==n_bits) trigger_stop_all+=1;
         }
-        if (trigger_stop_all==N_neurons) break;
     }
 }
 
@@ -153,7 +147,6 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     Neurons_Set.reserve(N_neurons);
     vector<UnsignedInt> Neighbor_Count;
     Neighbor_Count.reserve(N_neurons);
-    int trigger_stop, trigger_stop_all;
 
     for (int i = 0; i < N_neurons; i++) {
         Bits Neuron_tmp(1);
@@ -182,14 +175,13 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     }
     for (int step = 0; step < N_steps; step++) {
         cout << "step "<< step <<endl;
-        trigger_stop_all=0;
         for (int i = 0; i < N_neurons; i++) {
-            trigger_stop=0;
 
+            // BRANCH 1 IS NOT STRICLTY NECESSARY? COMMENTED FOR DEBUG
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
-            if (random_numbers[i][step] >= neighbor_count[i]) {Neurons_Set[i].ComplementTo();} 
-            else {
+            //if (random_numbers[i][step] >= neighbor_count[i]) {Neurons_Set[i].ComplementTo();} 
+           // else {
                 // BRANCH 2: compute the bitwise neighbor sum, then compare to threshold.
                 UnsignedInt sum(1);
                 sum.SetAll(0);
@@ -198,27 +190,17 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                 for (int j = 0; j < N_neurons; j++) {                    
                     if (i != j && connections[i][j]) {
                         xnor_ij = Neurons_Set[i] == Neurons_Set[j];
-                        if (xnor_ij.equal(Bits_one)) trigger_stop+=1; //if the XNOR is full of 1, then no matter the realisation, the two spins are aligned 
-                        // cout << "j= "<<j<<"\n";
-                        // sum.Print("sum:");
                         sum += &xnor_ij;
-                        //xnor_ij.Print("xnor_ij");
                     }
 
                 }
                 BitSet temp = Random_Numbers[i][step] + &Neighbor_Count[i];
-                temp.DivideByTwoTo();
-                //temp.Print("temp:");
-                
-                mask = sum < temp;
-                // mask.Print("mask");
-                // cout <<"\n";
+                sum.MultiplyByTwoTo(); 
+                //temp +=&Bits_one;         
+                mask = sum <= temp;
                 Neurons_Set[i] ^= &mask;
-            }
-            if (trigger_stop == neighbor_count[i]) trigger_stop_all +=1; // if the spin is aligned with all his neigbhors
+           // }
         }
-        if (trigger_stop_all == N_neurons) break; // if all spins are aligned with all their neighbors, we stop the simulations
-        
         
     }
 
@@ -234,7 +216,11 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
                    const vector<vector<int>>& neurons_set_classic,
                    const vector<vector<int>>& neurons_set_bits,
                    int N_neurons, int prefix_width, int col_width) {
+
+    bool all_equal = true;
+
     for (size_t r = 0; r < neurons_set_classic.size(); r++) {
+
         ostringstream oss_before;
         oss_before << "Realization" << right << setw(3) << r+1 << "\n       before: ";
         cout << left << setw(prefix_width) << oss_before.str();
@@ -254,7 +240,24 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
         cout << left << setw(prefix_width) << oss_after_bits.str();
         for (int i = 0; i < N_neurons; i++)
             cout << right << setw(col_width) << neurons_set_bits[r][i] << " ";
-        cout << "\n\n\n";
+        cout << "\n\n";
+
+        // Comparison between classic and bits
+        for (int i = 0; i < N_neurons; i++) {
+            if (neurons_set_classic[r][i] != neurons_set_bits[r][i]) {
+                all_equal = false;
+                cout << "Mismatch at r=" << r
+                     << " i=" << i
+                     << " classic=" << neurons_set_classic[r][i]
+                     << " bits=" << neurons_set_bits[r][i] << "\n";
+            }
+        }
+    }
+
+    if (all_equal) {
+        cout << "OK: classic and bitwise results are identical\n";
+    } else {
+        cout << "WARNING: differences detected between classic and bitwise results\n";
     }
 }
 

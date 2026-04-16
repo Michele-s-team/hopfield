@@ -266,7 +266,7 @@ Bits BitSet::operator < (const BitSet& m){
 
 
 
-//inline 
+//Compare *this with m and store the result in result. result is 1 if *this <= m, and 0 otherwise
 Bits BitSet::operator <= (BitSet& m){
     
     return(~(m < (*this)));
