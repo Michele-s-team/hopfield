@@ -57,7 +57,7 @@ const int N_neurons = 100;
 //const int J = 1;
 //const double k_B = 1.38 * pow(10, -23);  // has to be changed!!!!!!!!
 double Beta_times_J = 50;
-const int N_steps = 100;
+const int N_steps = 10000;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
@@ -113,16 +113,23 @@ void evolve_systems(vector<vector<int>>& neurons_set,
                     const vector<int>& neighbor_count,
                     const vector<vector<double>>& random_numbers,
                     const int N_steps) {
+    int trigger_stop, trigger_stop_all;
     for (int step = 0; step < N_steps; step++) {
+        cout << "step "<< step <<endl;
+        trigger_stop_all=0;
         for (int i = 0; i < N_neurons; i++) {
+            trigger_stop=0;
             double rho = random_numbers[i][step];
             for (size_t r = 0; r < n_bits; r++) {
                 vector<int>& neurons = neurons_set[r];
            
                 double dE = DeltaE(i, connections[i], neurons);
                 if (rho >= dE) neurons[i] = -neurons[i];
+                if (dE>0) trigger_stop+=1;
             }
+            if (trigger_stop==n_bits) trigger_stop_all+=1;
         }
+        if (trigger_stop_all==N_neurons) break;
     }
 }
 
@@ -146,6 +153,7 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     Neurons_Set.reserve(N_neurons);
     vector<UnsignedInt> Neighbor_Count;
     Neighbor_Count.reserve(N_neurons);
+    int trigger_stop, trigger_stop_all;
 
     for (int i = 0; i < N_neurons; i++) {
         Bits Neuron_tmp(1);
@@ -174,7 +182,9 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     }
     for (int step = 0; step < N_steps; step++) {
         cout << "step "<< step <<endl;
+        trigger_stop_all=0;
         for (int i = 0; i < N_neurons; i++) {
+            trigger_stop=0;
 
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
@@ -183,17 +193,18 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                 // BRANCH 2: compute the bitwise neighbor sum, then compare to threshold.
                 UnsignedInt sum(1);
                 sum.SetAll(0);
-
+                
                 // Bit r is 1 only if both neuron i and neuron j are +1 in realization r.
                 for (int j = 0; j < N_neurons; j++) {                    
                     if (i != j && connections[i][j]) {
                         xnor_ij = Neurons_Set[i] == Neurons_Set[j];
-                        if (xnor_ij==)
+                        if (xnor_ij.equal(Bits_one)) trigger_stop+=1; //if the XNOR is full of 1, then no matter the realisation, the two spins are aligned 
                         // cout << "j= "<<j<<"\n";
                         // sum.Print("sum:");
                         sum += &xnor_ij;
-                        xnor_ij.Print("xnor_ij");
+                        //xnor_ij.Print("xnor_ij");
                     }
+
                 }
                 BitSet temp = Random_Numbers[i][step] + &Neighbor_Count[i];
                 temp.DivideByTwoTo();
@@ -204,7 +215,11 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                 // cout <<"\n";
                 Neurons_Set[i] ^= &mask;
             }
+            if (trigger_stop == neighbor_count[i]) trigger_stop_all +=1; // if the spin is aligned with all his neigbhors
         }
+        if (trigger_stop_all == N_neurons) break; // if all spins are aligned with all their neighbors, we stop the simulations
+        
+        
     }
 
     // Write the bitwise result back to neurons_set for comparison with the classic result.

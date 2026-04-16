@@ -51,6 +51,7 @@ public:
     
     Bits operator & (const Bits&), operator | (const Bits&), operator ^ (const Bits&), operator ~(void);
     Bits operator == (Bits&);
+    bool equal(Bits&);
     void operator &= (const Bits&), operator &= (Bits*), operator ^= (Bits*);
     
 };

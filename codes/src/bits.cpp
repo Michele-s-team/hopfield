@@ -248,7 +248,7 @@ Bits Bits::operator ~ (void){
 }
 
 
-//return (bit-by-bit) true if *this == m, false otherwise
+//return (bit-by-bit) XNOR of *this and  m
 Bits Bits::operator == (Bits& m){
     
     return(Bits(~(n ^ (m.n))));
@@ -276,4 +276,8 @@ void Bits::operator ^= (Bits* m){
     
     n ^= (m->n);
     
+}
+
+bool Bits::equal(Bits& m){
+    return n == m.n;
 }
