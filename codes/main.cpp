@@ -53,28 +53,30 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int N_neurons = 20;
-const int J = 1;
-const double T = 300;
-const double k_B = 1.38 * pow(10, -1);  // has to be changed!!!!!!!!
-double Beta = 1 / (T * k_B);
+const int N_neurons = 100;
+//const int J = 1;
+//const double k_B = 1.38 * pow(10, -23);  // has to be changed!!!!!!!!
+double Beta_times_J = 50;
 const int N_steps = 100;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
-// neighbor_counts: number of neighbors of each neuron (identical across all realizations).
+// neighbor_count: number of neighbors of each neuron (identical across all realizations).
 // neurons_set: Matrix n_bits x N_neurons, initial spin value (+1/-1) per realization per neuron.
 
-// BITSET IMPLEMENTATION
-// Same connections and neighbor_counts as classic.
-// Neurons_Set: vector of N_neurons UnsignedInts. Neurons_Set[i] encodes the state of neuron i
+// BITWISE IMPLEMENTATION
+// Same connections as classic implementation.
+// Neurons_Set: vector of N_neurons UnsignedInts. Neurons_Set[i] encodes the state of neuron iand neighbor_counts
+// Neighbor_Count: vector of N_neurons UnsignedInts of same as neighbor_count
+// 
 // across all n_bits realizations simultaneously: bit r = 1 if neuron i is +1 in realization r.
 
 
 void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
     for (size_t r = 0; r < neurons_set.size(); r++)
-        for (int i = 0; i < N_neurons; i++)
+        for (int i = 0; i < N_neurons; i++){
             neurons_set[r][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
+        }
 }
 
 void init_connections_set(vector<vector<int>>& connections,
@@ -142,6 +144,9 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     // Bit r of Neurons_Set[i] = 1 if neuron i is +1 in realization r, 0 if -1.
     vector<Bits> Neurons_Set;
     Neurons_Set.reserve(N_neurons);
+    vector<UnsignedInt> Neighbor_Count;
+    Neighbor_Count.reserve(N_neurons);
+
     for (int i = 0; i < N_neurons; i++) {
         Bits Neuron_tmp(1);
         for (int r = 0; r < n_bits; r++) {
@@ -149,12 +154,16 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
             Neuron_tmp.Set(r, bit);
         }
         Neurons_Set.push_back(Neuron_tmp);
+
+        UnsignedInt Neighbor_tmp(neighbor_count[i]);
+        Neighbor_tmp.SetAll(neighbor_count[i]);
+        Neighbor_Count.push_back(Neighbor_tmp);
     }
+
 
     vector<vector<UnsignedInt>> Random_Numbers;
     Random_Numbers.resize(N_neurons, vector<UnsignedInt>(N_steps, UnsignedInt(N_neurons)));
-    UnsignedInt sum(1);
-    Bits and_ij(1);  // and_ij: AND of neuron_i bits and neuron_j bits.
+    Bits xnor_ij;  // xnor_ij: XNOR of neuron_i bits and neuron_j bits.
     Bits mask;   // mask[r]=1 if sum[r] < Random_Numbers[step]: neuron i flips in realization r
 
     for (int i = 0; i < N_neurons; i++) {
@@ -164,6 +173,7 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         }
     }
     for (int step = 0; step < N_steps; step++) {
+        cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
 
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
@@ -171,18 +181,27 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
             if (random_numbers[i][step] >= neighbor_count[i]) {Neurons_Set[i].ComplementTo();} 
             else {
                 // BRANCH 2: compute the bitwise neighbor sum, then compare to threshold.
+                UnsignedInt sum(1);
                 sum.SetAll(0);
 
-                
                 // Bit r is 1 only if both neuron i and neuron j are +1 in realization r.
-                for (int j = 0; j < N_neurons; j++) {
+                for (int j = 0; j < N_neurons; j++) {                    
                     if (i != j && connections[i][j]) {
-                        and_ij = Neurons_Set[i] & Neurons_Set[j];
-                        sum += &and_ij;
+                        xnor_ij = Neurons_Set[i] == Neurons_Set[j];
+                        if (xnor_ij==)
+                        // cout << "j= "<<j<<"\n";
+                        // sum.Print("sum:");
+                        sum += &xnor_ij;
+                        xnor_ij.Print("xnor_ij");
                     }
                 }
-
-                mask = sum < Random_Numbers[i][step];
+                BitSet temp = Random_Numbers[i][step] + &Neighbor_Count[i];
+                temp.DivideByTwoTo();
+                //temp.Print("temp:");
+                
+                mask = sum < temp;
+                // mask.Print("mask");
+                // cout <<"\n";
                 Neurons_Set[i] ^= &mask;
             }
         }
@@ -231,10 +250,7 @@ int main() {
     cout << "[main] Parameters: N_neurons=" << N_neurons
          << " n_bits=" << n_bits
          << " N_steps=" << N_steps
-         << " T=" << T
-         << " k_B=" << k_B
-         << " Beta=" << Beta
-         << " J=" << J << endl;
+         << " Beta*J=" << Beta_times_J<< endl;
 
 
     clock_t start_bits, end_bits;
@@ -258,27 +274,29 @@ int main() {
     vector<vector<double>> random_numbers(N_neurons, vector<double>(N_steps, 0));
     for (int i = 0; i < N_neurons; i++){
         for (int step = 0; step < N_steps; step++)
-        random_numbers[i][step] = min((double)N_neurons, 1.0 / (2.0 * Beta * J)
+        random_numbers[i][step] = min((double)N_neurons, 1.0 / (2.0 * Beta_times_J)
                                        * gsl_ran_exponential(ran, 1.0));
     }
 
     vector<vector<int>> neurons_set_before = neurons_set;
 
-    // Classic evolution: modifies neurons_set in place
-    vector<vector<int>> neurons_set_classic = neurons_set;
-    start_ref = clock();
-    evolve_systems(neurons_set_classic, connections, neighbor_count, random_numbers, N_steps);
-    end_ref = clock();
-    clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
-    cout<<"Classical evolution done"<<endl;
-
     // Bitwise evolution: takes the same inputs, writes result back into neurons_set_bits
     vector<vector<int>> neurons_set_bits = neurons_set;
+    cout<<"start Bitwise evolution"<<endl;
     start_bits = clock();
     evolve_systems_bits(neurons_set_bits, connections, neighbor_count, random_numbers, N_steps);
     end_bits = clock();
     clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout<<"Bitwise evolution done"<<endl;
+
+    // Classic evolution: modifies neurons_set in place
+    vector<vector<int>> neurons_set_classic = neurons_set;
+    cout<<"start classical evolution"<<endl;
+    start_ref = clock();
+    evolve_systems(neurons_set_classic, connections, neighbor_count, random_numbers, N_steps);
+    end_ref = clock();
+    clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
+    cout<<"Classical evolution done"<<endl;
 
     print_neurons(neurons_set_before, neurons_set_classic, neurons_set_bits, N_neurons, prefix_width, col_width);
 

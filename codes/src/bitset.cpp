@@ -372,7 +372,7 @@ void BitSet::operator += (BitSet* addend){
     b.push_back(carry);
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
-    //if (b.size() > 1) Normalize();
+    if (b.size() > 1) Normalize();
 }
 
 
@@ -386,7 +386,7 @@ void BitSet::operator += (Bits* addend){
     b.push_back(carry);
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
-    //if (b.size() > 1) Normalize();
+    if (GetSize() > 1) Normalize(); //ISSUES WITH THIS CONDITION --> enters even when only one Bits
 }
 
 
@@ -425,12 +425,8 @@ void BitSet::AddTo(BitSet* addend, Bits* carry){
 void BitSet::Normalize(void){
     
     int p;
-    if (b.empty()) {
-    cout << "BitSet became empty!" << endl;
-    abort();
-}
 
-    for(p=GetSize()-1; p>=0; p--){
+    for(p=GetSize()-1; p>0; p--){   //changed p>=0 to p>0 to avoid deleting the only remaining Bits
         
         if((b[p]).Get() == 0){
             b.pop_back();
