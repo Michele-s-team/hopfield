@@ -53,11 +53,11 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int N_neurons = 10;
+const int N_neurons = 100;
 //const int J = 1;
 //const double k_B = 1.38 * pow(10, -23);  // has to be changed!!!!!!!!
 double Beta_times_J = 0.1;
-const int N_steps = 1;
+const int N_steps = 100;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
@@ -118,12 +118,9 @@ void evolve_systems(vector<vector<int>>& neurons_set,
         cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
             double rho = random_numbers[step][i];
-            for (size_t r = 0; r < n_bits; r++) {  
-                cout <<r<<endl;        
-                dE = DeltaE(i, connections[i], neurons_set[r]);
-                cout << neurons_set[r][i]<<endl;
+            for (size_t r = 0; r < n_bits; r++) {       
+                dE = DeltaE(i, connections[i], neurons_set[r]);  
                 if (rho >= dE) neurons_set[r][i] = -neurons_set[r][i];
-                cout << neurons_set[r][i]<<endl;
             }
         }
     }
@@ -190,28 +187,26 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                 // Bit r is 1 only if both neuron i and neuron j are +1 in realization r.
                 for (int j = 0; j < N_neurons; j++) {                    
                     if (i != j && connections[i][j]) {
-                        xnor_ij = Neurons_Set[i] == Neurons_Set[j];
+                        xnor_ij = Neurons_Set[i] == Neurons_Set[j];  //c_ij= b_i == b_j
                         sum += &xnor_ij;
                     }
                 }
-                Random_Numbers[step][i].Print("Random_Numbers[step][i]");
-                Neighbor_Count[i].Print("Neighbor_Count[i]");
                 
                 BitSet temp = Random_Numbers[step][i] + &Neighbor_Count[i];
+                
+                Random_Numbers[step][i].Print("Random_Numbers[step][i]");
+                Neighbor_Count[i].Print("Neighbor_Count[i]");
                 temp.Print("Random_Numbers[step][i] + &Neighbor_Count[i]");
 
                 sum.Print("sum");
                 sum.MultiplyByTwoTo();   
                 sum.Print("2*sum");
                 mask = sum <= temp;
-                Neurons_Set[i].Print("Neurons_Set[i]");
+                Neurons_Set[i].Print("Neurons_Set[i] before flip");
                 mask.Print("mask");
                 Neurons_Set[i] ^= &mask;
-                Neurons_Set[i].Print("Neurons_Set[i]");
+                Neurons_Set[i].Print("Neurons_Set[i] after flip");
                 cout<<"\n\n\n\n\n";
-
-
-
            // }
         }      
     }
@@ -258,9 +253,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
             if (neurons_set_classic[r][i] != neurons_set_bits[r][i]) {
                 all_equal = false;
                 cout << "Mismatch at r=" << r+1
-                     << " i=" << i+1
-                     << " classic=" << neurons_set_classic[r][i]
-                     << " bits=" << neurons_set_bits[r][i] << "\n";
+                     << " i=" << i+1 << endl;
             }
         }
     }
