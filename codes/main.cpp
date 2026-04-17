@@ -53,11 +53,11 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int N_neurons = 100;
+const int N_neurons = 10;
 //const int J = 1;
 //const double k_B = 1.38 * pow(10, -23);  // has to be changed!!!!!!!!
-double Beta_times_J = 100;
-const int N_steps = 1000;
+double Beta_times_J = 0.1;
+const int N_steps = 1;
 
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
@@ -111,17 +111,16 @@ double DeltaE(int neuron, const vector<int>& connection, const vector<int>& neur
 void evolve_systems(vector<vector<int>>& neurons_set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
-                    const vector<vector<double>>& random_numbers,
+                    const vector<vector<int>>& random_numbers,
                     const int N_steps) {
+    double dE;
     for (int step = 0; step < N_steps; step++) {
         cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
             double rho = random_numbers[i][step];
-            for (size_t r = 0; r < n_bits; r++) {
-                vector<int>& neurons = neurons_set[r];
-           
-                double dE = DeltaE(i, connections[i], neurons);
-                if (rho >= dE) neurons[i] = -neurons[i];
+            for (size_t r = 0; r < n_bits; r++) {          
+                dE = DeltaE(i, connections[i], neurons_set[r]);
+                if (rho >= dE) neurons_set[r][i] = -neurons_set[r][i];
             }
         }
     }
@@ -137,7 +136,7 @@ void evolve_systems(vector<vector<int>>& neurons_set,
 void evolve_systems_bits(vector<vector<int>>& neurons_set,
                          const vector<vector<int>>& connections,
                          const vector<int>& neighbor_count,
-                         const vector<vector<double>>& random_numbers,
+                         const vector<vector<int>>& random_numbers,
                          const int N_steps) {
 
     // Build the bitwise neuron representation from the classic neurons_set.
@@ -161,7 +160,6 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         Neighbor_Count.push_back(Neighbor_tmp);
     }
 
-
     vector<vector<UnsignedInt>> Random_Numbers;
     Random_Numbers.resize(N_neurons, vector<UnsignedInt>(N_steps, UnsignedInt(N_neurons)));
     Bits xnor_ij;  // xnor_ij: XNOR of neuron_i bits and neuron_j bits.
@@ -177,7 +175,7 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
 
-            // BRANCH 1 IS NOT STRICLTY NECESSARY, COMMENTED FOR DEBUG
+            // BRANCH 1 IS NOT STRICTLY NECESSARY, COMMENTED FOR DEBUG
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
             //if (random_numbers[i][step] >= neighbor_count[i]) {Neurons_Set[i].ComplementTo();} 
@@ -200,10 +198,8 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                 mask = sum <= temp;
                 Neurons_Set[i] ^= &mask;
            // }
-        }
-        
+        }      
     }
-
     // Write the bitwise result back to neurons_set for comparison with the classic result.
     // Convert bit {0,1} back to spin {-1,+1}: spin = -1 + 2*bit
     for (int r = 0; r < n_bits; r++)
@@ -289,11 +285,13 @@ int main() {
 
     // Generate random thresholds, capped at N_neurons (the maximum possible neighbor sum).
     // NOTE: the exponential is artificially clamped to >= 1.0 — has to be checked.
-    vector<vector<double>> random_numbers(N_neurons, vector<double>(N_steps, 0));
+    vector<vector<int>> random_numbers(N_neurons, vector<int>(N_steps, 0));
     for (int i = 0; i < N_neurons; i++){
-        for (int step = 0; step < N_steps; step++)
-        random_numbers[i][step] = min((double)N_neurons, 1.0 / (2.0 * Beta_times_J)
+        for (int step = 0; step < N_steps; step++){
+        random_numbers[i][step] = (int)min((double)N_neurons, 1.0 / (2.0 * Beta_times_J)
                                        * gsl_ran_exponential(ran, 1.0));
+        cout <<"random number "<< random_numbers[i][step];
+        }
     }
 
     vector<vector<int>> neurons_set_before = neurons_set;
