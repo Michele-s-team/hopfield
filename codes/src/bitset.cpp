@@ -837,8 +837,10 @@ void BitSet::DivideByTwoTo(void){
 //this method  multiplies *this by 2 and writes the result in *this
 //inline
 void BitSet::MultiplyByTwoTo(void){
+
+    b.push_back(Bits_zero); //add a line of zero to create space for the shift
     
-    //to divide by two, I shift all entries to the right by one place
+    //to multiply by two, I shift all entries to the left by one place
     (*this) <<= (&Bits_one);
     
     

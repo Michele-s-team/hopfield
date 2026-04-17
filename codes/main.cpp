@@ -117,10 +117,13 @@ void evolve_systems(vector<vector<int>>& neurons_set,
     for (int step = 0; step < N_steps; step++) {
         cout << "step "<< step <<endl;
         for (int i = 0; i < N_neurons; i++) {
-            double rho = random_numbers[i][step];
-            for (size_t r = 0; r < n_bits; r++) {          
+            double rho = random_numbers[step][i];
+            for (size_t r = 0; r < n_bits; r++) {  
+                cout <<r<<endl;        
                 dE = DeltaE(i, connections[i], neurons_set[r]);
+                cout << neurons_set[r][i]<<endl;
                 if (rho >= dE) neurons_set[r][i] = -neurons_set[r][i];
+                cout << neurons_set[r][i]<<endl;
             }
         }
     }
@@ -161,14 +164,14 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
     }
 
     vector<vector<UnsignedInt>> Random_Numbers;
-    Random_Numbers.resize(N_neurons, vector<UnsignedInt>(N_steps, UnsignedInt(N_neurons)));
+    Random_Numbers.resize(N_steps, vector<UnsignedInt>(N_neurons, UnsignedInt(N_neurons)));
     Bits xnor_ij;  // xnor_ij: XNOR of neuron_i bits and neuron_j bits.
     Bits mask;   // mask[r]=1 if sum[r] < Random_Numbers[step]: neuron i flips in realization r
 
-    for (int i = 0; i < N_neurons; i++) {
-        for (int step = 0; step < N_steps; step++) {
-            unsigned long long v = (unsigned long long) random_numbers[i][step];
-            Random_Numbers[i][step].SetAll(v);
+    for (int step = 0; step < N_steps; step++) {
+        for (int i = 0; i < N_neurons; i++) {
+            unsigned long long int v=(unsigned long long int) random_numbers[step][i];
+            Random_Numbers[step][i].SetAll(v);
         }
     }
     for (int step = 0; step < N_steps; step++) {
@@ -190,13 +193,25 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
                         xnor_ij = Neurons_Set[i] == Neurons_Set[j];
                         sum += &xnor_ij;
                     }
-
                 }
-                BitSet temp = Random_Numbers[i][step] + &Neighbor_Count[i];
-                sum.MultiplyByTwoTo(); 
-                //temp +=&Bits_one;         
+                Random_Numbers[step][i].Print("Random_Numbers[step][i]");
+                Neighbor_Count[i].Print("Neighbor_Count[i]");
+                
+                BitSet temp = Random_Numbers[step][i] + &Neighbor_Count[i];
+                temp.Print("Random_Numbers[step][i] + &Neighbor_Count[i]");
+
+                sum.Print("sum");
+                sum.MultiplyByTwoTo();   
+                sum.Print("2*sum");
                 mask = sum <= temp;
+                Neurons_Set[i].Print("Neurons_Set[i]");
+                mask.Print("mask");
                 Neurons_Set[i] ^= &mask;
+                Neurons_Set[i].Print("Neurons_Set[i]");
+                cout<<"\n\n\n\n\n";
+
+
+
            // }
         }      
     }
@@ -242,8 +257,8 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
         for (int i = 0; i < N_neurons; i++) {
             if (neurons_set_classic[r][i] != neurons_set_bits[r][i]) {
                 all_equal = false;
-                cout << "Mismatch at r=" << r
-                     << " i=" << i
+                cout << "Mismatch at r=" << r+1
+                     << " i=" << i+1
                      << " classic=" << neurons_set_classic[r][i]
                      << " bits=" << neurons_set_bits[r][i] << "\n";
             }
@@ -285,12 +300,12 @@ int main() {
 
     // Generate random thresholds, capped at N_neurons (the maximum possible neighbor sum).
     // NOTE: the exponential is artificially clamped to >= 1.0 — has to be checked.
-    vector<vector<int>> random_numbers(N_neurons, vector<int>(N_steps, 0));
-    for (int i = 0; i < N_neurons; i++){
-        for (int step = 0; step < N_steps; step++){
-        random_numbers[i][step] = (int)min((double)N_neurons, 1.0 / (2.0 * Beta_times_J)
+    vector<vector<int>> random_numbers(N_steps, vector<int>(N_neurons, 0));
+    for (int step = 0; step < N_steps; step++){
+        for (int i = 0; i < N_neurons; i++){  
+        random_numbers[step][i] = (int)min((double)N_neurons, 1.0 / (2.0 * Beta_times_J)
                                        * gsl_ran_exponential(ran, 1.0));
-        cout <<"random number "<< random_numbers[i][step];
+        cout <<"random number "<< random_numbers[step][i];
         }
     }
 
