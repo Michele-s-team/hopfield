@@ -247,23 +247,27 @@ Bits BitSet::operator == (BitSet& m){
 
 //Compare *this with m and store the result in result. result is 1 if *this < m, and 0 otherwise
 Bits BitSet::operator < (const BitSet& m){
-    
     int s;
-    Bits result, check;
+    Bits result, equal_so_far;
     
-    
-    result = (~(b[GetSize() - 1])) & ((m.b)[GetSize() - 1]);
-    check = ((b[GetSize() - 1]) ^ ((m.b)[GetSize() - 1]));
-    
-    for(s=GetSize()-2; s >=0; s--){
-        result = ((check & result) | ((~check) & ((~(b[s])) & ((m.b)[s]))) );
-        check = (check | ((b[s]) ^ ((m.b)[s])));
-    }
-    
-    return result;
-    
-}
+    int sizeA = GetSize();
+    int sizeB = m.GetSize();
+    int sizeMax = std::max(sizeA, sizeB);
 
+    // Partir du bit de poids fort (ligne la plus haute)
+    // Si une seule des deux a cette ligne, l'autre vaut 0 implicitement
+    auto getA = [&](int i) -> Bits { return (i < sizeA) ? b[i] : Bits(0); };
+    auto getB = [&](int i) -> Bits { return (i < sizeB) ? m.b[i] : Bits(0); };
+
+    result      = (~getA(sizeMax-1)) & getB(sizeMax-1);
+    equal_so_far = ~(getA(sizeMax-1) ^ getB(sizeMax-1));
+
+    for(s = sizeMax-2; s >= 0; s--){
+        result       = result | (equal_so_far & (~getA(s)) & getB(s));
+        equal_so_far = equal_so_far & ~(getA(s) ^ getB(s));
+    }
+    return result;
+}
 
 
 //Compare *this with m and store the result in result. result is 1 if *this <= m, and 0 otherwise
@@ -886,14 +890,9 @@ void BitSet::operator >>=(UnsignedInt* e){
                          &zero,
                          //the element #n in e
                          &((e->b)[n])
-                         );
-            
-            
-        }
-        
-    }
-    
-    
+                         );         
+        }      
+    }  
 }
 
 
