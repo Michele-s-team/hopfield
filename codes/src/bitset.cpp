@@ -230,7 +230,7 @@ Bits BitSet::operator == (BitSet& m){
         //run through all entries b[p], as soon as there is an entry of *this that is different form the corresponding entry of m, set result to false
         for(p=0, result.SetAll(true); p<GetSize(); p++){
             
-            result &= (b[p].equal((m.b)[p]));
+            result &= (b[p]==((m.b)[p]));
             
         }
         

@@ -84,7 +84,7 @@ void Bits::SetAll(bool bit){
 }
 
 
-//return the s-th bit ofinput
+//return the s-th bit of input
 //inline 
 bool Bits::Get(unsigned int s){
     
