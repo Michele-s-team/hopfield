@@ -53,7 +53,7 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int L = 100;
+const int L = 50;
 const int N_neurons = L*L;
 const int N_neighbors=4;
 
@@ -346,8 +346,9 @@ int main() {
 
     print_neurons(neurons_set_before, neurons_set_classic, neurons_set_bits, N_neurons, prefix_width, col_width);
     cout << "Total clock_bitset: " << clock_bitset << " s\n";
-    cout << "Acceleration factor = " << clock_ref/clock_bitset << "\n";
     cout << "Total clock_ref:    " << clock_ref << " s\n";
+    cout << "Acceleration factor = " << clock_ref/clock_bitset << "\n";
+    
 
     gsl_rng_free(ran);
     return 0;
