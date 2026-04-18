@@ -53,7 +53,7 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int L = 10;
+const int L = 100;
 const int N_neurons = L*L;
 const int N_neighbors=4;
 
@@ -153,7 +153,8 @@ void evolve_systems(vector<vector<int>>& neurons_set,
                     const int N_steps) {
     double dE;
     for (int step = 0; step < N_steps; step++) {
-        cout << "step "<< step <<endl;
+        if (step % (N_steps / 10) == 0) {cout << "\rStep: " << step << " (" << (step * 100 / N_steps) << "%)    " << flush;}
+
         for (int i = 0; i < N_neurons; i++) {
             double rho = random_numbers[step][i];
             for (size_t r = 0; r < n_bits; r++) {       
@@ -162,6 +163,7 @@ void evolve_systems(vector<vector<int>>& neurons_set,
             }
         }
     }
+    cout <<"\n"; 
 }
 
 void evolve_systems_bits(vector<vector<int>>& neurons_set,
@@ -203,7 +205,8 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         }
     }
     for (int step = 0; step < N_steps; step++) {
-        cout << "step "<< step <<endl;
+        if (step % (N_steps / 10) == 0) {cout << "\rStep: " << step << " (" << (step * 100 / N_steps) << "%)    " << flush;}
+
         for (int i = 0; i < N_neurons; i++) {
 
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
@@ -229,9 +232,11 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
         }      
     }
     // Convert bit {0,1} back to spin {-1,+1}: spin = -1 + 2*bit
-    for (int r = 0; r < n_bits; r++)
+    for (int r = 0; r < n_bits; r++){
         for (int i = 0; i < N_neurons; i++)
             neurons_set[r][i] = -1 + 2 * Neurons_Set[i].Get(r);
+    }
+    cout <<"\n";        
 }
 
 
@@ -327,6 +332,7 @@ int main() {
     end_bits = clock();
     clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout<<"Bitwise evolution done"<<endl;
+    cout << "Total clock_bitset: " << clock_bitset << " s\n";
 
     // Classic evolution: modifies neurons_set in place
     vector<vector<int>> neurons_set_classic = neurons_set;
@@ -336,12 +342,12 @@ int main() {
     end_ref = clock();
     clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout<<"Classical evolution done"<<endl;
+    cout << "Total clock_ref:    " << clock_ref << " s\n";
 
     print_neurons(neurons_set_before, neurons_set_classic, neurons_set_bits, N_neurons, prefix_width, col_width);
-
-    cout << "Total clock_ref:    " << clock_ref << " s\n";
     cout << "Total clock_bitset: " << clock_bitset << " s\n";
     cout << "Acceleration factor = " << clock_ref/clock_bitset << "\n";
+    cout << "Total clock_ref:    " << clock_ref << " s\n";
 
     gsl_rng_free(ran);
     return 0;
