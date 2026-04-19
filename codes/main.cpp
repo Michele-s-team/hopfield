@@ -53,11 +53,11 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int col_width = 3;
 const int prefix_width = 12;
 
-const int L = 50;
+const int L = 40;
 const int N_neurons = L*L;
 const int N_neighbors=4;
 
-double Beta_times_J = 0.1;
+double Beta_times_J = 0.01;
 const int N_steps = 1000;
 
 // CLASSIC IMPLEMENTATION
@@ -77,6 +77,8 @@ void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
         }
 }
 
+
+//initializes a random lattice with periodic boundary conditions
 void init_connections_random(vector<vector<int>>& connections,
                           vector<int>& neighbor_counts,
                           gsl_rng* ran) {
@@ -93,7 +95,7 @@ void init_connections_random(vector<vector<int>>& connections,
         }
     }
 }
-
+//initializes a 2D square lattice with periodic boundary conditions
 void init_connections_2D(vector<vector<int>>& connections,
                          vector<int>& neighbor_counts,
                          int L) {
@@ -211,7 +213,10 @@ void evolve_systems_bits(vector<vector<int>>& neurons_set,
 
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
-            if (random_numbers[step][i]>= neighbor_count[i]) {Neurons_Set[i].ComplementTo();}//  or Neurons_Set[i]^= &Bits_one; 
+            if (random_numbers[step][i]>= neighbor_count[i]) {
+                //cout << "entered fast condition"<< endl;
+                Neurons_Set[i].ComplementTo();  //  or Neurons_Set[i]^= &Bits_one; 
+            }
             else {
                 // BRANCH 2: compute the bitwise neighbor sum, then compare to threshold.
                 UnsignedInt sum(1);
