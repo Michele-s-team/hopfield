@@ -1,6 +1,6 @@
 //
 //  lib.cpp
-//  gillespie
+//  hopfield
 //
 //  Created by Michele on 13/02/2024.
 //

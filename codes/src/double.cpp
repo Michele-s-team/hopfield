@@ -1,6 +1,6 @@
 //
 //  double.cpp
-//  gillespie
+//  hopfield
 //
 //  Created by Michele on 10/02/2024.
 //

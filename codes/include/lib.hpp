@@ -1,6 +1,6 @@
 //
 //  lib.h
-//  gillespie
+//  hopfield
 //
 //  Created by Michele Castellana on 07/10/2024.
 //

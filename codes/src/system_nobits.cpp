@@ -1,6 +1,6 @@
 //
 //  system_nobits.cpp
-//  gillespie
+//  hopfield
 //
 //  Created by Michele on 07/02/2024.
 //

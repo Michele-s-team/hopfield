@@ -1,6 +1,6 @@
 //
 //  int.cpp
-//  gillespie
+//  hopfield
 //
 //  Created by Michele on 18/02/2024.
 //

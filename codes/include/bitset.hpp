@@ -1,6 +1,6 @@
 //
 //  bitset.hpp
-//  gillespie
+//  hopfield
 //
 //  Created by Michele on 12/02/2024.
 //
