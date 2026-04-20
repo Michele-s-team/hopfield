@@ -24,8 +24,11 @@ class IsingBits : public IsingModel {
     vector<vector<UnsignedInt>> Random_Numbers;   // version bitwise
 public:
     using IsingModel::IsingModel;
-    void evolve() override;            // boucle bitwise
+    void setrandom(double, gsl_rng*);          
+    void setFromExp(double new_BJ, const vector<vector<double>>& exp_base);
+    void evolve() override;                         // boucle bitwise
 private:
+    void convertRandomNumbers(); //converts random number from double to UnsignedInts
     void toCanonical();    // Bits → neurons_set (±1) à la fin
     void fromCanonical();  // neurons_set → Bits au début
 };

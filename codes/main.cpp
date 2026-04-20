@@ -102,6 +102,44 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // Main
 // ──────────────────────────────────────────────
 int main() {
+
+    InitGlobals();
+    const int L        = 50;
+    const int N_sweeps = 10000;
+
+    cout << "[main] Parameters: N_neurons=" << L*L
+         << " n_bits=" << n_bits
+         << " N_sweeps=" << N_sweeps << endl;
+
+    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+
+    // ── Configuration initiale des spins ──────
+    gsl_rng_set(ran, 123);
+    IsingBits bits(L, 0.01, N_sweeps);
+    bits.init(ran);
+    vector<vector<int>> initial_config = bits.getSpinsConfig();
+
+    // ── Génération unique des exponentielles ──
+    vector<vector<double>> exp_base(N_sweeps, vector<double>(L*L));
+    gsl_rng_set(ran, 456);
+    for (int step = 0; step < N_sweeps; step++)
+        for (int i = 0; i < L*L; i++)
+            exp_base[step][i] = gsl_ran_exponential(ran, 1.0);
+
+    // ── Boucle sur BJ ─────────────────────────
+    for (int step = 1; step <= 20; step++) {
+        double BJ_loop = step * 0.1;
+        bits.setFromExp(BJ_loop, exp_base);
+        bits.initSpinsFromConfig(initial_config);
+        bits.evolve();
+        bits.SaveMagnetizations("../results/magnetizations.csv");
+        cout << "BJ=" << BJ_loop << " done.\n";
+    }
+
+    gsl_rng_free(ran);
+    return 0;
+
+    /*
     InitGlobals();
 
     const int    L          = 40;
@@ -155,4 +193,6 @@ int main() {
 
     gsl_rng_free(ran);
     return 0;
+
+    */
 }

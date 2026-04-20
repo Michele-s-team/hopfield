@@ -28,10 +28,20 @@ protected:
 
 public:
     IsingModel(int L, double BJ, int N_steps);
-    void init(gsl_rng* ran);           // initializes neurons + random_numbers
-    virtual void evolve() = 0;
+    void setBJ(double);
+    void initConnections();
+    void initSpins(gsl_rng*);
+    void initSpinsFromConfig(const vector<vector<int>>&);
+    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base);
+    void initRandomNumbers(gsl_rng*);
+    void init(gsl_rng*);           // initializes connection, neurons and random_numbers 
+    vector<vector<int>> getSpinsConfig() const;
     const vector<vector<int>>& getState() const;
+    virtual void evolve() = 0;
     virtual ~IsingModel() = default;
+    vector<double> GetMagnetizations();
+    void SaveMagnetizations(const string& filename);
+    double GetAverageMagnetization();
 };
 
 
