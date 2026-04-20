@@ -127,8 +127,8 @@ int main() {
             exp_base[step][i] = gsl_ran_exponential(ran, 1.0);
 
     // ── Boucle sur BJ ─────────────────────────
-    for (int step = 1; step <= 20; step++) {
-        double BJ_loop = step * 0.1;
+    for (int step = 1; step <= 100; step++) {
+        double BJ_loop = step * 0.01;
         bits.setFromExp(BJ_loop, exp_base);
         bits.initSpinsFromConfig(initial_config);
         bits.evolve();
