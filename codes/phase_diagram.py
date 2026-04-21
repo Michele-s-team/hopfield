@@ -21,12 +21,14 @@ n_real = mags.shape[1]
 for r in range(n_real):
     ax.scatter(T, mags[:, r], color="steelblue", alpha=0.3, s=5)
 
-
-
+plt.axvline(2.269185, color='r', label=r"$T_c/J$")
+plt.ylim([-1.05,1.05])
+plt.xlim([-0.5,5])
 
 ax.set_xlabel("T/J")
 ax.set_ylabel("m")
-ax.set_title("Magnetization s a function of the temperature")
+plt.legend()
+ax.set_title("Magnetization a function of the temperature")
 plt.tight_layout()
 plt.savefig("../results/magnetizations.png", dpi=150)
 plt.show()

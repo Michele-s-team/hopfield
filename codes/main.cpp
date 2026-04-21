@@ -105,7 +105,8 @@ int main() {
 
     InitGlobals();
     const int L        = 50;
-    const int N_sweeps = 10000;
+    const int N_sweeps = 25000;
+    double BJ_dummy=0.01;
 
     cout << "[main] Parameters: N_neurons=" << L*L
          << " n_bits=" << n_bits
@@ -115,21 +116,24 @@ int main() {
 
     // ── Configuration initiale des spins ──────
     gsl_rng_set(ran, 123);
-    IsingBits bits(L, 0.01, N_sweeps);
+    IsingBits bits(L, BJ_dummy, N_sweeps);
     bits.init(ran);
     vector<vector<int>> initial_config = bits.getSpinsConfig();
-
-    // ── Génération unique des exponentielles ──
-    vector<vector<double>> exp_base(N_sweeps, vector<double>(L*L));
     gsl_rng_set(ran, 456);
+   /* // ── Génération unique des exponentielles ──
+    vector<vector<double>> exp_base(N_sweeps, vector<double>(L*L));
+    
     for (int step = 0; step < N_sweeps; step++)
         for (int i = 0; i < L*L; i++)
             exp_base[step][i] = gsl_ran_exponential(ran, 1.0);
 
+    */
+
     // ── Boucle sur BJ ─────────────────────────
-    for (int step = 1; step <= 100; step++) {
-        double BJ_loop = step * 0.01;
-        bits.setFromExp(BJ_loop, exp_base);
+    for (int T =1 ; T <= 200; T++) {
+        double BJ_loop = 1/(T * 0.02);
+        cout << "BJ=" << BJ_loop <<endl;
+        bits.setrandom(BJ_loop, ran);
         bits.initSpinsFromConfig(initial_config);
         bits.evolve();
         bits.SaveMagnetizations("../results/magnetizations.csv");
