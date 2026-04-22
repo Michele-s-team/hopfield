@@ -104,7 +104,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 int main() {
 
     InitGlobals();
-    const int L        = 40;
+    const int L        = 4;
     const int N_sweeps = 25000;
     double BJ_dummy=0.01;
 

@@ -52,3 +52,13 @@ void IsingModel::init(gsl_rng* ran) {
     initSpins(ran);
     initRandomNumbers(ran);
 }
+
+
+void IsingModel::SaveMagnetizations(const string& filename) {
+    ofstream file(filename, ios::app);
+    vector<double> magnetizations = GetMagnetizations();
+    file << BJ<< ",";
+    for (int r = 0; r < n_bits; r++)
+        file << "," << magnetizations[r];
+    file << "\n";
+}

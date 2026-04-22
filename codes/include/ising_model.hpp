@@ -35,6 +35,7 @@ public:
     //virtual void evolveOneSweep() = 0;  // Performs one Metropolis sweep over all spins (implemented in subclasses)
     virtual void evolve_modular() = 0;  // Performs the full Metropolis simulation using evolveOneSweep() (implemented in subclasses)
     virtual void evolve_monolithic() = 0;  // Performs the full Metropolis simulation in one block (implemented in subclasses)
+    void SaveMagnetizations(const string&);
 };
 
 
