@@ -104,7 +104,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 int main() {
 
     InitGlobals();
-    const int L        = 50;
+    const int L        = 40;
     const int N_sweeps = 25000;
     double BJ_dummy=0.01;
 
@@ -130,8 +130,8 @@ int main() {
     */
 
     // ── Boucle sur BJ ─────────────────────────
-    for (int T =1 ; T <= 200; T++) {
-        double BJ_loop = 1/(T * 0.02);
+    for (int T =1 ; T <= 400; T++) {
+        double BJ_loop = 1/(T * 0.01);
         cout << "BJ=" << BJ_loop <<endl;
         bits.setrandom(BJ_loop, ran);
         bits.initSpinsFromConfig(initial_config);

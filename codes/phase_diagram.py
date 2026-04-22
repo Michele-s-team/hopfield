@@ -23,7 +23,7 @@ for r in range(n_real):
 
 plt.axvline(2.269185, color='r', label=r"$T_c/J$")
 plt.ylim([-1.05,1.05])
-plt.xlim([-0.5,5])
+plt.xlim([-0.05,4.05])
 
 ax.set_xlabel("T/J")
 ax.set_ylabel("m")
