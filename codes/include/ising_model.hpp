@@ -4,9 +4,11 @@
 //
 //  Created by Bastien on 20/04/2026.
 //
-
+//THIS CLASS SETS UP THE VARIABLES USED FOR THE SIMULATION OF THE THERMALIZATION OF AN ISING HAMILTONIAN ON THE GENERATED NETWORK
 #ifndef ising_model_hpp
 #define ising_model_hpp
+
+#include "spin_system.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -16,32 +18,23 @@
 
 using namespace std;
 
-//this class describes an Ising lattice thermalization using either Bitwise or classical implementation
-class IsingModel {
+class IsingModel : public SpinSystem {
 protected:
-    int L, N_neurons, N_sweeps;
-    double BJ;
-    vector<vector<int>> connections; //matrix of the connections in the lattice.
-    vector<int>         neighbor_count;
-    vector<vector<int>> random_numbers;
-    vector<vector<int>> neurons_set;   // (spins ±1)
-
+    double BJ;                          // inverse temperature times coupling: β*J
+    int N_sweeps;                       // number of Metropolis sweeps
+    vector<vector<int>> random_numbers; // pre-generated random numbers for Metropolis, shape: [N_sweeps][N_neurons]
+        
 public:
-    IsingModel(int L, double BJ, int N_steps);
-    void setBJ(double);
-    void initConnections();
-    void initSpins(gsl_rng*);
-    void initSpinsFromConfig(const vector<vector<int>>&);
-    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base);
-    void initRandomNumbers(gsl_rng*);
-    void init(gsl_rng*);           // initializes connection, neurons and random_numbers 
-    vector<vector<int>> getSpinsConfig() const;
-    const vector<vector<int>>& getState() const;
-    virtual void evolve() = 0;
+    
+    IsingModel(int L, double BJ, int N_sweeps);  // Constructor: allocates all vectors for an L x L lattice with given inverse temperature BJ and number of sweeps
     virtual ~IsingModel() = default;
-    vector<double> GetMagnetizations();
-    void SaveMagnetizations(const string& filename);
-    double GetAverageMagnetization();
+    void setBJ(double);   // Sets a new value of β*J (e.g. when sweeping over temperatures)
+    void initRandomNumbers(gsl_rng*);  // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
+    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)
+    void init(gsl_rng*); // Full initialization: connections + spins + random numbers
+    virtual void evolveOneSweep() = 0;  // Performs one Metropolis sweep over all spins (implemented in subclasses)
+    virtual void evolve_modular() = 0;  // Performs the full Metropolis simulation using evolveOneSweep() (implemented in subclasses)
+    virtual void evolve_monolithic() = 0;  // Performs the full Metropolis simulation in one block (implemented in subclasses)
 };
 
 

@@ -4,7 +4,7 @@
 //
 //  Created by Bastien on 20/04/2026.
 //
-
+// THIS CLASS IMPLEMENTS THE BITWISE SIMULATION OF THE ISING HAMILTONIAN ON THE GENERATED NETWORK
 #ifndef ising_bits_hpp
 #define ising_bits_hpp
 
@@ -17,21 +17,29 @@
 #include "unsigned_int.hpp"
 using namespace std;
 
-//this class describes an Ising lattice thermalization using Bitwise implementation
+
 class IsingBits : public IsingModel {
-    vector<Bits>        Neurons_Set;
-    vector<UnsignedInt> Neighbor_Count;
-    vector<vector<UnsignedInt>> Random_Numbers;   // version bitwise
+
+    vector<Bits> Neurons_Set;                      // bitwise spins across all realizations
+    vector<UnsignedInt> Neighbor_Count;           // degree encoded for vectorized ops
+    vector<vector<UnsignedInt>> Random_Numbers;   // precomputed stochastic thresholds
+
 public:
     using IsingModel::IsingModel;
-    void setrandom(double, gsl_rng*);          
-    void setFromExp(double new_BJ, const vector<vector<double>>& exp_base);
-    void evolve() override;                         // boucle bitwise
-private:
-    void convertRandomNumbers(); //converts random number from double to UnsignedInts
-    void toCanonical();    // Bits → neurons_set (±1) à la fin
-    void fromCanonical();  // neurons_set → Bits au début
-};
 
+    void setrandom(double, gsl_rng*);                                      // initialize RNG-based thresholds
+    void setFromExp(double new_BJ, const vector<vector<double>>& exp_base); // initialize from external distribution
+    void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
+
+    void evolveOneSweep(int, Bits&, Bits&);                                 // single bitwise Monte Carlo sweep
+
+    void evolve_monolithic() override;                                      // reference full-loop implementation
+    void evolve_modular() override;                                         // optimized modular bitwise evolution
+
+private:
+    void convertRandomNumbers(); // convert double RNG values → UnsignedInt bitwise format
+    void toCanonical();          // convert Bits → ±1 spin representation
+    void fromCanonical();        // convert ±1 spins → Bits representation
+};
 
 #endif

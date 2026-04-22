@@ -50,18 +50,17 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
     }
 }
 
-
+//THE CODE IMPLEMENTS THE THERMALIZATION OF A ISING NETWORK USING CLASSIC OR BITIWSE IMPLEMENTATION
 // ─────────────────────────────────────────────────────────────────────────────
 // GLOBAL PARAMETERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const int col_width    = 3;
-const int prefix_width = 12;
-const int L            = 5;
-const int N_neurons    = L * L;
-const int N_neighbors  = 4;
-double Beta_times_J    = 0.8;
-const int N_steps      = 20;
+const int L            = 5;     // number of spins on a side of the lattice    
+const int N_neurons    = L * L; // total number of spins
+double betaJ = 0.8;             // \beta*J
+const int N_steps = 20;         // number of steps
+const int col_width    = 3;     // printing parameter
+const int prefix_width = 12;    // printing parameter
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,8 +120,8 @@ void init_connections_2D(vector<vector<int>>& connections,
             for (int k = 0; k < 4; k++) {
                 int j = neighbors[k];
                 connections[i][j] = 1;
+                neighbor_counts[i]+=1;
             }
-            neighbor_counts[i] = 4;
         }
     }
 }
@@ -481,7 +480,7 @@ int main() {
     cout << "[main] Parameters: N_neurons=" << N_neurons
          << " n_bits=" << n_bits
          << " N_steps=" << N_steps
-         << " Beta*J=" << Beta_times_J << endl;
+         << " Beta*J=" << betaJ << endl;
 
     clock_t start_bits, end_bits;
     clock_t start_ref, end_ref;
@@ -505,7 +504,7 @@ int main() {
     for (int step = 0; step < N_steps; step++)
         for (int i = 0; i < N_neurons; i++)
             random_numbers[step][i] = (int) min((double) N_neurons,
-                1.0 / (2.0 * Beta_times_J) * gsl_ran_exponential(ran, 1.0));
+                1.0 / (2.0 * betaJ) * gsl_ran_exponential(ran, 1.0));
 
     vector<vector<int>> neurons_set_before = neurons_set;
     evolve(neurons_set, neurons_set, connections, neighbor_count, random_numbers, N_steps);
