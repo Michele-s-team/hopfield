@@ -35,7 +35,7 @@ public:
     void initSpinsFromConfig(const vector<vector<int>>&); // Initializes spins from a given configuration (deep copy)
     vector<vector<int>> getSpinsConfig() const; // Returns a copy of the full spin configuration
     const vector<vector<int>>& getState() const;  // Returns a const reference to the spin configuration (no copy)
-    vector<double> GetMagnetizations(); // Computes the magnetization m = (1/N) * sum_i s_i for each realisation
+    void GetMagnetizations(vector<double>&); // Computes the magnetization m = (1/N) * sum_i s_i for each realisation
     double GetAverageMagnetization(); // Returns the average magnetization over all realisations    
     void SaveMagnetizations(const string& filename); // Appends the magnetizations of all realisations to a CSV file
 };

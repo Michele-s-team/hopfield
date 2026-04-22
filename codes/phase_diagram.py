@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # ── Lecture du fichier ──────────────────────────────
-data = np.loadtxt("../results/magnetizations.csv", delimiter=",")
+data = np.loadtxt("../results/magnetizations_bits.csv", delimiter=",")
 
 BJ   = data[:, 0]
 mags = data[:, 1:]

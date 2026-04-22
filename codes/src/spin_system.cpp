@@ -76,20 +76,19 @@ void SpinSystem::initSpinsFromConfig(const vector<vector<int>>& initial_set) {
 vector<vector<int>> SpinSystem::getSpinsConfig() const {
     return neurons_set;
 }
-
-vector<double> SpinSystem::GetMagnetizations() {
-    vector<double> magnetizations(n_bits);
+//magnetizations must have size n_bits
+void SpinSystem::GetMagnetizations(std::vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
         for (int i = 0; i < N_neurons; i++)
             sum += neurons_set[r][i];
         magnetizations[r] = sum / N_neurons;
     }
-    return magnetizations;
 }
 
 double SpinSystem::GetAverageMagnetization() {
-    vector<double> magnetizations = GetMagnetizations();
+    vector<double> magnetizations(n_bits);
+    GetMagnetizations(magnetizations);
     double sum = 0;
     for (double m : magnetizations) sum += m;
     return sum / n_bits;
@@ -98,7 +97,9 @@ double SpinSystem::GetAverageMagnetization() {
 void SpinSystem::SaveMagnetizations(const string& filename) {
     // BJ n'est pas connu ici — à surcharger dans IsingModel si besoin
     ofstream file(filename, ios::app);
-    vector<double> magnetizations = GetMagnetizations();
+    vector<double> magnetizations(n_bits);
+    GetMagnetizations(magnetizations);
+    
     for (int r = 0; r < n_bits; r++)
         file << "," << magnetizations[r];
     file << "\n";

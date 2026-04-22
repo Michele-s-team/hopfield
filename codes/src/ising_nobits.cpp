@@ -37,10 +37,10 @@ double IsingNoBits::DeltaE(int neuron, int realization) {
 // EVOLUTION (SINGLE SWEEP)
 // =====================================================
 
-void IsingNoBits::evolveOneSweep(int step) {
+void IsingNoBits::evolveOneSweep(int sweep) {
     for (int i = 0; i < N_neurons; ++i) {
 
-        double rho = random_numbers[step][i];
+        double rho = random_numbers[sweep][i];
         for (int r = 0; r < n_bits; ++r) {
 
             if (rho >= DeltaE(i, r)) {
@@ -58,26 +58,25 @@ void IsingNoBits::evolveOneSweep(int step) {
 void IsingNoBits::evolve_modular() {
     int progress_stride = max(1, N_sweeps / 10);
 
-    for (int step = 0; step < N_sweeps; ++step) {
+    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
 
-        evolveOneSweep(step);
+        evolveOneSweep(sweep);
 
-        if ((step + 1) % progress_stride == 0) {
+        if ((sweep + 1) % progress_stride == 0) {
 
-            cout << "\rStep: " << step + 1 << " (" << ((step + 1) * 100 / N_sweeps)<< "%) " << flush;
+            cout << "\rsweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps)<< "%) " << flush;
         }
     }
 
     cout << "\n";
 }
 void IsingNoBits::evolve_monolithic() {
-    for (int step = 0; step < N_sweeps; step++) {
-        if (step % (N_sweeps / 10) == 0)
-            cout << "\rStep: " << step
-                 << " (" << (step * 100 / N_sweeps) << "%)    " << flush;
+    for (int sweep = 0; sweep < N_sweeps; sweep++) {
+        if (sweep % (N_sweeps / 10) == 0)
+            cout << "\rsweep: " << sweep+1 << " (" << ((sweep+1) * 100 / N_sweeps) << "%)    " << flush;
 
         for (int i = 0; i < N_neurons; i++) {
-            double rho = random_numbers[step][i];
+            double rho = random_numbers[sweep][i];
             for (int r = 0; r < n_bits; r++) {
                 if (rho >= DeltaE(i, r))
                     neurons_set[r][i] = -neurons_set[r][i];

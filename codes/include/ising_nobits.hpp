@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "ising_model.hpp"
+
 using namespace std;
 
 class IsingNoBits : public IsingModel {

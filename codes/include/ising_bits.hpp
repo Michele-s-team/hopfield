@@ -27,11 +27,11 @@ class IsingBits : public IsingModel {
 public:
     using IsingModel::IsingModel;
 
-    void setrandom(double, gsl_rng*);                                      // initialize RNG-based thresholds
-    void setFromExp(double new_BJ, const vector<vector<double>>& exp_base); // initialize from external distribution
+    void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
+    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
     void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
 
-    void evolveOneSweep(int, Bits&, Bits&);                                 // single bitwise Monte Carlo sweep
+    void evolveOneSweep(int, BitSet&, Bits&, Bits&);                        // single bitwise Monte Carlo sweep
 
     void evolve_monolithic() override;                                      // reference full-loop implementation
     void evolve_modular() override;                                         // optimized modular bitwise evolution

@@ -56,8 +56,9 @@ void IsingModel::init(gsl_rng* ran) {
 
 void IsingModel::SaveMagnetizations(const string& filename) {
     ofstream file(filename, ios::app);
-    vector<double> magnetizations = GetMagnetizations();
-    file << BJ<< ",";
+    vector<double> magnetizations(n_bits);
+    GetMagnetizations(magnetizations);
+    file << BJ;
     for (int r = 0; r < n_bits; r++)
         file << "," << magnetizations[r];
     file << "\n";

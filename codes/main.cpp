@@ -104,7 +104,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 int main() {
 
     InitGlobals();
-    const int L        = 4;
+    const int L        = 30;
     const int N_sweeps = 25000;
     double BJ_dummy=0.01;
 
@@ -117,7 +117,11 @@ int main() {
     // ── Configuration initiale des spins ──────
     gsl_rng_set(ran, 123);
     IsingBits bits(L, BJ_dummy, N_sweeps);
+    IsingNoBits nobits(L, BJ_dummy, N_sweeps);
     bits.init(ran);
+    //gsl_rng_set(ran, 123);
+    //nobits.init(ran);
+    
     vector<vector<int>> initial_config = bits.getSpinsConfig();
     gsl_rng_set(ran, 456);
    /* // ── Génération unique des exponentielles ──
@@ -128,15 +132,45 @@ int main() {
             exp_base[step][i] = gsl_ran_exponential(ran, 1.0);
 
     */
+    vector<double> magnetizations_bits(n_bits);
+    //vector<double> magnetizations_nobits(n_bits);
+
+    bool equal;
 
     // ── Boucle sur BJ ─────────────────────────
-    for (int T =1 ; T <= 400; T++) {
-        double BJ_loop = 1/(T * 0.01);
+    for (int T =200; T >= 1; T--) {
+        equal=true;
+        double BJ_loop = 1/(T * 0.02);
         cout << "BJ=" << BJ_loop <<endl;
-        bits.setrandom(BJ_loop, ran);
-        bits.initSpinsFromConfig(initial_config);
-        bits.evolve_modular();
-        bits.SaveMagnetizations("../results/magnetizations.csv");
+
+        bits.setBJ(BJ_loop);
+        //gsl_rng_set(ran, 123);
+        bits.initRandomNumbers(ran);
+
+        //nobits.setBJ(BJ_loop);
+        //gsl_rng_set(ran, 123);
+        //nobits.initRandomNumbers(ran);
+        //bits.initSpinsFromConfig(initial_config);
+
+        bits.evolve_monolithic();
+        //nobits.evolve_monolithic();
+        bits.GetMagnetizations(magnetizations_bits);
+        //nobits.GetMagnetizations(magnetizations_nobits);
+
+        /*for (int r = 0; r < n_bits; r++) {
+            if (magnetizations_bits[r] != magnetizations_nobits[r]) {
+                equal = false;
+
+                cout << "Difference at r = " << r
+                        << " : bits = " << magnetizations_bits[r]
+                        << ", nobits = " << magnetizations_nobits[r]
+                        << endl;
+            }
+        }
+        if (equal) {cout << "OK: magnetizations vectors are identical." << endl;}
+        */
+        bits.SaveMagnetizations("../results/magnetizations_bits.csv");
+        //nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
         cout << "BJ=" << BJ_loop << " done.\n";
     }
 
