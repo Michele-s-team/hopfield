@@ -135,7 +135,7 @@ int main() {
         cout << "BJ=" << BJ_loop <<endl;
         bits.setrandom(BJ_loop, ran);
         bits.initSpinsFromConfig(initial_config);
-        bits.evolve();
+        bits.evolve_modular();
         bits.SaveMagnetizations("../results/magnetizations.csv");
         cout << "BJ=" << BJ_loop << " done.\n";
     }

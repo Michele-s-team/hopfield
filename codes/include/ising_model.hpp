@@ -32,7 +32,7 @@ public:
     void initRandomNumbers(gsl_rng*);  // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
     void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)
     void init(gsl_rng*); // Full initialization: connections + spins + random numbers
-    virtual void evolveOneSweep() = 0;  // Performs one Metropolis sweep over all spins (implemented in subclasses)
+    //virtual void evolveOneSweep() = 0;  // Performs one Metropolis sweep over all spins (implemented in subclasses)
     virtual void evolve_modular() = 0;  // Performs the full Metropolis simulation using evolveOneSweep() (implemented in subclasses)
     virtual void evolve_monolithic() = 0;  // Performs the full Metropolis simulation in one block (implemented in subclasses)
 };

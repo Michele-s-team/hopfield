@@ -21,9 +21,9 @@ class SpinSystem {
 protected:
     int L;                              // linear size of the lattice (L x L)
     int N_neurons;                      // total number of spins (L*L)
-    vector<vector<int>> neurons_set;    // spin configurations (±1), shape: [n_bits][N_neurons]
     vector<vector<int>> connections;    // adjacency matrix of the lattice, shape: [N_neurons][N_neurons]
-    vector<int>         neighbor_count; // number of neighbors for each spin
+    vector<int> neighbor_count;         // number of neighbors for each spin
+    vector<vector<int>> neurons_set;    // spin configurations (±1), shape: [n_bits][N_neurons]
 
 public:
    

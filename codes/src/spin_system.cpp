@@ -14,8 +14,6 @@
 #include "gsl_randist.h"
 
 
-static constexpr int N_NEIGHBORS = 4;
-
 SpinSystem::SpinSystem(int L)
     : L(L),
       N_neurons(L * L),
@@ -32,8 +30,10 @@ void SpinSystem::initConnections() {
             (x+1)%L + L*y,   (x-1+L)%L + L*y,
             x + L*((y+1)%L), x + L*((y-1+L)%L)
         };
-        for (int k = 0; k < 4; k++) connections[i][nb[k]] = 1;
-        neighbor_count[i] = N_NEIGHBORS;
+        for (int k = 0; k < 4; k++){
+            connections[i][nb[k]] = 1;
+            neighbor_count[i]+=1;
+        }
     }
 }
 
@@ -55,7 +55,6 @@ void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
     }
 }
 
-
 void SpinSystem::initSpins(gsl_rng* ran) {
     for (int r = 0; r < n_bits; r++)
     for (int i = 0; i < N_neurons; i++)
@@ -75,10 +74,6 @@ void SpinSystem::initSpinsFromConfig(const vector<vector<int>>& initial_set) {
 }
 
 vector<vector<int>> SpinSystem::getSpinsConfig() const {
-    return neurons_set;
-}
-
-const vector<vector<int>>& SpinSystem::getState() const {
     return neurons_set;
 }
 
