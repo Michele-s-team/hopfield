@@ -586,10 +586,7 @@ void BitSet::SubstractTo(Bits* subtrahend, Bits* borrow) {
         borrow->Set((~(b[p])) & (*borrow));
         (b[p]).Set(t);
         
-    }
-    
-    
-    
+    }     
 }
 
 
@@ -824,8 +821,7 @@ void BitSet::Multiply(UnsignedInt* multiplicand, UnsignedInt* result){
         }
         ((result->b)[p+s]).Set(carry);
 
-    }
-    
+    }   
 }
 
 
@@ -843,14 +839,13 @@ void BitSet::DivideByTwoTo(void){
 //inline
 void BitSet::MultiplyByTwoTo(void){
 
-    b.push_back(Bits_zero); //add a line of zero to create space for the shift
-    
+    if (!b[b.size()-1].equal(Bits_zero)) b.push_back(Bits_zero);  //add a line of zero to create space for the shift if the last line is not free
+
     //to multiply by two, I shift all entries to the left by one place
     (*this) <<= (&Bits_one);
-    
+    if (b.size() > 1) Normalize();   
     
 }
-
 
 
 //I am obliged to put this method definition here, because this method needs the full declaration of the UnsignedInt class before it is declared

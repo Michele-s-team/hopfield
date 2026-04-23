@@ -160,38 +160,48 @@ void IsingBits::evolve_modular(){
 
 
 // Monolithic reference implementation
-void IsingBits::evolve_monolithic(){
+void IsingBits::evolve_monolithic() {
     fromCanonical();
-    Bits xnor_ij;
-    Bits mask;
+    Bits xnor_ij, mask;
     BitSet threshold;
-    
+    UnsignedInt sum((unsigned long long int) (neighbor_count[0]*2));
     int progress_stride = max(1, N_sweeps / 10);
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        //cout << sweep<< endl;
+
+        const int* rng_row = random_numbers[sweep].data();
+        UnsignedInt*  Rng_row = Random_Numbers[sweep].data();  // non-const
+
         for (int i = 0; i < N_neurons; ++i) {
-            if (random_numbers[sweep][i] >= neighbor_count[i]) {
-                Neurons_Set[i].ComplementTo();
+            const int nc    = neighbor_count[i];
+            Bits& neuron_i  = Neurons_Set[i];
+
+            if (rng_row[i] >= nc) {
+                neuron_i.ComplementTo();
             }
             else {
+                //sum.Resize((unsigned long long int) (nc*2));  //not truly needed as the size of BitSet dynamically increases
+                //cout << "Initial size" << sum.GetSize() <<endl;
+                sum.SetAll(0);
 
-            UnsignedInt sum(neighbor_count[i]);
-            sum.SetAll(0);
-            for (int j : neighbors[i]){
-                xnor_ij = (Neurons_Set[i] == Neurons_Set[j]);
-                sum += &xnor_ij;
+                for (int j : neighbors[i]) {
+                    xnor_ij = (neuron_i == Neurons_Set[j]);
+                    sum += &xnor_ij;
+                }
+
+                sum.MultiplyByTwoTo();
+                threshold = Rng_row[i] + &Neighbor_Count[i];
+                mask = (sum <= threshold);
+                neuron_i ^= &mask;
             }
-        
-            sum.MultiplyByTwoTo();
-            threshold = Random_Numbers[sweep][i] + &Neighbor_Count[i];
-            mask = (sum <= threshold);
-            Neurons_Set[i] ^= &mask;
+            //cout << sum.GetSize() <<endl;
+
         }
-        }
-        if ((sweep + 1) % progress_stride == 0) {
-            cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps)<< "%)    " << flush;
-        }
+
+
+        if ((sweep + 1) % progress_stride == 0)
+            cout << "\rSweep: " << sweep+1
+                 << " (" << ((sweep+1)*100/N_sweeps) << "%)    " << flush;
     }
     cout << "\n";
     toCanonical();

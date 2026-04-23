@@ -19,7 +19,7 @@
 //inline 
 UnsignedInt::UnsignedInt(void) : BitSet(){}
 
-//constructor taht resizes *this in ordert to host N
+//constructor that resizes *this in order to host N
 //inline 
 UnsignedInt::UnsignedInt(unsigned long long int N) : BitSet(N){}
 

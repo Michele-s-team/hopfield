@@ -58,7 +58,7 @@ void InitGlobals() {  // question to Michele : it is not so easy to define them 
 const int L            = 5;     // number of spins on a side of the lattice    
 const int N_neurons    = L * L; // total number of spins
 double betaJ = 0.8;             // \beta*J
-const int N_sweeps = 20;         // number of sweeps
+const int N_sweeps = pow(2,18);         // number of sweeps
 const int col_width    = 3;     // printing parameter
 const int prefix_width = 12;    // printing parameter
 
@@ -166,7 +166,7 @@ void evolve_classic_one_sweep(vector<vector<int>>& neurons_set,
 }
 
 // Classic implementation: N_sweeps sweeps.
-void evolve_systems(vector<vector<int>>& neurons_set,
+void evolve_systems_modular(vector<vector<int>>& neurons_set,
                     const vector<vector<int>>& connections,
                     const vector<int>& neighbor_count,
                     const vector<vector<int>>& random_numbers,
@@ -180,7 +180,7 @@ void evolve_systems(vector<vector<int>>& neurons_set,
 }
 
 // Classic implementation: N_sweeps sweeps (monolithic version, kept for reference).
-void evolve_systems_old(vector<vector<int>>& neurons_set,
+void evolve_systems_monolithic(vector<vector<int>>& neurons_set,
                         const vector<vector<int>>& connections,
                         const vector<int>& neighbor_count,
                         const vector<vector<int>>& random_numbers,
@@ -278,13 +278,12 @@ void evolve_bits_one_sweep(
 }
 
 // Bitwise implementation: N_sweeps sweeps.
-void evolve_systems_bits(
+void evolve_systems_bits_modular(
     vector<vector<int>>& neurons_set,
     const vector<vector<int>>& connections,
     const vector<int>& neighbor_count,
     const vector<vector<int>>& random_numbers,
-    const int N_sweeps,
-    int prefix_width, int col_width)
+    const int N_sweeps)
 {
     vector<Bits> Neurons_Set_bits;
     vector<UnsignedInt> Neighbor_Count;
@@ -302,11 +301,15 @@ void evolve_systems_bits(
             Neurons_Set_bits, connections, Neighbor_Count, neighbor_count,
             Random_Numbers[sweep], random_numbers[sweep], threshold, xnor_ij, mask);
     }
+    // Convert bit {0,1} back to spin {-1,+1}: spin = -1 + 2*bit
+    for (int r = 0; r < n_bits; r++)
+        for (int i = 0; i < N_neurons; i++)
+            neurons_set[r][i] = -1 + 2 * Neurons_Set_bits[i].Get(r);
     cout << "\n";
 }
 
 // Bitwise implementation: N_sweeps sweeps (monolithic version, kept for reference).
-void evolve_systems_bits_old(
+void evolve_systems_bits_monolithic(
     vector<vector<int>>& neurons_set,
     const vector<vector<int>>& connections,
     const vector<int>& neighbor_count,
@@ -315,26 +318,15 @@ void evolve_systems_bits_old(
 {
     // Neurons_Set[i] is a Bits encoding neuron i across all n_bits realizations.
     // Bit r of Neurons_Set[i] = 1 if neuron i is +1 in realization r, 0 if -1.
-    vector<Bits> Neurons_Set;
-    Neurons_Set.reserve(N_neurons);
+    vector<Bits> Neurons_Set_bits;
     vector<UnsignedInt> Neighbor_Count;
-    Neighbor_Count.reserve(N_neurons);
-    for (int i = 0; i < N_neurons; i++) {
-        Bits Neuron_tmp(1);
-        for (int r = 0; r < n_bits; r++) {
-            int bit = (neurons_set[r][i] + 1) / 2;
-            Neuron_tmp.Set(r, bit);
-        }
-        Neurons_Set.push_back(Neuron_tmp);
-        UnsignedInt Neighbor_tmp(neighbor_count[i]);
-        Neighbor_tmp.SetAll(neighbor_count[i]);
-        Neighbor_Count.push_back(Neighbor_tmp);
-    }
     vector<vector<UnsignedInt>> Random_Numbers;
-    Random_Numbers.resize(N_sweeps, vector<UnsignedInt>(N_neurons, UnsignedInt(N_neurons)));
-    Bits xnor_ij;  // xnor_ij: XNOR of neuron_i bits and neuron_j bits.
-    Bits mask;     // mask[r]=1 if sum[r] < Random_Numbers[sweep]: neuron i flips in realization r
+    Bits xnor_ij;
+    Bits mask;
     BitSet threshold; // threshold condition to flip spin i (different among realizations)
+    initEvolveContext(neurons_set, neighbor_count, random_numbers, N_sweeps,
+                      Neurons_Set_bits, Neighbor_Count, Random_Numbers);
+
     for (int sweep = 0; sweep < N_sweeps; sweep++)
         for (int i = 0; i < N_neurons; i++) {
             unsigned long long int v = (unsigned long long int) random_numbers[sweep][i];
@@ -347,7 +339,7 @@ void evolve_systems_bits_old(
             // BRANCH 1: rho >= neighbor_count[i], the maximum possible sum for neuron i.
             // The flip is guaranteed for ALL realizations.
             if (random_numbers[sweep][i] >= neighbor_count[i]) {
-                Neurons_Set[i].ComplementTo();
+                Neurons_Set_bits[i].ComplementTo();
             }
             else {
                 // BRANCH 2: compute the bitwise neighbor sum, then compare to threshold.
@@ -356,21 +348,21 @@ void evolve_systems_bits_old(
                 // Bit r is 1 only if both neuron i and neuron j are +1 in realization r.
                 for (int j = 0; j < N_neurons; j++) {
                     if (i != j && connections[i][j]) {
-                        xnor_ij = Neurons_Set[i] == Neurons_Set[j];  // c_ij = b_i == b_j
+                        xnor_ij = Neurons_Set_bits[i] == Neurons_Set_bits[j];  // c_ij = b_i == b_j
                         sum += &xnor_ij;                              // Sum S_iS_j = 2*Sum c_ij - degree(i)
                     }
                 }
                 sum.MultiplyByTwoTo();
                 threshold = Random_Numbers[sweep][i] + &Neighbor_Count[i];
                 mask = sum <= threshold;
-                Neurons_Set[i] ^= &mask;
+                Neurons_Set_bits[i] ^= &mask;
             }
         }
     }
     // Convert bit {0,1} back to spin {-1,+1}: spin = -1 + 2*bit
     for (int r = 0; r < n_bits; r++)
         for (int i = 0; i < N_neurons; i++)
-            neurons_set[r][i] = -1 + 2 * Neurons_Set[i].Get(r);
+            neurons_set[r][i] = -1 + 2 * Neurons_Set_bits[i].Get(r);
     cout << "\n";
 }
 
@@ -394,8 +386,8 @@ void evolve(
     const vector<vector<int>>& connections,
     const vector<int>& neighbor_count,
     const vector<vector<int>>& random_numbers,
-    const int N_sweeps)
-{
+    const int N_sweeps,
+    int prefix_width, int col_width){
     vector<Bits> Neurons_Set_bits;
     vector<UnsignedInt> Neighbor_Count;
     vector<vector<UnsignedInt>> Random_Numbers;
@@ -511,14 +503,15 @@ int main() {
                 1.0 / (2.0 * betaJ) * gsl_ran_exponential(ran, 1.0));
 
     vector<vector<int>> neurons_set_before = neurons_set;
-    evolve(neurons_set, neurons_set, connections, neighbor_count, random_numbers, N_sweeps);
 
-    /*
+
+    //evolve(neurons_set, neurons_set, connections, neighbor_count, random_numbers, N_sweeps, prefix_width, col_width);
+    
     // Bitwise evolution: takes the same inputs, writes result back into neurons_set_bits
     vector<vector<int>> neurons_set_bits = neurons_set;
     cout<<"start Bitwise evolution"<<endl;
     start_bits = clock();
-    evolve_systems_bits(neurons_set_bits, connections, neighbor_count, random_numbers, N_sweeps);
+    evolve_systems_bits_modular(neurons_set_bits, connections, neighbor_count, random_numbers, N_sweeps);
     end_bits = clock();
     clock_bitset = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout<<"Bitwise evolution done"<<endl;
@@ -528,7 +521,7 @@ int main() {
     vector<vector<int>> neurons_set_classic = neurons_set;
     cout<<"start classical evolution"<<endl;
     start_ref = clock();
-    evolve_systems(neurons_set_classic, connections, neighbor_count, random_numbers, N_sweeps);
+    evolve_systems_modular(neurons_set_classic, connections, neighbor_count, random_numbers, N_sweeps);
     end_ref = clock();
     clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout<<"Classical evolution done"<<endl;
@@ -538,8 +531,8 @@ int main() {
     cout << "Total clock_bitset: " << clock_bitset << " s\n";
     cout << "Total clock_ref:    " << clock_ref << " s\n";
     cout << "Acceleration factor = " << clock_ref/clock_bitset << "\n";
-    */
 
+    
     gsl_rng_free(ran);
     return 0;
 }

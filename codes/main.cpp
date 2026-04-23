@@ -102,8 +102,8 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    const int L        = 5;
-    const int N_sweeps = pow(2,18);
+    const int L        = 50;
+    const int N_sweeps = 20000;// pow(2,18);
     double BJ_dummy=0.01;
 
     InitGlobals();
@@ -148,21 +148,37 @@ int main() {
 
     for (int i = 0; i < totalSteps; i++, step++) {
         double BJ_loop = 1.0 / (T_max - i * step_T);
-        equal = true;
         cout << "BJ=" << BJ_loop << " Step " << step << "/" << totalSteps << endl;
 
+        // --- Test approche BITS ---
         bits.setBJ(BJ_loop);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
+        auto start_bits = std::chrono::high_resolution_clock::now();
         bits.initRandomNumbers(ran);
+        bits.evolve_monolithic();
+        auto end_bits = std::chrono::high_resolution_clock::now();
+        
+        std::chrono::duration<double, std::milli> duration_bits = end_bits - start_bits;
 
+        // --- Test approche NOBITS ---
         nobits.setBJ(BJ_loop);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
-        nobits.initRandomNumbers(ran);
 
-        bits.evolve_monolithic();
+        auto start_nobits = std::chrono::high_resolution_clock::now();
+        nobits.initRandomNumbers(ran);
         nobits.evolve_monolithic();
+        auto end_nobits = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<double, std::milli> duration_nobits = end_nobits - start_nobits;
+
+
+        // --- Affichage des résultats ---
+        cout << "  > Temps Bits   : " << duration_bits.count()/1000 << " s" << endl;
+        cout << "  > Temps NoBits : " << duration_nobits.count()/1000 << " s" << endl;
+        cout << "  > Speedup      : " << duration_nobits.count() / duration_bits.count() << "x" << endl;
+        cout << "------------------------------------------" << endl;
 
         bits.GetMagnetizations(magnetizations_bits);
         nobits.GetMagnetizations(magnetizations_nobits);

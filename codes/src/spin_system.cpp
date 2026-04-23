@@ -51,6 +51,7 @@ void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
             }
 }
 
+
 int SpinSystem::randomSpin(gsl_rng* ran){
     return 2 * gsl_rng_uniform_int(ran, 2) - 1;
 }
