@@ -29,15 +29,16 @@ void IsingBits::fromCanonical()
 
     for (int i = 0; i < N_neurons; ++i) {
 
-        Bits neuron_tmp(1);
+        Bits neuron_tmp;
 
         for (int r = 0; r < n_bits; ++r) {
             int bit = (neurons_set[r][i] + 1) / 2;
             neuron_tmp.Set(r, bit);
         }
-        Neurons_Set.push_back(neuron_tmp);
         UnsignedInt neighbor_tmp(neighbor_count[i]);
         neighbor_tmp.SetAll(neighbor_count[i]);
+
+        Neurons_Set.push_back(neuron_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
     }
 }
@@ -68,11 +69,11 @@ void IsingBits::convertRandomNumbers()
         )
     );
 
-    for (int step = 0; step < N_sweeps; ++step)
+    for (int sweep = 0; sweep < N_sweeps; ++sweep)
         for (int i = 0; i < N_neurons; ++i) {
             unsigned long long v =
-                (unsigned long long) random_numbers[step][i];
-            Random_Numbers[step][i].SetAll(v);
+                (unsigned long long) random_numbers[sweep][i];
+            Random_Numbers[sweep][i].SetAll(v);
         }
 }
 
@@ -104,29 +105,28 @@ void IsingBits::initEvolveContext(){
 // CORE UPDATE KERNEL
 // =====================================================
 
-void IsingBits::evolveOneSweep(int step, BitSet& threshold, Bits& xnor_ij, Bits& mask){
+void IsingBits::evolveOneSweep(int sweep, BitSet& threshold, Bits& xnor_ij, Bits& mask){
     for (int i = 0; i < N_neurons; ++i) {
         // --------------------------------
         // Branch 1: unconditional flip
         // --------------------------------
-        if (random_numbers[step][i] >= neighbor_count[i]) {
+        if (random_numbers[sweep][i] >= neighbor_count[i]) {
             Neurons_Set[i].ComplementTo();
         }
         // --------------------------------
         // Branch 2: conditional flip
         // --------------------------------
         else {
-            UnsignedInt sum(1);
+            UnsignedInt sum(neighbor_count[i]);
             sum.SetAll(0);
-            for (int j = 0; j < N_neurons; ++j) {
-                if (i != j && connections[i][j]) {
-                    xnor_ij = (Neurons_Set[i] == Neurons_Set[j]);
-                    sum += &xnor_ij;
-                }
+            for (int j : neighbors[i]){
+                xnor_ij = (Neurons_Set[i] == Neurons_Set[j]);
+                sum += &xnor_ij;
             }
+        
             sum.MultiplyByTwoTo();
-            BitSet temp = Random_Numbers[step][i] + &Neighbor_Count[i];
-            mask = (sum <= temp);
+            threshold = Random_Numbers[sweep][i] + &Neighbor_Count[i];
+            mask = (sum <= threshold);
             Neurons_Set[i] ^= &mask;
         }
     }
@@ -139,18 +139,19 @@ void IsingBits::evolveOneSweep(int step, BitSet& threshold, Bits& xnor_ij, Bits&
 
 // Refactored version using reusable sweep kernel
 void IsingBits::evolve_modular(){
-    initEvolveContext();
+    fromCanonical();
     Bits xnor_ij;
     Bits mask;
     BitSet threshold;
+    UnsignedInt sum(neighbor_count[0]);
 
     int progress_stride = max(1, N_sweeps / 10);
 
-    for (int step = 0; step < N_sweeps; ++step) {
+    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
 
-        evolveOneSweep(step, threshold, xnor_ij, mask);
-        if ((step + 1) % progress_stride == 0) {
-            cout << "\rStep: " << step + 1 << " (" << ((step + 1) * 100 / N_sweeps)<< "%)    " << flush;
+        evolveOneSweep(sweep, threshold, xnor_ij, mask);
+        if ((sweep + 1) % progress_stride == 0) {
+            cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps)<< "%)    " << flush;
         }
     }
     cout << "\n";
@@ -164,32 +165,32 @@ void IsingBits::evolve_monolithic(){
     Bits xnor_ij;
     Bits mask;
     BitSet threshold;
-
+    
     int progress_stride = max(1, N_sweeps / 10);
 
-    for (int step = 0; step < N_sweeps; ++step) {
+    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+        //cout << sweep<< endl;
         for (int i = 0; i < N_neurons; ++i) {
-            if (random_numbers[step][i] >= neighbor_count[i]) {
+            if (random_numbers[sweep][i] >= neighbor_count[i]) {
                 Neurons_Set[i].ComplementTo();
             }
             else {
-                UnsignedInt sum(1);
-                sum.SetAll(0);
-                for (int j = 0; j < N_neurons; ++j) {
-                    if (i != j && connections[i][j]) {
 
-                        xnor_ij = (Neurons_Set[i] == Neurons_Set[j]);
-                        sum += &xnor_ij;
-                    }
-                }
-                sum.MultiplyByTwoTo();
-                threshold= Random_Numbers[step][i] + &Neighbor_Count[i];
-                mask = (sum <= threshold);
-                Neurons_Set[i] ^= &mask;
+            UnsignedInt sum(neighbor_count[i]);
+            sum.SetAll(0);
+            for (int j : neighbors[i]){
+                xnor_ij = (Neurons_Set[i] == Neurons_Set[j]);
+                sum += &xnor_ij;
             }
+        
+            sum.MultiplyByTwoTo();
+            threshold = Random_Numbers[sweep][i] + &Neighbor_Count[i];
+            mask = (sum <= threshold);
+            Neurons_Set[i] ^= &mask;
         }
-        if ((step + 1) % progress_stride == 0) {
-            cout << "\rStep: " << step + 1 << " (" << ((step + 1) * 100 / N_sweeps)<< "%)    " << flush;
+        }
+        if ((sweep + 1) % progress_stride == 0) {
+            cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps)<< "%)    " << flush;
         }
     }
     cout << "\n";

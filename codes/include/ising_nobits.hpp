@@ -24,7 +24,6 @@ public:
     using IsingModel::IsingModel;
 
     void evolveOneSweep(int);   // single Monte Carlo sweep (classic spin implementation)
-
     void evolve_monolithic() override; // reference full-loop implementation (non-modular)
     void evolve_modular() override;    // modular version of classic evolution loop
 

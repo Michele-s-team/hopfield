@@ -30,13 +30,12 @@ public:
     void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
     void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
     void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
-
     void evolveOneSweep(int, BitSet&, Bits&, Bits&);                        // single bitwise Monte Carlo sweep
-
     void evolve_monolithic() override;                                      // reference full-loop implementation
     void evolve_modular() override;                                         // optimized modular bitwise evolution
 
 private:
+
     void convertRandomNumbers(); // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();          // convert Bits → ±1 spin representation
     void fromCanonical();        // convert ±1 spins → Bits representation

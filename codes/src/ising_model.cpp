@@ -25,30 +25,33 @@ IsingModel::IsingModel(int L, double BJ, int N_sweeps)
       random_numbers(N_sweeps, vector<int>(L * L, 0))
 {}
 
+// ising_model.cpp
+void IsingModel::setNSweeps(int n) {
+    N_sweeps = n;
+    random_numbers.assign(n, vector<int>(N_neurons, 0));
+}
+
 void IsingModel::setBJ(double new_BJ) {
     BJ = new_BJ;
 }
 
+
 void IsingModel::initRandomNumbers(gsl_rng* ran) {
-    for (int step = 0; step < N_sweeps; step++)
-    for (int i = 0; i < N_neurons; i++)
-        random_numbers[step][i] = (int) min(
-            (double) N_neurons,
-            1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0)
-        );
+    double val;
+    for (int sweep = 0; sweep < N_sweeps; sweep++)
+    for (int i = 0; i < N_neurons; i++){
+        val = min((double)N_neurons, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
+        random_numbers[sweep][i] = (int)val;
+    }
 }
 
 void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
-    for (int step = 0; step < N_sweeps; step++)
+    for (int sweep = 0; sweep < N_sweeps; sweep++)
     for (int i = 0; i < N_neurons; i++)
-        random_numbers[step][i] = (int) min(
-            (double) N_neurons,
-            1.0 / (2.0 * BJ) * exp_base[step][i]
-        );
+        random_numbers[sweep][i] = (int) min((double) N_neurons,1.0 / (2.0 * BJ) * exp_base[sweep][i]);
 }
 
 void IsingModel::init(gsl_rng* ran) {
-    initConnections();
     initSpins(ran);
     initRandomNumbers(ran);
 }

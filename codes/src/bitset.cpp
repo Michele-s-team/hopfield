@@ -387,10 +387,11 @@ void BitSet::operator += (Bits* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
-    b.push_back(carry);
+    if (!(carry.equal(Bits_zero))) b.push_back(carry);
+    
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
-    if (GetSize() > 1) Normalize(); //ISSUES WITH THIS CONDITION --> enters even when only one Bits, has to be checked
+    //if (GetSize() > 1) Normalize(); //ISSUES WITH THIS CONDITION --> enters even when only one Bits, has to be checked
 }
 
 

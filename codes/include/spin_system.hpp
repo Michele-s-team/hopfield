@@ -21,7 +21,7 @@ class SpinSystem {
 protected:
     int L;                              // linear size of the lattice (L x L)
     int N_neurons;                      // total number of spins (L*L)
-    vector<vector<int>> connections;    // adjacency matrix of the lattice, shape: [N_neurons][N_neurons]
+    vector<vector<int>> neighbors;      // neighbors[i] = liste of neigbhors of each neurons
     vector<int> neighbor_count;         // number of neighbors for each spin
     vector<vector<int>> neurons_set;    // spin configurations (±1), shape: [n_bits][N_neurons]
 
@@ -29,8 +29,9 @@ public:
    
     SpinSystem(int L); // Constructor: allocates all vectors for an L x L lattice
     virtual ~SpinSystem() = default;
-    void initConnections(); // Builds the periodic square lattice connectivity (4 neighbors per spin)
+    void initConnections2D(); // Builds the periodic square lattice connectivity (4 neighbors per spin)
     void initConnections_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
+    int randomSpin(gsl_rng*); // initializes randomly a spin +-1
     void initSpins(gsl_rng*); // Initializes all spins randomly to ±1 using the GSL RNG
     void initSpinsFromConfig(const vector<vector<int>>&); // Initializes spins from a given configuration (deep copy)
     vector<vector<int>> getSpinsConfig() const; // Returns a copy of the full spin configuration

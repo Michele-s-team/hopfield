@@ -41,7 +41,6 @@ using namespace std;
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
-
 BitSet BitSet_one;
 Bits Bits_one, Bits_zero;
 
@@ -103,10 +102,11 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    InitGlobals();
-    const int L        = 30;
-    const int N_sweeps = 25000;
+    const int L        = 5;
+    const int N_sweeps = pow(2,18);
     double BJ_dummy=0.01;
+
+    InitGlobals();
 
     cout << "[main] Parameters: N_neurons=" << L*L
          << " n_bits=" << n_bits
@@ -115,49 +115,59 @@ int main() {
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
     // ── Configuration initiale des spins ──────
-    gsl_rng_set(ran, 123);
     IsingBits bits(L, BJ_dummy, N_sweeps);
     IsingNoBits nobits(L, BJ_dummy, N_sweeps);
-    bits.init(ran);
-    //gsl_rng_set(ran, 123);
-    //nobits.init(ran);
-    
+
+    bits.initConnections2D();
+    nobits.initConnections2D();
+
+    gsl_rng_set(ran, 123);
+    bits.initSpins(ran);
     vector<vector<int>> initial_config = bits.getSpinsConfig();
-    gsl_rng_set(ran, 456);
-   /* // ── Génération unique des exponentielles ──
+    nobits.initSpinsFromConfig(initial_config);
+    
+    //gsl_rng_set(ran, 456);
+    /* // ── Génération unique des exponentielles ──
     vector<vector<double>> exp_base(N_sweeps, vector<double>(L*L));
     
     for (int step = 0; step < N_sweeps; step++)
         for (int i = 0; i < L*L; i++)
             exp_base[step][i] = gsl_ran_exponential(ran, 1.0);
-
     */
+
     vector<double> magnetizations_bits(n_bits);
-    //vector<double> magnetizations_nobits(n_bits);
+    vector<double> magnetizations_nobits(n_bits);
 
     bool equal;
+    const double T_min  = 1.0;
+    const double T_max  = 5.0;
+    const double step_T = 0.05;
 
-    // ── Boucle sur BJ ─────────────────────────
-    for (int T =200; T >= 1; T--) {
-        equal=true;
-        double BJ_loop = 1/(T * 0.02);
-        cout << "BJ=" << BJ_loop <<endl;
+    const int totalSteps = (int)((T_max - T_min) / step_T) + 1;
+    int step = 1;
+
+    for (int i = 0; i < totalSteps; i++, step++) {
+        double BJ_loop = 1.0 / (T_max - i * step_T);
+        equal = true;
+        cout << "BJ=" << BJ_loop << " Step " << step << "/" << totalSteps << endl;
 
         bits.setBJ(BJ_loop);
-        //gsl_rng_set(ran, 123);
+        bits.initSpinsFromConfig(initial_config);
+        gsl_rng_set(ran, 123);
         bits.initRandomNumbers(ran);
 
-        //nobits.setBJ(BJ_loop);
-        //gsl_rng_set(ran, 123);
-        //nobits.initRandomNumbers(ran);
-        //bits.initSpinsFromConfig(initial_config);
+        nobits.setBJ(BJ_loop);
+        nobits.initSpinsFromConfig(initial_config);
+        gsl_rng_set(ran, 123);
+        nobits.initRandomNumbers(ran);
 
         bits.evolve_monolithic();
-        //nobits.evolve_monolithic();
-        bits.GetMagnetizations(magnetizations_bits);
-        //nobits.GetMagnetizations(magnetizations_nobits);
+        nobits.evolve_monolithic();
 
-        /*for (int r = 0; r < n_bits; r++) {
+        bits.GetMagnetizations(magnetizations_bits);
+        nobits.GetMagnetizations(magnetizations_nobits);
+
+        for (int r = 0; r < n_bits; r++) {
             if (magnetizations_bits[r] != magnetizations_nobits[r]) {
                 equal = false;
 
@@ -168,10 +178,9 @@ int main() {
             }
         }
         if (equal) {cout << "OK: magnetizations vectors are identical." << endl;}
-        */
+        
         bits.SaveMagnetizations("../results/magnetizations_bits.csv");
-        //nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
-        cout << "BJ=" << BJ_loop << " done.\n";
+        nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
     }
 
     gsl_rng_free(ran);
