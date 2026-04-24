@@ -40,4 +40,4 @@ private:
     void fromCanonical();        // convert ±1 spins → Bits representation
 };
 
-#endif;
+#endif
