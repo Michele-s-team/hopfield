@@ -31,7 +31,7 @@ void IsingBits::fromCanonical(){
         Bits neuron_tmp;
 
         for (int r = 0; r < n_bits; ++r) {
-            int bit = (neurons_set[r*n_bits+i] + 1) / 2;
+            int bit = (neurons_set[r*N_neurons+i] + 1) / 2;
             neuron_tmp.Set(r, bit);
         }
         UnsignedInt neighbor_tmp(neighbor_count[i]);
@@ -42,12 +42,11 @@ void IsingBits::fromCanonical(){
     }
 }
 
-
 // bit representation {0,1} -> canonical spins {-1,+1}
 void IsingBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
         for (int i = 0; i < N_neurons; ++i)
-            neurons_set[r*n_bits+i] = -1 + 2 * Neurons_Set[i].Get(r);
+            neurons_set[r*N_neurons+i] = -1 + 2 * Neurons_Set[i].Get(r);
 }
 
 

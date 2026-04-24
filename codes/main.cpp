@@ -102,7 +102,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    const int L        = 100;
+    const int L        = 50;
     const int N_sweeps = pow(2,18);// pow(2,18);
     double BJ_dummy=0.01;
 
@@ -124,7 +124,7 @@ int main() {
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
-    const vector<int>& initial_config = bits.getSpinsConfig();
+    vector<int> initial_config = bits.getSpinsConfig();
     nobits.initSpinsFromConfig(initial_config);
     cout <<"Spin configurations initialized \n" <<endl;
     
@@ -160,6 +160,8 @@ int main() {
         auto end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration_bits = end_bits - start_bits;
 
+        bits.SaveMagnetizations("../results/magnetizations_bits.csv");
+
         // --- Test approche NOBITS ---
         nobits.setBJ(BJ_loop);
         nobits.initSpinsFromConfig(initial_config);
@@ -192,8 +194,8 @@ int main() {
         }
         if (equal) {cout << "OK: magnetizations vectors are identical." << endl;}
 
-        bits.SaveMagnetizations("../results/magnetizations_bits.csv");
-        //nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
+        
+        nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
     }
 
     gsl_rng_free(ran);

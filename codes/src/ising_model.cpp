@@ -14,9 +14,6 @@
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
-static constexpr int N_NEIGHBORS = 4;
-
-
 
 IsingModel::IsingModel(int L, double BJ, int N_sweeps)
     : SpinSystem(L),

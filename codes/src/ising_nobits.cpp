@@ -22,8 +22,8 @@
 double IsingNoBits::DeltaE(int neuron, int realization) {
     int sum = 0;
     for (int j : neighbors[neuron])
-        sum += neurons_set[realization*n_bits+j];
-    return neurons_set[realization*n_bits+neuron] * sum;
+        sum += neurons_set[realization*N_neurons+j];
+    return neurons_set[realization*N_neurons+neuron] * sum;
 }
 
 
@@ -37,11 +37,11 @@ void IsingNoBits::evolveOneSweep(int sweep, gsl_rng* ran) {
     for (int i = 0; i < N_neurons; ++i) {
         double rng = random_numbers[sweep][i];
         if (rng >= neighbor_count[i]) {
-            for (int r = 0; r < n_bits; ++r) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
+            for (int r = 0; r < n_bits; ++r) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
         }
         else {
             for (int r = 0; r < n_bits; ++r)
-                if (rng >= DeltaE(i, r)) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
+                if (rng >= DeltaE(i, r)) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
         }
     }
 }
@@ -67,11 +67,11 @@ void IsingNoBits::evolve_monolithic(gsl_rng* ran) {
         for (int i = 0; i < N_neurons; ++i) {
             double rng = randomNumber(ran);
             if (rng >= neighbor_count[i]) {
-                for (int r = 0; r < n_bits; ++r) neurons_set[r*n_bits+i] = -neurons_set[r*n_bits+i] ;
+                for (int r = 0; r < n_bits; ++r) neurons_set[r*N_neurons+i] = -neurons_set[r*N_neurons+i] ;
             }
             else {
                 for (int r = 0; r < n_bits; ++r)
-                    if (rng >= DeltaE(i, r)) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
+                    if (rng >= DeltaE(i, r)) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
             }
         }
         if ((sweep + 1) % progress_stride == 0)

@@ -23,9 +23,6 @@ SpinSystem::SpinSystem(int L)
 {}
 
 void SpinSystem::initConnections2D() {
-    neighbors.assign(N_neurons, vector<int>());
-    fill(neighbor_count.begin(), neighbor_count.end(), 0);
-
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -61,19 +58,19 @@ void SpinSystem::initSpins(gsl_rng* ran) {
         neurons_set[i] = randomSpin(ran);
 }
 
-void SpinSystem::initSpinsFromConfig(const vector<int>& initial_set) {
+void SpinSystem::initSpinsFromConfig(vector<int>& initial_set) {
     neurons_set = initial_set;
 }
 
-const std::vector<int>& SpinSystem::getSpinsConfig() const {
+vector<int> SpinSystem::getSpinsConfig() {
     return neurons_set;
 }
 
 //magnetizations must have size n_bits
-void SpinSystem::GetMagnetizations(std::vector<double>& magnetizations) {
+void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
-        for (int i = 0; i < N_neurons; i++) sum += neurons_set[r*n_bits+i];
+        for (int i = 0; i < N_neurons; i++) sum += neurons_set[r*N_neurons+i];
         magnetizations[r] = sum / N_neurons;
     }
 }
