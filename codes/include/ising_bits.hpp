@@ -20,25 +20,24 @@ using namespace std;
 
 class IsingBits : public IsingModel {
 
-    vector<Bits> Neurons_Set;                      // bitwise spins across all realizations
-    vector<UnsignedInt> Neighbor_Count;           // degree encoded for vectorized ops
-    vector<vector<UnsignedInt>> Random_Numbers;   // precomputed stochastic thresholds
+    vector<Bits> Neurons_Set;                    // bitwise spins across all realizations
+    vector<UnsignedInt> Neighbor_Count;          // degree encoded for vectorized ops
 
 public:
     using IsingModel::IsingModel;
 
-    void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
-    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
-    void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
-    void evolveOneSweep(int, BitSet&, Bits&, Bits&);                        // single bitwise Monte Carlo sweep
-    void evolve_monolithic() override;                                      // reference full-loop implementation
-    void evolve_modular() override;                                         // optimized modular bitwise evolution
+    //void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
+    //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
+    //void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
+    //void evolveOneSweep(int, BitSet&, Bits&, Bits&, gsl_rng*);                        // single bitwise Monte Carlo sweep
+    //void evolve_modular(gsl_rng*) override;                                         // optimized modular bitwise evolution
+    void evolve_monolithic(gsl_rng*) override;                                      // reference full-loop implementation
 
 private:
 
-    void convertRandomNumbers(); // convert double RNG values → UnsignedInt bitwise format
+    //void convertRandomNumbers(); // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();          // convert Bits → ±1 spin representation
     void fromCanonical();        // convert ±1 spins → Bits representation
 };
 
-#endif
+#endif;

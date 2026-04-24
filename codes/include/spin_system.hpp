@@ -23,7 +23,7 @@ protected:
     int N_neurons;                      // total number of spins (L*L)
     vector<vector<int>> neighbors;      // neighbors[i] = liste of neigbhors of each neurons
     vector<int> neighbor_count;         // number of neighbors for each spin
-    vector<vector<int>> neurons_set;    // spin configurations (±1), shape: [n_bits][N_neurons]
+    vector<int> neurons_set;    // spin configurations (±1), shape: [n_bits][N_neurons]
 
 public:
    
@@ -33,9 +33,8 @@ public:
     void initConnections_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
     int randomSpin(gsl_rng*); // initializes randomly a spin +-1
     void initSpins(gsl_rng*); // Initializes all spins randomly to ±1 using the GSL RNG
-    void initSpinsFromConfig(const vector<vector<int>>&); // Initializes spins from a given configuration (deep copy)
-    vector<vector<int>> getSpinsConfig() const; // Returns a copy of the full spin configuration
-    const vector<vector<int>>& getState() const;  // Returns a const reference to the spin configuration (no copy)
+    void initSpinsFromConfig(const vector<int>&); // Initializes spins from a given configuration (deep copy)
+    vector<int> getSpinsConfig() const; // Returns a copy of the full spin configuration
     void GetMagnetizations(vector<double>&); // Computes the magnetization m = (1/N) * sum_i s_i for each realisation
     double GetAverageMagnetization(); // Returns the average magnetization over all realisations    
     void SaveMagnetizations(const string& filename); // Appends the magnetizations of all realisations to a CSV file

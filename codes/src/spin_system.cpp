@@ -19,7 +19,7 @@ SpinSystem::SpinSystem(int L)
       N_neurons(L * L),
       neighbors(L * L),            
       neighbor_count(L * L, 0),
-      neurons_set(n_bits, vector<int>(L * L, 0))
+      neurons_set(n_bits * N_neurons, 0)
 {}
 
 void SpinSystem::initConnections2D() {
@@ -57,32 +57,22 @@ int SpinSystem::randomSpin(gsl_rng* ran){
 }
 
 void SpinSystem::initSpins(gsl_rng* ran) {
-    for (int r = 0; r < n_bits; r++)
-    for (int i = 0; i < N_neurons; i++)
-        neurons_set[r][i] = randomSpin(ran);
+    for (int i = 0; i < n_bits*N_neurons; i++)
+        neurons_set[i] = randomSpin(ran);
 }
 
-void SpinSystem::initSpinsFromConfig(const vector<vector<int>>& initial_set) {
-    if (initial_set.size() != (size_t)n_bits) {
-        cerr << "Erreur: nombre de réalisations incorrect !" << endl;
-        return;
-    }
-    if (n_bits > 0 && initial_set[0].size() != (size_t)N_neurons) {
-        cerr << "Erreur: taille des réseaux de neurones incorrecte !" << endl;
-        return;
-    }
+void SpinSystem::initSpinsFromConfig(const vector<int>& initial_set) {
     neurons_set = initial_set;
 }
 
-vector<vector<int>> SpinSystem::getSpinsConfig() const {
+vector<int> SpinSystem::getSpinsConfig() const {
     return neurons_set;
 }
 //magnetizations must have size n_bits
 void SpinSystem::GetMagnetizations(std::vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
-        for (int i = 0; i < N_neurons; i++)
-            sum += neurons_set[r][i];
+        for (int i = 0; i < N_neurons; i++) sum += neurons_set[r*n_bits+i];
         magnetizations[r] = sum / N_neurons;
     }
 }

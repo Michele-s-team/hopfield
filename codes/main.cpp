@@ -102,15 +102,15 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    const int L        = 50;
-    const int N_sweeps = 20000;// pow(2,18);
+    const int L        = 100;
+    const int N_sweeps = pow(2,18);// pow(2,18);
     double BJ_dummy=0.01;
 
     InitGlobals();
 
     cout << "[main] Parameters: N_neurons=" << L*L
          << " n_bits=" << n_bits
-         << " N_sweeps=" << N_sweeps << endl;
+         << " N_sweeps=" << N_sweeps << "\n" << endl;
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
@@ -120,11 +120,13 @@ int main() {
 
     bits.initConnections2D();
     nobits.initConnections2D();
+    cout <<"Network initialized \n" <<endl;
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
-    vector<vector<int>> initial_config = bits.getSpinsConfig();
+    vector<int> initial_config = bits.getSpinsConfig();
     nobits.initSpinsFromConfig(initial_config);
+    cout <<"Spin configurations initialized \n" <<endl;
     
     //gsl_rng_set(ran, 456);
     /* // ── Génération unique des exponentielles ──
@@ -138,7 +140,6 @@ int main() {
     vector<double> magnetizations_bits(n_bits);
     vector<double> magnetizations_nobits(n_bits);
 
-    bool equal;
     const double T_min  = 1.0;
     const double T_max  = 5.0;
     const double step_T = 0.05;
@@ -154,25 +155,20 @@ int main() {
         bits.setBJ(BJ_loop);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
-        auto start_bits = std::chrono::high_resolution_clock::now();
-        bits.initRandomNumbers(ran);
-        bits.evolve_monolithic();
-        auto end_bits = std::chrono::high_resolution_clock::now();
-        
-        std::chrono::duration<double, std::milli> duration_bits = end_bits - start_bits;
+        auto start_bits = chrono::high_resolution_clock::now();
+        bits.evolve_monolithic(ran);
+        auto end_bits = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration_bits = end_bits - start_bits;
 
         // --- Test approche NOBITS ---
         nobits.setBJ(BJ_loop);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
-
-        auto start_nobits = std::chrono::high_resolution_clock::now();
-        nobits.initRandomNumbers(ran);
-        nobits.evolve_monolithic();
-        auto end_nobits = std::chrono::high_resolution_clock::now();
-
-        std::chrono::duration<double, std::milli> duration_nobits = end_nobits - start_nobits;
-
+        auto start_nobits = chrono::high_resolution_clock::now();
+        nobits.evolve_monolithic(ran);
+        auto end_nobits = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration_nobits = end_nobits - start_nobits;
+        
 
         // --- Affichage des résultats ---
         cout << "  > Temps Bits   : " << duration_bits.count()/1000 << " s" << endl;
@@ -182,6 +178,7 @@ int main() {
 
         bits.GetMagnetizations(magnetizations_bits);
         nobits.GetMagnetizations(magnetizations_nobits);
+        bool equal=true;
 
         for (int r = 0; r < n_bits; r++) {
             if (magnetizations_bits[r] != magnetizations_nobits[r]) {
@@ -194,9 +191,9 @@ int main() {
             }
         }
         if (equal) {cout << "OK: magnetizations vectors are identical." << endl;}
-        
+
         bits.SaveMagnetizations("../results/magnetizations_bits.csv");
-        nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
+        //nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
     }
 
     gsl_rng_free(ran);

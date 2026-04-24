@@ -13,7 +13,6 @@
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
-
 // =====================================================
 // ENERGY COMPUTATION
 // =====================================================
@@ -23,8 +22,8 @@
 double IsingNoBits::DeltaE(int neuron, int realization) {
     int sum = 0;
     for (int j : neighbors[neuron])
-        sum += neurons_set[realization][j];
-    return neurons_set[realization][neuron] * sum;
+        sum += neurons_set[realization*n_bits+j];
+    return neurons_set[realization*n_bits+neuron] * sum;
 }
 
 
@@ -32,45 +31,47 @@ double IsingNoBits::DeltaE(int neuron, int realization) {
 // =====================================================
 // EVOLUTION (SINGLE SWEEP)
 // =====================================================
-
-
-void IsingNoBits::evolveOneSweep(int sweep) {
+/*
+//TO BE FIXED
+void IsingNoBits::evolveOneSweep(int sweep, gsl_rng* ran) {
     for (int i = 0; i < N_neurons; ++i) {
-        double rho = random_numbers[sweep][i];
-        if (rho >= neighbor_count[i]) {
-            for (int r = 0; r < n_bits; ++r) neurons_set[r][i] = -neurons_set[r][i];
+        double rng = random_numbers[sweep][i];
+        if (rng >= neighbor_count[i]) {
+            for (int r = 0; r < n_bits; ++r) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
         }
         else {
             for (int r = 0; r < n_bits; ++r)
-                if (rho >= DeltaE(i, r)) neurons_set[r][i] = -neurons_set[r][i];
+                if (rng >= DeltaE(i, r)) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
         }
     }
 }
+*/
 // =====================================================
 // FULL EVOLUTION
 // =====================================================
-
-void IsingNoBits::evolve_modular() {
+/*
+void IsingNoBits::evolve_modular(gsl_rng* ran) {
     int progress_stride = max(1, N_sweeps / 10);
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        evolveOneSweep(sweep);
+        evolveOneSweep(sweep, ran);
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps) << "%) " << flush;
     }
     cout << "\n";
 }
+*/
 
-void IsingNoBits::evolve_monolithic() {
+void IsingNoBits::evolve_monolithic(gsl_rng* ran) {
     int progress_stride = max(1, N_sweeps / 10);
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
         for (int i = 0; i < N_neurons; ++i) {
-            double rho = random_numbers[sweep][i];
-            if (rho >= neighbor_count[i]) {
-                for (int r = 0; r < n_bits; ++r) neurons_set[r][i] = -neurons_set[r][i];
+            double rng = randomNumber(ran);
+            if (rng >= neighbor_count[i]) {
+                for (int r = 0; r < n_bits; ++r) neurons_set[r*n_bits+i] = -neurons_set[r*n_bits+i] ;
             }
             else {
                 for (int r = 0; r < n_bits; ++r)
-                    if (rho >= DeltaE(i, r)) neurons_set[r][i] = -neurons_set[r][i];
+                    if (rng >= DeltaE(i, r)) neurons_set[r*n_bits+i]  = -neurons_set[r*n_bits+i] ;
             }
         }
         if ((sweep + 1) % progress_stride == 0)

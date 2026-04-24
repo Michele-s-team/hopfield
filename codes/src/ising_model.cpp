@@ -35,12 +35,18 @@ void IsingModel::setBJ(double new_BJ) {
     BJ = new_BJ;
 }
 
+int IsingModel::randomNumber(gsl_rng* ran) {
+    double val;
+    val = min((double)N_neurons, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
+    return (int)val;
 
-void IsingModel::initRandomNumbers(gsl_rng* ran) {
+}
+
+void IsingModel::initrandomNumbers(gsl_rng* ran) {
     double val;
     for (int sweep = 0; sweep < N_sweeps; sweep++)
     for (int i = 0; i < N_neurons; i++){
-        val = min((double)N_neurons, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
+        val = randomNumber(ran);
         random_numbers[sweep][i] = (int)val;
     }
 }
@@ -53,7 +59,7 @@ void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base
 
 void IsingModel::init(gsl_rng* ran) {
     initSpins(ran);
-    initRandomNumbers(ran);
+    initrandomNumbers(ran);
 }
 
 

@@ -95,7 +95,7 @@ void BitSet::SetRandom(gsl_rng* ran){
     
 }
 
-//set all n_bits entries of *this to the respective bits of i. This method requires  *this to be properly sized to contain i
+//set all n_bits entries of *this to the respective bits of i. This method requires *this to be properly sized to contain i
 //inline 
 void BitSet::SetAll(unsigned long long int i){
     
@@ -387,7 +387,7 @@ void BitSet::operator += (Bits* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
-    if (!(carry.equal(Bits_zero))) b.push_back(carry);
+    if(carry.Get()!=0) b.push_back(carry);
     
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
@@ -839,11 +839,11 @@ void BitSet::DivideByTwoTo(void){
 //inline
 void BitSet::MultiplyByTwoTo(void){
 
-    if (!b[b.size()-1].equal(Bits_zero)) b.push_back(Bits_zero);  //add a line of zero to create space for the shift if the last line is not free
+    if (b[b.size()-1].Get()!=0) b.push_back(Bits_zero);  //add a line of zero to create space for the shift if the last line is not free
 
     //to multiply by two, I shift all entries to the left by one place
     (*this) <<= (&Bits_one);
-    if (b.size() > 1) Normalize();   
+    //if (b.size() > 1) Normalize();   
     
 }
 
