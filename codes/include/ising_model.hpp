@@ -22,7 +22,6 @@ class IsingModel : public SpinSystem {
 protected:
     double BJ;                          // inverse temperature times coupling: β*J
     int N_sweeps;                       // number of Metropolis sweeps
-    vector<vector<int>> random_numbers; // pre-generated random numbers for Metropolis, shape: [N_sweeps][N_neurons]
         
 public:
     
@@ -31,9 +30,9 @@ public:
     void setNSweeps(int); //sets the number of spins
     void setBJ(double);   // Sets a new value of β*J (e.g. when sweeping over temperatures)
     int randomNumber(gsl_rng*); //generates a random number following an exponential distribution
-    void initrandomNumbers(gsl_rng*);  // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
-    void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)
-    void init(gsl_rng*); // Full initialization: spins + random numbers
+    //void initrandomNumbers(gsl_rng*);  // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
+    //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)
+    //void init(gsl_rng*); // Full initialization: spins + random numbers
     //virtual void evolveOneSweep() = 0;  // Performs one Metropolis sweep over all spins (implemented in subclasses)
     //virtual void evolve_modular(gsl_rng*) = 0;  // Performs the full Metropolis simulation using evolveOneSweep() (implemented in subclasses)
     virtual void evolve_monolithic(gsl_rng*) = 0;  // Performs the full Metropolis simulation in one block (implemented in subclasses)

@@ -124,7 +124,7 @@ int main() {
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
-    vector<int> initial_config = bits.getSpinsConfig();
+    const vector<int>& initial_config = bits.getSpinsConfig();
     nobits.initSpinsFromConfig(initial_config);
     cout <<"Spin configurations initialized \n" <<endl;
     

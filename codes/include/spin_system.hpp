@@ -34,7 +34,7 @@ public:
     int randomSpin(gsl_rng*); // initializes randomly a spin +-1
     void initSpins(gsl_rng*); // Initializes all spins randomly to ±1 using the GSL RNG
     void initSpinsFromConfig(const vector<int>&); // Initializes spins from a given configuration (deep copy)
-    vector<int> getSpinsConfig() const; // Returns a copy of the full spin configuration
+    const vector<int>& getSpinsConfig() const; // Returns a copy of the full spin configuration
     void GetMagnetizations(vector<double>&); // Computes the magnetization m = (1/N) * sum_i s_i for each realisation
     double GetAverageMagnetization(); // Returns the average magnetization over all realisations    
     void SaveMagnetizations(const string& filename); // Appends the magnetizations of all realisations to a CSV file

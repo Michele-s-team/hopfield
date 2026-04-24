@@ -21,14 +21,12 @@ static constexpr int N_NEIGHBORS = 4;
 IsingModel::IsingModel(int L, double BJ, int N_sweeps)
     : SpinSystem(L),
       BJ(BJ),
-      N_sweeps(N_sweeps),
-      random_numbers(N_sweeps, vector<int>(L * L, 0))
+      N_sweeps(N_sweeps)
 {}
 
 // ising_model.cpp
 void IsingModel::setNSweeps(int n) {
     N_sweeps = n;
-    random_numbers.assign(n, vector<int>(N_neurons, 0));
 }
 
 void IsingModel::setBJ(double new_BJ) {
@@ -41,7 +39,7 @@ int IsingModel::randomNumber(gsl_rng* ran) {
     return (int)val;
 
 }
-
+/*
 void IsingModel::initrandomNumbers(gsl_rng* ran) {
     double val;
     for (int sweep = 0; sweep < N_sweeps; sweep++)
@@ -51,16 +49,19 @@ void IsingModel::initrandomNumbers(gsl_rng* ran) {
     }
 }
 
+
 void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
     for (int sweep = 0; sweep < N_sweeps; sweep++)
     for (int i = 0; i < N_neurons; i++)
         random_numbers[sweep][i] = (int) min((double) N_neurons,1.0 / (2.0 * BJ) * exp_base[sweep][i]);
 }
-
+*/
+/*
 void IsingModel::init(gsl_rng* ran) {
     initSpins(ran);
     initrandomNumbers(ran);
 }
+*/
 
 
 void IsingModel::SaveMagnetizations(const string& filename) {

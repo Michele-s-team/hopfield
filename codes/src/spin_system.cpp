@@ -65,9 +65,10 @@ void SpinSystem::initSpinsFromConfig(const vector<int>& initial_set) {
     neurons_set = initial_set;
 }
 
-vector<int> SpinSystem::getSpinsConfig() const {
+const std::vector<int>& SpinSystem::getSpinsConfig() const {
     return neurons_set;
 }
+
 //magnetizations must have size n_bits
 void SpinSystem::GetMagnetizations(std::vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
