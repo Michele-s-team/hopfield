@@ -19,11 +19,11 @@
 
 
 // ΔE(i, r) = σ_i * Σ_j A_ij σ_j
-double IsingNoBits::DeltaE(int neuron, int realization) {
+double IsingNoBits::DeltaE(int spin, int realization) {
     int sum = 0;
-    for (int j : neighbors[neuron])
-        sum += neurons_set[realization*N_neurons+j];
-    return neurons_set[realization*N_neurons+neuron] * sum;
+    for (int j : neighbors[spin])
+        sum += spins_set[realization*N_spins+j];
+    return spins_set[realization*N_spins+spin] * sum;
 }
 
 
@@ -34,14 +34,14 @@ double IsingNoBits::DeltaE(int neuron, int realization) {
 /*
 //TO BE FIXED
 void IsingNoBits::evolveOneSweep(int sweep, gsl_rng* ran) {
-    for (int i = 0; i < N_neurons; ++i) {
+    for (int i = 0; i < N_spins; ++i) {
         double rng = random_numbers[sweep][i];
         if (rng >= neighbor_count[i]) {
-            for (int r = 0; r < n_bits; ++r) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
+            for (int r = 0; r < n_bits; ++r) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
         }
         else {
             for (int r = 0; r < n_bits; ++r)
-                if (rng >= DeltaE(i, r)) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
+                if (rng >= DeltaE(i, r)) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
         }
     }
 }
@@ -61,17 +61,18 @@ void IsingNoBits::evolve_modular(gsl_rng* ran) {
 }
 */
 
-void IsingNoBits::evolve_monolithic(gsl_rng* ran) {
+void IsingNoBits::evolve(gsl_rng* ran) {
     int progress_stride = max(1, N_sweeps / 10);
+    int rng;
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int i = 0; i < N_neurons; ++i) {
-            double rng = randomNumber(ran);
+        for (int i = 0; i < N_spins; ++i) {
+            rng = randomNumber(ran);
             if (rng >= neighbor_count[i]) {
-                for (int r = 0; r < n_bits; ++r) neurons_set[r*N_neurons+i] = -neurons_set[r*N_neurons+i] ;
+                for (int r = 0; r < n_bits; ++r) spins_set[r*N_spins+i] = -spins_set[r*N_spins+i] ;
             }
             else {
                 for (int r = 0; r < n_bits; ++r)
-                    if (rng >= DeltaE(i, r)) neurons_set[r*N_neurons+i]  = -neurons_set[r*N_neurons+i] ;
+                    if (rng >= DeltaE(i, r)) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
             }
         }
         if ((sweep + 1) % progress_stride == 0)

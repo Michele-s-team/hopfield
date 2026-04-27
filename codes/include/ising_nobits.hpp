@@ -25,10 +25,10 @@ public:
 
     //void evolveOneSweep(int, gsl_rng*);   // single Monte Carlo sweep (classic spin implementation)
     //void evolve_modular(gsl_rng*) override;    // modular version of classic evolution loop
-    void evolve_monolithic(gsl_rng*) override; // reference full-loop implementation (non-modular)
+    void evolve(gsl_rng*) override; // reference full-loop implementation (non-modular)
 
 private:
-    double DeltaE(int neuron, int realization); // local energy variation for neuron flip decision
+    double DeltaE(int spin, int realization); // local energy variation for spin flip decision
 };
 
 

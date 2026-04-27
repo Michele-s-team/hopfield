@@ -32,7 +32,7 @@ void IsingModel::setBJ(double new_BJ) {
 
 int IsingModel::randomNumber(gsl_rng* ran) {
     double val;
-    val = min((double)N_neurons, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
+    val = min((double)N_spins, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
     return (int)val;
 
 }
@@ -40,7 +40,7 @@ int IsingModel::randomNumber(gsl_rng* ran) {
 void IsingModel::initrandomNumbers(gsl_rng* ran) {
     double val;
     for (int sweep = 0; sweep < N_sweeps; sweep++)
-    for (int i = 0; i < N_neurons; i++){
+    for (int i = 0; i < N_spins; i++){
         val = randomNumber(ran);
         random_numbers[sweep][i] = (int)val;
     }
@@ -49,8 +49,8 @@ void IsingModel::initrandomNumbers(gsl_rng* ran) {
 
 void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
     for (int sweep = 0; sweep < N_sweeps; sweep++)
-    for (int i = 0; i < N_neurons; i++)
-        random_numbers[sweep][i] = (int) min((double) N_neurons,1.0 / (2.0 * BJ) * exp_base[sweep][i]);
+    for (int i = 0; i < N_spins; i++)
+        random_numbers[sweep][i] = (int) min((double) N_spins,1.0 / (2.0 * BJ) * exp_base[sweep][i]);
 }
 */
 /*
@@ -61,11 +61,11 @@ void IsingModel::init(gsl_rng* ran) {
 */
 
 
-void IsingModel::SaveMagnetizations(const string& filename) {
+void IsingModel::SaveMagnetizations(const string& filename, int N) {
     ofstream file(filename, ios::app);
     vector<double> magnetizations(n_bits);
     GetMagnetizations(magnetizations);
-    file << BJ;
+    file << 1/BJ << "," << N;
     for (int r = 0; r < n_bits; r++)
         file << "," << magnetizations[r];
     file << "\n";

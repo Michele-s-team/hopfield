@@ -102,8 +102,8 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    const int L        = 50;
-    const int N_sweeps = pow(2,18);// pow(2,18);
+    const int L        = 100;
+    const int N_sweeps = pow(2,16);// pow(2,18);
     double BJ_dummy=0.01;
 
     InitGlobals();
@@ -118,8 +118,8 @@ int main() {
     IsingBits bits(L, BJ_dummy, N_sweeps);
     IsingNoBits nobits(L, BJ_dummy, N_sweeps);
 
-    bits.initConnections2D();
-    nobits.initConnections2D();
+    bits.initConnections2D_PBC();
+    //nobits.initConnections2D_OBC();
     cout <<"Network initialized \n" <<endl;
 
     gsl_rng_set(ran, 123);
@@ -140,34 +140,38 @@ int main() {
     vector<double> magnetizations_bits(n_bits);
     vector<double> magnetizations_nobits(n_bits);
 
-    const double T_min  = 1.0;
-    const double T_max  = 5.0;
+    const double T_min  = 0.05;
+    const double T_max  = 5;
     const double step_T = 0.05;
 
     const int totalSteps = (int)((T_max - T_min) / step_T) + 1;
     int step = 1;
+    double BJ_loop, T_loop;
 
     for (int i = 0; i < totalSteps; i++, step++) {
-        double BJ_loop = 1.0 / (T_max - i * step_T);
-        cout << "BJ=" << BJ_loop << " Step " << step << "/" << totalSteps << endl;
+        T_loop=T_min + i * step_T;
+        BJ_loop = 1.0 / T_loop;
+        cout << "T=" << T_loop << " Step " << step << "/" << totalSteps << endl;
 
         // --- Test approche BITS ---
         bits.setBJ(BJ_loop);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
         auto start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_monolithic(ran);
+        // bits.SaveSpins("../results/spins/spin_config");
+        bits.evolve(ran);
         auto end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration_bits = end_bits - start_bits;
-
+        cout << "  > Temps Bits   : " << duration_bits.count()/1000 << " s" << endl;
         bits.SaveMagnetizations("../results/magnetizations_bits.csv");
-
+        /*
         // --- Test approche NOBITS ---
         nobits.setBJ(BJ_loop);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
         auto start_nobits = chrono::high_resolution_clock::now();
-        nobits.evolve_monolithic(ran);
+        nobits.evolve(ran);
+}
         auto end_nobits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration_nobits = end_nobits - start_nobits;
         
@@ -193,9 +197,9 @@ int main() {
             }
         }
         if (equal) {cout << "OK: magnetizations vectors are identical." << endl;}
-
+        */
         
-        nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
+        //nobits.SaveMagnetizations("../results/magnetizations_nobits.csv");
     }
 
     gsl_rng_free(ran);

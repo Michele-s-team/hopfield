@@ -16,13 +16,13 @@
 
 SpinSystem::SpinSystem(int L)
     : L(L),
-      N_neurons(L * L),
+      N_spins(L * L),
       neighbors(L * L),            
       neighbor_count(L * L, 0),
-      neurons_set(n_bits * N_neurons, 0)
+      spins_set(n_bits * N_spins, 0)
 {}
 
-void SpinSystem::initConnections2D() {
+void SpinSystem::initConnections2D_PBC() {
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -36,12 +36,26 @@ void SpinSystem::initConnections2D() {
         }
 }
 
+void SpinSystem::initConnections2D_OBC() {
+    for (int y = 0; y < L; ++y)
+        for (int x = 0; x < L; ++x) {
+            int i = x + L * y;
+            neighbors[i].clear();
+            
+            if (x + 1 < L) neighbors[i].push_back((x+1) + L*y);
+            if (x - 1 >= 0) neighbors[i].push_back((x-1) + L*y);
+            if (y + 1 < L) neighbors[i].push_back(x + L*(y+1));
+            if (y - 1 >= 0) neighbors[i].push_back(x + L*(y-1));
+            
+            neighbor_count[i] = neighbors[i].size();
+        }
+}
 void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
-    neighbors.assign(N_neurons, vector<int>());
+    neighbors.assign(N_spins, vector<int>());
     fill(neighbor_count.begin(), neighbor_count.end(), 0);
 
-    for (int i = 0; i < N_neurons; i++)
-        for (int j = 0; j < N_neurons; j++)
+    for (int i = 0; i < N_spins; i++)
+        for (int j = 0; j < N_spins; j++)
             if (i != j && gsl_rng_uniform(ran) < p) {
                 neighbors[i].push_back(j);
                 neighbor_count[i]++;
@@ -54,24 +68,24 @@ int SpinSystem::randomSpin(gsl_rng* ran){
 }
 
 void SpinSystem::initSpins(gsl_rng* ran) {
-    for (int i = 0; i < n_bits*N_neurons; i++)
-        neurons_set[i] = randomSpin(ran);
+    for (int i = 0; i < n_bits*N_spins; i++)
+        spins_set[i] = randomSpin(ran);
 }
 
 void SpinSystem::initSpinsFromConfig(vector<int>& initial_set) {
-    neurons_set = initial_set;
+    spins_set = initial_set;
 }
 
 vector<int> SpinSystem::getSpinsConfig() {
-    return neurons_set;
+    return spins_set;
 }
 
 //magnetizations must have size n_bits
 void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
-        for (int i = 0; i < N_neurons; i++) sum += neurons_set[r*N_neurons+i];
-        magnetizations[r] = sum / N_neurons;
+        for (int i = 0; i < N_spins; i++) sum += spins_set[r*N_spins+i];
+        magnetizations[r] = sum / N_spins;
     }
 }
 
@@ -92,4 +106,22 @@ void SpinSystem::SaveMagnetizations(const string& filename) {
     for (int r = 0; r < n_bits; r++)
         file << "," << magnetizations[r];
     file << "\n";
+}
+
+void SpinSystem::SaveSpins(const string& filename) {
+    for (int r = 0; r < n_bits; ++r) {
+        string fname = filename + "_r" + to_string(r) + ".csv";
+        ofstream f(fname, ios::app);
+
+        for (int y = 0; y < L; ++y) {
+            for (int x = 0; x < L; ++x) {
+                int i = x + L * y;
+
+                f << spins_set[r * N_spins + i];
+                if (x < L - 1) f << ",";
+            }
+            f << "\n";
+        }
+        f.close();
+    }
 }

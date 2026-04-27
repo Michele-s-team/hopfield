@@ -19,9 +19,6 @@ plt.rcParams.update({
     "ytick.labelsize":   11,
     "axes.labelsize":    13,
     "axes.titlesize":    14,
-    "font.family":       "serif",
-    "font.serif":        ["Palatino Linotype", "Palatino", "DejaVu Serif"],
-    "mathtext.fontset":  "cm",
     "legend.facecolor":  "white",
     "legend.edgecolor":  "#cccccc",
     "legend.fontsize":   10.5,
@@ -29,7 +26,7 @@ plt.rcParams.update({
 })
 
 # ── Données ───────────────────────────────────────────
-data = np.loadtxt("../results/save/v2/magnetizations_bits.csv", delimiter=",")
+data = np.loadtxt("../results/magnetizations_bits.csv", delimiter=",")
 BJ   = data[:, 0]
 mags = data[:, 1:]
 T    = 1.0 / BJ
@@ -48,12 +45,9 @@ err_rms_m = std_m2 / (2 * rms_m * np.sqrt(n_real))
 
 # ── Courbe théorique Onsager ──────────────────────────
 Tc   = 2.269185
-T_th = np.linspace(0.95, 5.05, 2000)
-mag_th = np.where(
-    T_th < Tc,
-    (1 - np.sinh(2 / T_th)**(-4))**(1/8),
-    0.0
-)
+T_th = np.linspace(0.001, 5.05, 2000)
+arg = 1 - np.sinh(2 / T_th)**(-4)
+mag_th = np.where(arg > 0, arg**(1/8), 0.0)
 
 # ── Figure ────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(9, 5.5))
@@ -70,10 +64,19 @@ for r in range(n_real):
 # Température critique
 ax.axvline(Tc, color="#b41c1c", linestyle="--", linewidth=1.3, alpha=0.85,
            label=r"$T_c/J \approx 2.269$", zorder=4)
-
+"""
 # Courbe lissée
 smoothed = gaussian_filter1d(rms_m, sigma=2)
 ax.plot(T, smoothed, color="#000000", linewidth=1.8, alpha=0.4, zorder=5)
+"""
+
+# Solution exacte Onsager
+ax.plot(
+    T_th, mag_th,
+    color="#05532a", linewidth=2.0, linestyle="-",
+    zorder=7, label="Onsager exact solution",
+)
+
 
 # sqrt(<m²>) avec barres d'erreur
 ax.errorbar(
@@ -84,19 +87,14 @@ ax.errorbar(
     markersize=4.5, markeredgewidth=0,
     zorder=6, label=r"$\sqrt{\langle m^2 \rangle}$",
 )
-
-# Solution exacte Onsager
-ax.plot(
-    T_th, mag_th,
-    color="#05532a", linewidth=2.0, linestyle="-",
-    zorder=7, label="Onsager exact solution",
-)
+print(T)
+print(rms_m)
 
 # ── Axes ──────────────────────────────────────────────
-ax.set_xlim([0.95, 5.05])
-ax.set_ylim([0.0, 1.08])
+ax.set_xlim([0, 5.05])
+ax.set_ylim([-0.002, 1.05])
 ax.xaxis.set_major_locator(ticker.MultipleLocator(0.5))
-ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.25))
+ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.2))
 ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
 ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
 ax.tick_params(which="minor", length=3, color="#aaaaaa")
@@ -112,5 +110,5 @@ for spine in ax.spines.values():
     spine.set_linewidth(0.8)
 
 plt.tight_layout()
-plt.savefig("../results/save/v2/magnetizations.png", dpi=200, bbox_inches="tight")
+plt.savefig("../results/magnetizations.png", dpi=200, bbox_inches="tight")
 plt.show()

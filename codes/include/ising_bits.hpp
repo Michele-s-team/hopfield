@@ -20,7 +20,7 @@ using namespace std;
 
 class IsingBits : public IsingModel {
 
-    vector<Bits> Neurons_Set;                    // bitwise spins across all realizations
+    vector<Bits> spins_Set;                    // bitwise spins across all realizations
     vector<UnsignedInt> Neighbor_Count;          // degree encoded for vectorized ops
 
 public:
@@ -31,7 +31,8 @@ public:
     //void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
     //void evolveOneSweep(int, BitSet&, Bits&, Bits&, gsl_rng*);                        // single bitwise Monte Carlo sweep
     //void evolve_modular(gsl_rng*) override;                                         // optimized modular bitwise evolution
-    void evolve_monolithic(gsl_rng*) override;                                      // reference full-loop implementation
+    void evolve(gsl_rng*) override;                                      // reference full-loop implementation
+    void evolve_save(gsl_rng*);    
 
 private:
 
