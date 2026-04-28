@@ -37,19 +37,6 @@ void IsingBits::fromCanonical(){
         Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
     }
-
-    // DEBUG: verify round-trip consistency
-    for (int i = 0; i < N_spins; ++i)
-        for (int r = 0; r < n_bits; ++r) {
-            int original = spins_set[r*N_spins+i];
-            int roundtrip = -1 + 2 * Spins_Set[i].Get(r);
-            if (original != roundtrip)
-                cout << "MISMATCH fromCanonical: i=" << i
-                     << " r=" << r
-                     << " original=" << original
-                     << " roundtrip=" << roundtrip << endl;
-           // else cout <<"OK \n";
-        }
 }
 
 // bit representation {0,1} -> canonical spins {-1,+1}
@@ -113,7 +100,7 @@ void IsingBits::initEvolveContext(){
 // OBSERVABLES
 // =====================================================
 
-// Compute magnetization m = (2*ones - N) / N for each realization
+// Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
 void IsingBits::GetMagnetizations(vector<double>& magnetizations){
     vector<int> ones(n_bits, 0);
 
@@ -131,12 +118,11 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 // =====================================================
 
 // Attempt a spin flip at site i using the bitwise Metropolis rule:
-//   - if rng >= nc: unconditional flip (infinite temperature limit)
+//   - if rng >= neighbor_count[i]: unconditional flip 
 //   - otherwise: flip only realizations where 2*aligned_neighbors <= rng + nc
 void IsingBits::tryFlip(int i, int rng,
                          Bits& xnor_ij, Bits& mask,
                          UnsignedInt& sum, BitSet& threshold){
-    // référence directe, pas de copie
     Bits& spin_i = Spins_Set[i];
 
     if (rng >= neighbor_count[i]) {
