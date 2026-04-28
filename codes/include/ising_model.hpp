@@ -25,8 +25,6 @@ protected:
 
 private:
     vector<ofstream> m_csv_files; 
-
-
         
 public:
     

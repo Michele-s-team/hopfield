@@ -15,10 +15,7 @@
 
 
 //inline 
-BitSet::BitSet(void){
-    
-    
-}
+BitSet::BitSet(void){}
 
 
 //inline 
@@ -101,6 +98,13 @@ void BitSet::SetAll(unsigned long long int i){
     
     unsigned int s;
     Bits m(i);
+
+
+    if (GetSize() < bits(m.Get())) {
+        std::cerr << "BitSet too small\n";
+        abort();
+    }
+
           
     //set the first bits(m.Get()) bits of *this equal to the bits of i
     for(s=0; s<bits(m.Get()); s++){
@@ -110,7 +114,6 @@ void BitSet::SetAll(unsigned long long int i){
     for(s=bits(m.Get()); s<GetSize(); s++){
         (b[s]).SetAll(false);
     }
-    
 }
 
 
@@ -252,7 +255,7 @@ Bits BitSet::operator < (const BitSet& m){
     
     int sizeA = GetSize();
     int sizeB = m.GetSize();
-    int sizeMax = max(sizeA, sizeB);
+    int sizeMax = std::max(sizeA, sizeB);
 
     // Partir du bit de poids fort (ligne la plus haute)
     // Si une seule des deux a cette ligne, l'autre vaut 0 implicitement
@@ -487,6 +490,7 @@ void BitSet::AddTo(Bits* addend, Bits* carry){
 
 
 //substract m to *this and write the result in *this
+//DOES NOT WORK (PROBABLY)
 void BitSet::operator -= (BitSet* subtrahend) {
     
     

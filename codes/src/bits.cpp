@@ -80,7 +80,6 @@ void Bits::SetAll(bool bit){
     
     if(bit){(*this) = Bits_one;}
     else{(*this) = Bits_zero;}
-    
 }
 
 

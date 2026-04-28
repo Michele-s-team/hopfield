@@ -20,7 +20,7 @@ using namespace std;
 
 class IsingBits : public IsingModel {
 
-    vector<Bits> spins_Set;                 // bitwise spins across all realizations
+    vector<Bits> Spins_Set;                 // bitwise spins across all realizations
     vector<UnsignedInt> Neighbor_Count;     // degree encoded for vectorized ops
 
 public:

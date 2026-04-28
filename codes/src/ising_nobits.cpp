@@ -33,13 +33,12 @@ void IsingNoBits::runSweeps(gsl_rng* ran, bool save, double freq) {
     const int progress_stride = max(1, N_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
     int rng;
+    int i;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-
         for (int step = 0; step < N_spins; ++step) {
-            int i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
             rng = randomNumber(ran);
-
             if (rng >= neighbor_count[i]) {
                 // unconditional flip: rng exceeds max possible local field
                 for (int r = 0; r < n_bits; ++r)
