@@ -376,10 +376,10 @@ void BitSet::operator += (BitSet* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
-    b.push_back(carry);
+    if(carry.Get()!=0) b.push_back(carry);
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
-    if (b.size() > 1) Normalize();
+    //if (b.size() > 1) Normalize();
 }
 
 
@@ -390,7 +390,7 @@ void BitSet::operator += (Bits* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
-    if(carry.Get()!=0) b.push_back(carry);
+    
     
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
@@ -481,10 +481,8 @@ void BitSet::AddTo(Bits* addend, Bits* carry){
         
         t.Set((b[p]) ^ (*carry));
         carry->Set((b[p]) & (*carry));
-        (b[p]).Set(t);
-        
+        (b[p]).Set(t);     
     }
-    
 }
 
 
@@ -694,20 +692,14 @@ void BitSet::operator <<= (Bits* l){
     //in this first loop, I run over the first chunk of entries of b:  and I replace  if e=true, and do nothing otherwise
     for(m=(this->GetSize())-1; m>0; m--){
         
-        b[m].Replace(
-                     //the element # m+1 in b
-                     (b.data()) + (m-1),
-                     l
-                     );
+        b[m].Replace(           //the element # m+1 in b
+                     (b.data()) + (m-1), l);
         
     }
     
     //I consider the first entry (b[0]) of b: I can no longer replace it with b[-1] as in the loop above, becuase b[-1] does not exist in b -> I replace it with zero
-    b.front().Replace(
-                     //a Bits filled with zeros
-                     &Bits_zero,
-                     l
-                     );
+    b.front().Replace(     //a Bits filled with zeros
+                     &Bits_zero, l);
     
 }
 

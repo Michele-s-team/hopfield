@@ -20,10 +20,10 @@
 
 // canonical spins {-1,+1} -> bit representation {0,1}
 void IsingBits::fromCanonical(){
-    Spins_Set.clear();
+    Bits_Spins_Set.clear();
     Neighbor_Count.clear();
 
-    Spins_Set.reserve(N_spins);
+    Bits_Spins_Set.reserve(N_spins);
     Neighbor_Count.reserve(N_spins);
     Bits spin_tmp;
 
@@ -34,7 +34,7 @@ void IsingBits::fromCanonical(){
         }
         UnsignedInt neighbor_tmp(neighbor_count[i]);
         neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
-        Spins_Set.push_back(spin_tmp);
+        Bits_Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
     }
 }
@@ -43,7 +43,7 @@ void IsingBits::fromCanonical(){
 void IsingBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
         for (int i = 0; i < N_spins; ++i)
-            spins_set[r*N_spins+i] = -1 + 2 * Spins_Set[i].Get(r);
+            spins_set[r*N_spins+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
 
 // =====================================================
@@ -106,7 +106,7 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 
     for (int i = 0; i < N_spins; ++i)
         for (int r = 0; r < n_bits; ++r)
-            ones[r] += Spins_Set[i].Get(r);
+            ones[r] += Bits_Spins_Set[i].Get(r);
 
     for (int r = 0; r < n_bits; ++r)
         magnetizations[r] = (2.0 * ones[r] - N_spins) / N_spins;
@@ -123,25 +123,25 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 void IsingBits::tryFlip(int i, int rng,
                          Bits& xnor_ij, Bits& mask,
                          UnsignedInt& sum, BitSet& threshold){
-    Bits& spin_i = Spins_Set[i];
+    Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
     if (rng >= neighbor_count[i]) {
-        spin_i.ComplementTo();
+        Bits_Spin_i.ComplementTo();
         return;
     }
 
     sum.SetAll(0);
     for (int j : neighbors[i]) {
-        xnor_ij = (spin_i == Spins_Set[j]);
+        xnor_ij = (Bits_Spin_i == Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
         sum += &xnor_ij;
     }
-    sum.MultiplyByTwoTo();
+    sum.MultiplyByTwoTo();  
 
     threshold.SetAll((unsigned long long int) rng);
     threshold += &Neighbor_Count[i];
 
     mask = (sum <= threshold);
-    spin_i ^= &mask;
+    Bits_Spin_i ^= &mask;
 }
 
 // =====================================================
