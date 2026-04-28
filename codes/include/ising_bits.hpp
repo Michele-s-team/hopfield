@@ -20,8 +20,8 @@ using namespace std;
 
 class IsingBits : public IsingModel {
 
-    vector<Bits> spins_Set;                    // bitwise spins across all realizations
-    vector<UnsignedInt> Neighbor_Count;          // degree encoded for vectorized ops
+    vector<Bits> spins_Set;                 // bitwise spins across all realizations
+    vector<UnsignedInt> Neighbor_Count;     // degree encoded for vectorized ops
 
 public:
     using IsingModel::IsingModel;
@@ -29,16 +29,17 @@ public:
     //void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
     //void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
-    //void evolveOneSweep(int, BitSet&, Bits&, Bits&, gsl_rng*);                        // single bitwise Monte Carlo sweep
-    //void evolve_modular(gsl_rng*) override;                                         // optimized modular bitwise evolution
-    void evolve(gsl_rng*) override;                                      // reference full-loop implementation
-    void evolve_save(gsl_rng*);    
+    void evolve(gsl_rng*);                      // reference full-loop implementation
+    void evolve_save(gsl_rng*, double freq);    // run simulation and save the magnetization at the frequency freq (between 0 and 1)
+    void GetMagnetizations(vector<double>&);    // get the n_bits magnetizations using the UnsignedInt formalism
 
 private:
 
-    //void convertRandomNumbers(); // convert double RNG values → UnsignedInt bitwise format
-    void toCanonical();          // convert Bits → ±1 spin representation
-    void fromCanonical();        // convert ±1 spins → Bits representation
+    //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
+    void toCanonical();                                            // convert Bits → ±1 spin representation
+    void fromCanonical();                                          // convert ±1 spins → Bits representation
+    void tryFlip(int, int, Bits&, Bits&, UnsignedInt&, BitSet&);   // test a spin and flips it 
+    void runSweeps(gsl_rng*, bool save, double);
 };
 
 #endif

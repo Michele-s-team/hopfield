@@ -4,24 +4,29 @@
 //
 //  Created by Bastien on 22/04/2026.
 //
-
 #include "spin_system.hpp"
-
 #include "lib.hpp"
 #include "main.hpp"
-
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
+// =====================================================
+// CONSTRUCTION
+// =====================================================
 
 SpinSystem::SpinSystem(int L)
     : L(L),
       N_spins(L * L),
-      neighbors(L * L),            
+      neighbors(L * L),
       neighbor_count(L * L, 0),
       spins_set(n_bits * N_spins, 0)
 {}
 
+// =====================================================
+// NETWORK TOPOLOGY
+// =====================================================
+
+// 2D square lattice with periodic boundary conditions
 void SpinSystem::initConnections2D_PBC() {
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
@@ -36,24 +41,24 @@ void SpinSystem::initConnections2D_PBC() {
         }
 }
 
+// 2D square lattice with open boundary conditions (edge spins have fewer neighbors)
 void SpinSystem::initConnections2D_OBC() {
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
             neighbors[i].clear();
-            
             if (x + 1 < L) neighbors[i].push_back((x+1) + L*y);
             if (x - 1 >= 0) neighbors[i].push_back((x-1) + L*y);
             if (y + 1 < L) neighbors[i].push_back(x + L*(y+1));
             if (y - 1 >= 0) neighbors[i].push_back(x + L*(y-1));
-            
             neighbor_count[i] = neighbors[i].size();
         }
 }
+
+// Erdos-Renyi random graph: each directed edge (i,j) included with probability p
 void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
     neighbors.assign(N_spins, vector<int>());
     fill(neighbor_count.begin(), neighbor_count.end(), 0);
-
     for (int i = 0; i < N_spins; i++)
         for (int j = 0; j < N_spins; j++)
             if (i != j && gsl_rng_uniform(ran) < p) {
@@ -62,25 +67,35 @@ void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
             }
 }
 
+// =====================================================
+// SPIN INITIALIZATION
+// =====================================================
 
+// Draw a random spin value in {-1, +1}
 int SpinSystem::randomSpin(gsl_rng* ran){
     return 2 * gsl_rng_uniform_int(ran, 2) - 1;
 }
 
+// Initialize all spins randomly across all realizations
 void SpinSystem::initSpins(gsl_rng* ran) {
-    for (int i = 0; i < n_bits*N_spins; i++)
+    for (int i = 0; i < n_bits * N_spins; i++)
         spins_set[i] = randomSpin(ran);
 }
 
+// Set spins from an externally provided configuration
 void SpinSystem::initSpinsFromConfig(vector<int>& initial_set) {
     spins_set = initial_set;
 }
+
+// =====================================================
+// OBSERVABLES
+// =====================================================
 
 vector<int> SpinSystem::getSpinsConfig() {
     return spins_set;
 }
 
-//magnetizations must have size n_bits
+// Compute magnetization m = (1/N) Σ σ_i for each realization
 void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
@@ -89,6 +104,7 @@ void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     }
 }
 
+// Average magnetization over all realizations
 double SpinSystem::GetAverageMagnetization() {
     vector<double> magnetizations(n_bits);
     GetMagnetizations(magnetizations);
@@ -97,26 +113,18 @@ double SpinSystem::GetAverageMagnetization() {
     return sum / n_bits;
 }
 
-void SpinSystem::SaveMagnetizations(const string& filename) {
-    // BJ n'est pas connu ici — à surcharger dans IsingModel si besoin
-    ofstream file(filename, ios::app);
-    vector<double> magnetizations(n_bits);
-    GetMagnetizations(magnetizations);
-    
-    for (int r = 0; r < n_bits; r++)
-        file << "," << magnetizations[r];
-    file << "\n";
-}
+// =====================================================
+// I/O
+// =====================================================
 
+// Appends the 2D spin configuration of each realization to its own CSV file
 void SpinSystem::SaveSpins(const string& filename) {
     for (int r = 0; r < n_bits; ++r) {
         string fname = filename + "_r" + to_string(r) + ".csv";
         ofstream f(fname, ios::app);
-
         for (int y = 0; y < L; ++y) {
             for (int x = 0; x < L; ++x) {
                 int i = x + L * y;
-
                 f << spins_set[r * N_spins + i];
                 if (x < L - 1) f << ",";
             }

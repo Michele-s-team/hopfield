@@ -252,7 +252,7 @@ Bits BitSet::operator < (const BitSet& m){
     
     int sizeA = GetSize();
     int sizeB = m.GetSize();
-    int sizeMax = std::max(sizeA, sizeB);
+    int sizeMax = max(sizeA, sizeB);
 
     // Partir du bit de poids fort (ligne la plus haute)
     // Si une seule des deux a cette ligne, l'autre vaut 0 implicitement

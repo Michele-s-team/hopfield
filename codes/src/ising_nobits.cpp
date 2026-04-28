@@ -4,12 +4,9 @@
 //
 //  Created by Bastien on 20/04/2026.
 //
-
 #include "ising_nobits.hpp"
-
 #include "lib.hpp"
 #include "main.hpp"
-
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
@@ -17,8 +14,8 @@
 // ENERGY COMPUTATION
 // =====================================================
 
-
-// ΔE(i, r) = σ_i * Σ_j A_ij σ_j
+// Local energy cost of flipping spin i in realization r:
+//   ΔE(i, r) = σ_i * Σ_j A_ij σ_j
 double IsingNoBits::DeltaE(int spin, int realization) {
     int sum = 0;
     for (int j : neighbors[spin])
@@ -26,57 +23,59 @@ double IsingNoBits::DeltaE(int spin, int realization) {
     return spins_set[realization*N_spins+spin] * sum;
 }
 
+// =====================================================
+// SWEEP LOOP
+// =====================================================
 
-
-// =====================================================
-// EVOLUTION (SINGLE SWEEP)
-// =====================================================
-/*
-//TO BE FIXED
-void IsingNoBits::evolveOneSweep(int sweep, gsl_rng* ran) {
-    for (int i = 0; i < N_spins; ++i) {
-        double rng = random_numbers[sweep][i];
-        if (rng >= neighbor_count[i]) {
-            for (int r = 0; r < n_bits; ++r) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
-        }
-        else {
-            for (int r = 0; r < n_bits; ++r)
-                if (rng >= DeltaE(i, r)) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
-        }
-    }
-}
-*/
-// =====================================================
-// FULL EVOLUTION
-// =====================================================
-/*
-void IsingNoBits::evolve_modular(gsl_rng* ran) {
-    int progress_stride = max(1, N_sweeps / 10);
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        evolveOneSweep(sweep, ran);
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps) << "%) " << flush;
-    }
-    cout << "\n";
-}
-*/
-
-void IsingNoBits::evolve(gsl_rng* ran) {
-    int progress_stride = max(1, N_sweeps / 10);
+// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
+// Saves magnetizations every save_stride sweeps if save=true.
+void IsingNoBits::runSweeps(gsl_rng* ran, bool save, double freq) {
+    const int progress_stride = max(1, N_sweeps / 10);
+    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
     int rng;
+
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int i = 0; i < N_spins; ++i) {
+
+        for (int step = 0; step < N_spins; ++step) {
+            int i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
             rng = randomNumber(ran);
+
             if (rng >= neighbor_count[i]) {
-                for (int r = 0; r < n_bits; ++r) spins_set[r*N_spins+i] = -spins_set[r*N_spins+i] ;
+                // unconditional flip: rng exceeds max possible local field
+                for (int r = 0; r < n_bits; ++r)
+                    spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
             }
             else {
+                // flip realization r only if rng >= ΔE(i, r)
                 for (int r = 0; r < n_bits; ++r)
-                    if (rng >= DeltaE(i, r)) spins_set[r*N_spins+i]  = -spins_set[r*N_spins+i] ;
+                    if (rng >= DeltaE(i, r))
+                        spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
             }
         }
+
+        if (save && (sweep % save_stride == 0))
+            SaveMagnetizations(sweep);
+
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1 << " (" << ((sweep + 1) * 100 / N_sweeps) << "%)    " << flush;
+            cout << "\rSweep: " << sweep + 1
+                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
+                 << flush;
     }
     cout << "\n";
+}
+
+// =====================================================
+// PUBLIC API
+// =====================================================
+
+// Run simulation without saving (thermalization)
+void IsingNoBits::evolve(gsl_rng* ran) {
+    runSweeps(ran, /*save=*/false, 0);
+}
+
+// Run simulation and save magnetizations at the given frequency
+void IsingNoBits::evolve_save(gsl_rng* ran, double freq) {
+    OpenCSVFiles("../results/magnetizations/magnetizations_nobits.csv");
+    runSweeps(ran, /*save=*/true, freq);
+    CloseCSVFiles();
 }

@@ -100,7 +100,7 @@ int main() {
         A_bit.GetBase10(C);
 
         // Print results and compare
-        std::cout << "\n===== Game " << game << " =====\n";
+        cout << "\n===== Game " << game << " =====\n";
         for (int s = 0; s < n_bits; s++) {
             cout << "s=" << s
                       << " | Input =" << A[s]
@@ -109,7 +109,7 @@ int main() {
                 cout << "  <-- ERROR";
             }
             else{cout << "   OK"; }
-            cout << std::endl;
+            cout << endl;
         }
     }
 

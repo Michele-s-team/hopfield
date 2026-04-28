@@ -103,7 +103,7 @@ void print_neurons(const vector<vector<int>>& neurons_set_before,
 int main() {
 
     const int L        = 100;
-    const int N_sweeps = pow(2,16);// pow(2,18);
+    const int N_sweeps = pow(2,18);// pow(2,18);
     double BJ_dummy=0.01;
 
     InitGlobals();
@@ -157,13 +157,14 @@ int main() {
         bits.setBJ(BJ_loop);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
-        auto start_bits = chrono::high_resolution_clock::now();
+        auto start_bits = chrono
+        ::high_resolution_clock::now();
         // bits.SaveSpins("../results/spins/spin_config");
         bits.evolve(ran);
         auto end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> duration_bits = end_bits - start_bits;
+        //bits.SaveMagnetizations("../results/magnetizations/magnetizations_bits.csv", N_sweeps);
         cout << "  > Temps Bits   : " << duration_bits.count()/1000 << " s" << endl;
-        bits.SaveMagnetizations("../results/magnetizations_bits.csv");
         /*
         // --- Test approche NOBITS ---
         nobits.setBJ(BJ_loop);
