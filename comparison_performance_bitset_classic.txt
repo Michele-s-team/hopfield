@@ -1,0 +1,29 @@
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ ./main.o
+[main] Parameters: N_neurons=10000 N_sweeps=65536 Beta*J=0.01
+Network initialized
+
+Spin configurations initialized
+
+OK: classic and bitwise results are identical
+Sweep: 65530 (99%)    
+Bits done. Time: 25.8571 s
+Sweep: 65530 (99%)    
+Classic done. Time: 134.466 s
+OK: classic and bitwise results are identical
+Acceleration factor = 5.20035
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ g++ main.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -flto     -Wno-deprecated -Iinclude -I/usr/include/gsl -DHAVE_INLINE -o main.o
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ ./main.o
+[main] Parameters: N_neurons=10000 N_sweeps=65536 Beta*J=100
+Network initialized
+
+Spin configurations initialized
+
+OK: classic and bitwise results are identical
+Sweep: 65530 (99%)    
+Bits done. Time: 64.3054 s
+Sweep: 65530 (99%)    
+Classic done. Time: 446.601 s
+OK: classic and bitwise results are identical
+Acceleration factor = 6.94501
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ 
+

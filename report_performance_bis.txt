@@ -1,0 +1,28 @@
++   15.19%  main.o   main.o                [.] IsingBits::runSweeps(gsl_rng*, bool, double)                                  ◆
++   14.36%  main.o   main.o                [.] Bits::Set(Bits const&)                                                        ▒
++    9.48%  main.o   main.o                [.] BitSet::AddTo(BitSet*, Bits*)                                                 ▒
++    8.08%  main.o   main.o                [.] Bits::Get()                                                                   ▒
++    6.22%  main.o   libm.so.6             [.] __log1p_fma                                                                   ▒
++    6.01%  main.o   main.o                [.] Bits::operator&(Bits const&)                                                  ▒
++    4.74%  main.o   main.o                [.] BitSet::AddTo(Bits*, Bits*)                                                   ▒
++    4.39%  main.o   main.o                [.] BitSet::MultiplyByTwoTo()                                                     ▒
++    4.00%  main.o   main.o                [.] BitSet::SetAll(unsigned long long)                                            ▒
++    3.22%  main.o   main.o                [.] BitSet::operator<(BitSet const&)                                              ▒
++    3.03%  main.o   main.o                [.] Bits::operator==(Bits&)                                                       ▒
++    2.71%  main.o   main.o                [.] Bits::operator^(Bits const&)                                                  ▒
++    2.67%  main.o   main.o                [.] Bits::Set(unsigned long long const&)                                          ▒
++    2.03%  main.o   main.o                [.] Bits::operator~()                                                             ▒
++    1.95%  main.o   main.o                [.] Bits::Replace(Bits*, Bits*)                                                   ▒
++    1.65%  main.o   main.o                [.] BitSet::operator+=(Bits*)                                                     ▒
++    1.41%  main.o   main.o                [.] Bits::operator|(Bits const&)                                                  ▒
++    1.18%  main.o   main.o                [.] BitSet::operator+=(BitSet*)                                                   ▒
++    0.86%  main.o   main.o                [.] Bits::SetAll(bool)                                                            ▒
++    0.78%  main.o   main.o                [.] IsingModel::randomNumber(gsl_rng*)                                            ▒
+     0.52%  main.o   main.o                [.] Bits::Bits()                                                                  ▒
++    0.52%  main.o   main.o                [.] Bits::operator^=(Bits*)                                                       ▒
+     0.45%  main.o   libgsl.so.27.0.0      [.] gsl_ran_exponential                                                           ▒
+     0.41%  main.o   libgsl.so.27.0.0      [.] 0x000000000014380c                                                            ▒
+     0.34%  main.o   libgsl.so.27.0.0      [.] 0x00000000001437cd                                                            ▒
+     0.34%  main.o   libm.so.6             [.] __w_log1p                                                                     ▒
+     0.32%  main.o   libgsl.so.27.0.0      [.] 0x0000000000143804                                                            ▒
+     0.28%  main.o   main.o                [.] bits(unsigned long long)   

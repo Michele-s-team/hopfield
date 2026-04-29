@@ -23,15 +23,22 @@ unsigned long long int two_pow(unsigned long long int i){
     
 }
 
+
+
+/*
+//return the number of bits necessary to write n in base 2
+//OLD VERSION 
+unsigned int bits(unsigned long long int n){
+    unsigned int s;
+    for(s=1; two_pow(s) <= (unsigned long long int)n; s++){} //changed s=0 to s=1  
+    return s;
+}
+*/
+
 //return the number of bits necessary to write n in base 2
 unsigned int bits(unsigned long long int n){
-    
-    unsigned int s;
-    
-    for(s=1; two_pow(s) <= (unsigned long long int)n; s++){} //changed s=0 to s=1
-    
-    return s;
-    
+    if (n == 0) return 1;
+    return 64 - __builtin_clzll(n);  // count leading zeros, disponible sur GCC/Clang
 }
 
 

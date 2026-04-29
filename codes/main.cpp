@@ -33,7 +33,7 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  clear; clear;  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O0 -Wno-deprecated -I/Users/michelecastellana/Documents/office_stuff/work/stages/stage_bastien_dumont_2026/hopfield/codes/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
 
 //  compile on mac, with optimization:
-//  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O3 -Wno-deprecated  -I/Users/michelecastellana/Documents/gillespie/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
+//  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O3 -ftlo -Wno-deprecated  -I/Users/michelecastellana/Documents/gillespie/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
 
 //  compile on calcsub:
 //  clear; clear;  g++ main.cpp src/*.cpp  -llapack -lgsl -lgslcblas -lm -O3 -Wno-deprecated -I /usr/include/gsl/ -I./include/ -o main.o -Wall -DHAVE_INLINE
@@ -102,19 +102,20 @@ int main() {
     const int    N_sweeps = pow(2, 16);
     
     // ── Temperature Range ───────────────────
-    const double T_min    = 0.1;
-    const double step_1   = 1;
-    const double T_1      = 1.5;
-    const double step_2   = 5;
-    const double T_2      = 2.0;
-    const double step_3   = 5;
-    const double T_3      = 2.5;
-    const double step_4   = 5;
-    const double T_4      = 3.0;
-    const double step_5   = 1;
-    const double T_max    = 4.0;
 
     vector<double> temperatures;
+
+    const double T_min    = 0.1;
+    const double step_1   = 0.1;
+    const double T_1      = 1.5;
+    const double step_2   = 0.05;
+    const double T_2      = 2.0;
+    const double step_3   = 0.02;
+    const double T_3      = 2.5;
+    const double step_4   = 0.05;
+    const double T_4      = 3.0;
+    const double step_5   = 0.1;
+    const double T_max    = 4.0;
 
 
     auto add_segment = [&](double a, double b, double h, bool include_start){
@@ -130,7 +131,6 @@ int main() {
     add_segment(T_2,  T_3, step_3, false);
     add_segment(T_3,  T_4, step_4, false);
     add_segment(T_4,  T_max, step_5, false);
-
 
 
     cout << "[main] Parameters: N_spins=" << L*L
@@ -176,7 +176,7 @@ int main() {
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 
-        bits.SaveMagnetizations(N_sweeps); //saves the laast values of magnetizations
+        bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
 
         /*
@@ -212,6 +212,7 @@ int main() {
         if (equal) cout << "OK: magnetizations are identical." << endl;
 
         */
+
     bits.CloseCSVFiles();
     }
 
@@ -219,15 +220,14 @@ int main() {
     gsl_rng_free(ran);
 
     /*
-
     // ══════════════════════════════════════════
     // LEGACY: small-scale correctness check
     // (bits vs classic on a small L, few sweeps)
     // ══════════════════════════════════════════
 
     const int    L_test        = 100;
-    const double BJ_test       = 0.01;
-    const int    N_sweeps_test = pow(2,19);
+    const double BJ_test       = 100;
+    const int    N_sweeps_test = pow(2,16);
     const int    col_width     = 3;
     const int    prefix_width  = 12;
 
@@ -271,7 +271,6 @@ int main() {
     cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 
     gsl_rng_free(ran_test);
-
     */
 
     return 0;

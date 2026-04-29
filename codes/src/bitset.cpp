@@ -94,6 +94,8 @@ void BitSet::SetRandom(gsl_rng* ran){
 
 //set all n_bits entries of *this to the respective bits of i. This method requires *this to be properly sized to contain i
 //inline 
+//OLD VERSION
+/*
 void BitSet::SetAll(unsigned long long int i){
     
     unsigned int s;
@@ -112,6 +114,24 @@ void BitSet::SetAll(unsigned long long int i){
     }
     //set the remaining bits of *this, if any, to false (0)
     for(s=bits(m.Get()); s<GetSize(); s++){
+        (b[s]).SetAll(false);
+    }
+}
+*/
+
+void BitSet::SetAll(unsigned long long int i){
+    Bits m(i);
+    unsigned int n = bits(m.Get());  // calculé une seule fois
+
+    if (GetSize() < n) {
+        std::cerr << "BitSet too small\n";
+        abort();
+    }
+
+    for(int s=0; s<n; s++){          // n au lieu de bits(m.Get())
+        (b[s]).SetAll(m.Get(s));
+    }
+    for(int s=n; s<GetSize(); s++){  // idem
         (b[s]).SetAll(false);
     }
 }
