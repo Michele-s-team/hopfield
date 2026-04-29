@@ -184,9 +184,9 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // Saves magnetizations every save_stride sweeps if save=true.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
-    Bits        xnor_ij, mask;
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
-    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2));
+    Bits xnor_ij, mask; //used in branch2
+    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
+    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2)); // no need for more space allocation
     int rng;
     int i;
 
@@ -199,10 +199,13 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
             rng = randomNumber(ran);
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
-            if (rng >= neighbor_count[i]) {
+            // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
+            if (rng >= neighbor_count[i]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
             }
+
+            // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
             for (int j : neighbors[i]) {
                 xnor_ij = (Bits_Spin_i == Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
@@ -213,7 +216,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
             threshold.SetAll((unsigned long long int) rng);
             threshold += &Neighbor_Count[i];
 
-            mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold is useless
+            mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold value is useless
             Bits_Spin_i ^= &mask;
         }
 
@@ -241,9 +244,9 @@ void IsingBits::evolve(gsl_rng* ran){
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingBits::evolve_save(gsl_rng* ran, double freq){
+void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
-    OpenCSVFiles("../results/magnetizations/magnetizations_bits.csv");
+    OpenCSVFiles(filename);
     runSweeps(ran, /*save=*/true, freq);
     CloseCSVFiles();
     toCanonical();

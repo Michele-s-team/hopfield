@@ -100,18 +100,18 @@ int main() {
     // ── Parameters ────────────────────────────
     const int    L        = 100;
     const int    N_sweeps = pow(2, 16);
-
-
+    
+    // ── Temperature Range ───────────────────
     const double T_min    = 0.1;
-    const double step_1   = 0.1;
+    const double step_1   = 1;
     const double T_1      = 1.5;
-    const double step_2   = 0.05;
+    const double step_2   = 5;
     const double T_2      = 2.0;
-    const double step_3   = 0.02;
+    const double step_3   = 5;
     const double T_3      = 2.5;
-    const double step_4   = 0.05;
+    const double step_4   = 5;
     const double T_4      = 3.0;
-    const double step_5   = 0.1;
+    const double step_5   = 1;
     const double T_max    = 4.0;
 
     vector<double> temperatures;
@@ -132,16 +132,18 @@ int main() {
     add_segment(T_4,  T_max, step_5, false);
 
 
+
     cout << "[main] Parameters: N_spins=" << L*L
-         << "  n_bits=" << n_bits
-         << "  N_sweeps=" << N_sweeps << "\n" << endl;
+         << "  N_sweeps=" << N_sweeps
+         << "\nTemperatures: " <<endl;
 
     for (double T : temperatures) cout <<T <<"  ";
     cout <<" \n";
 
-    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
     // ── Model initialization ───────────────────
+
+    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     IsingBits   bits  (L, 1.0 / T_min, N_sweeps);
     IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
@@ -170,11 +172,11 @@ int main() {
         gsl_rng_set(ran, 123);
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve(ran);
+        bits.evolve(ran);  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 
-        bits.SaveMagnetizations(N_sweeps);
+        bits.SaveMagnetizations(N_sweeps); //saves the laast values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
 
         /*

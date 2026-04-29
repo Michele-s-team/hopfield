@@ -16,9 +16,7 @@
 // =====================================================
 
 IsingModel::IsingModel(int L, double BJ, int N_sweeps)
-    : SpinSystem(L),
-      BJ(BJ),
-      N_sweeps(N_sweeps)
+    : SpinSystem(L), BJ(BJ), inv2BJ(1.0 / (2.0 * BJ)), N_sweeps(N_sweeps)
 {}
 
 // =====================================================
@@ -31,6 +29,7 @@ void IsingModel::setNSweeps(int n) {
 
 void IsingModel::setBJ(double new_BJ) {
     BJ = new_BJ;
+    inv2BJ = 1.0 / (2.0 * new_BJ);  
 }
 
 // =====================================================
@@ -40,10 +39,8 @@ void IsingModel::setBJ(double new_BJ) {
 // Draw a Metropolis threshold from an exponential distribution:
 //   rng ~ min(N_spins, Exp(1) / (2*BJ))
 int IsingModel::randomNumber(gsl_rng* ran) {
-    double val = min((double) neighbor_count[0], 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
-    return (int)val;
+    return (int)min((double)neighbor_count[0], inv2BJ*gsl_ran_exponential(ran, 1.0));
 }
-
 /*
 // Pre-generate all random thresholds for the full simulation
 void IsingModel::initrandomNumbers(gsl_rng* ran) {
@@ -97,7 +94,7 @@ void IsingModel::CloseCSVFiles() {
     m_csv_files.clear();
 }
 
-// Append current magnetizations to each realization's CSV file
+// Append current magnetizations to each realization's CSV file (n_bits different files)
 void IsingModel::SaveMagnetizations(int N) {
     vector<double> magnetizations(n_bits);
     GetMagnetizations(magnetizations);

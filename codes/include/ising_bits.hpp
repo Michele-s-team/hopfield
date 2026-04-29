@@ -29,8 +29,8 @@ public:
     //void initRandomNumbers(gsl_rng*);                                      // initialize RNG-based thresholds
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // initialize from external distribution
     //void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
-    void evolve(gsl_rng*);                      // reference full-loop implementation
-    void evolve_save(gsl_rng*, double freq);    // run simulation and save the magnetization at the frequency freq (between 0 and 1)
+    void evolve(gsl_rng*);                                               // reference full-loop implementation
+    void evolve_save(gsl_rng*, double freq, const string& filename);    // run simulation and save the magnetization at the frequency freq (between 0 and 1)
     void GetMagnetizations(vector<double>&) override;    // get the n_bits magnetizations using the UnsignedInt formalism
 
 private:

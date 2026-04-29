@@ -1,0 +1,63 @@
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ gprof main.o gmon.out | head -60
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 25.38    184.42   184.42        3    61.47   241.25  IsingBits::runSweeps(gsl_rng*, bool, double)
+ 15.73    298.71   114.29 25330238838     0.00     0.00  Bits::Get()
+  9.53    367.97    69.26 1876927972     0.00     0.00  BitSet::AddTo(BitSet*, Bits*)
+  8.01    426.14    58.17 10889879940     0.00     0.00  bits(unsigned long long)
+  6.68    474.69    48.55 3212744592     0.00     0.00  BitSet::AddTo(Bits*, Bits*)
+  6.22    519.86    45.17 16536987272     0.00     0.00  Bits::Set(Bits const&)
+  3.92    548.31    28.45 3212744592     0.00     0.00  Bits::operator==(Bits&)
+  3.55    574.10    25.79 12022349580     0.00     0.00  Bits::operator&(Bits const&)
+  2.99    595.86    21.76 9350716340     0.00     0.00  Bits::operator^(Bits const&)
+  2.78    616.07    20.21 1876927972     0.00     0.00  BitSet::operator<(BitSet const&)
+  2.46    633.92    17.85 3753885944     0.00     0.00  BitSet::SetAll(unsigned long long)
+  2.12    649.34    15.42 1966080000     0.00     0.00  IsingModel::randomNumber(gsl_rng*)
+  1.62    661.14    11.80 19022963669     0.00     0.00  Bits::Bits()
+  1.53    672.23    11.09 6425579184     0.00     0.00  Bits::SetAll(bool)
+  1.37    682.19     9.96 3212744592     0.00     0.00  BitSet::operator+=(Bits*)
+  1.27    691.41     9.22 1876927972     0.00     0.00  BitSet::MultiplyByTwoTo()
+  1.02    698.79     7.38 3212744592     0.00     0.00  Bits::Replace(Bits*, Bits*)
+  0.78    704.49     5.70 8302417156     0.00     0.00  Bits::operator~()
+  0.70    709.54     5.05 2671633240     0.00     0.00  Bits::Set(unsigned long long const&)
+  0.41    712.51     2.97 1876927972     0.00     0.00  BitSet::operator+=(BitSet*)
+  0.37    715.18     2.67                             _init
+  0.32    717.49     2.31 1335816620     0.00     0.00  Bits::operator|(Bits const&)
+  0.27    719.43     1.94 1876927972     0.00     0.00  BitSet::operator<=(BitSet&)
+  0.22    721.03     1.60 1876927972     0.00     0.00  Bits::operator^=(Bits*)
+  0.22    722.60     1.57 3926999398     0.00     0.00  Bits::Get(unsigned int)
+  0.21    724.15     1.55 3753885946     0.00     0.00  Bits::Bits(unsigned long long)
+  0.17    725.39     1.24 1876927972     0.00     0.00  Bits::Clear()
+  0.14    726.42     1.03 89152028     0.00     0.00  Bits::ComplementTo()
+  0.02    726.53     0.11  1920000     0.00     0.00  Bits::Set(unsigned int, bool)
+  0.00    726.56     0.03        3     0.01     0.05  IsingBits::fromCanonical()
+  0.00    726.58     0.02        3     0.01   241.30  IsingBits::evolve(gsl_rng*)
+  0.00    726.58     0.00    30006     0.00     0.00  UnsignedInt::UnsignedInt(unsigned long long)
+  0.00    726.58     0.00    30006     0.00     0.00  BitSet::BitSet(unsigned long long)
+  0.00    726.58     0.00    30006     0.00     0.00  std::vector<Bits, std::allocator<Bits> >::_M_default_append(unsigned long)
+  0.00    726.58     0.00        4     0.00     0.00  SpinSystem::initSpinsFromConfig(std::vector<int, std::allocator<int> >&)
+  0.00    726.58     0.00        3     0.00     0.00  IsingModel::OpenCSVFiles(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+  0.00    726.58     0.00        3     0.00     0.00  IsingModel::CloseCSVFiles()
+  0.00    726.58     0.00        3     0.00     0.00  IsingModel::SaveMagnetizations(int)
+  0.00    726.58     0.00        3     0.00     0.00  IsingModel::setBJ(double)
+  0.00    726.58     0.00        3     0.00     0.00  IsingBits::GetMagnetizations(std::vector<double, std::allocator<double> >&)
+  0.00    726.58     0.00        3     0.00     0.00  std::vector<std::basic_ofstream<char, std::char_traits<char> >, std::allocator<std::basic_ofstream<char, std::char_traits<char> > > >::_M_default_append(unsigned long)
+  0.00    726.58     0.00        3     0.00     0.00  void std::vector<double, std::allocator<double> >::_M_realloc_insert<double>(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, double&&)
+  0.00    726.58     0.00        3     0.00     0.00  frame_dummy
+  0.00    726.58     0.00        2     0.00     0.00  IsingModel::IsingModel(int, double, int)
+  0.00    726.58     0.00        2     0.00     0.00  SpinSystem::initConnections2D_PBC()
+  0.00    726.58     0.00        2     0.00     0.00  SpinSystem::SpinSystem(int)
+  0.00    726.58     0.00        1     0.00     0.00  SpinSystem::getSpinsConfig()
+  0.00    726.58     0.00        1     0.00     0.00  SpinSystem::initSpins(gsl_rng*)
+  0.00    726.58     0.00        1     0.00     0.00  SpinSystem::~SpinSystem()
+  0.00    726.58     0.00        1     0.00     0.00  BitSet::BitSet()
+  0.00    726.58     0.00        1     0.00     0.00  IsingBits::~IsingBits()
+  0.00    726.58     0.00        1     0.00     0.00  std::vector<std::basic_ofstream<char, std::char_traits<char> >, std::allocator<std::basic_ofstream<char, std::char_traits<char> > > >::~vector()
+  0.00    726.58     0.00        1     0.00     0.00  std::vector<double, std::allocator<double> >::~vector()
+  0.00    726.58     0.00        1     0.00     0.00  std::vector<int, std::allocator<int> >::~vector()
+
+bastien@Bepo:~/Documents/cours/M2Marseille/stage/hopfield/codes$ 
+

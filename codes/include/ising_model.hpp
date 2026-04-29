@@ -20,8 +20,9 @@ using namespace std;
 
 class IsingModel : public SpinSystem {
 protected:
-    double BJ;                          // inverse temperature times coupling: β*J
-    int N_sweeps;                      // number of Metropolis sweeps
+    double BJ;                       // inverse temperature times coupling: β*J
+    double inv2BJ;                   // =1/(2*BJ)
+    int N_sweeps;                    // number of Metropolis sweeps
 
 private:
     vector<ofstream> m_csv_files; 

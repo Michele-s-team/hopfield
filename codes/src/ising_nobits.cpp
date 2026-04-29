@@ -40,12 +40,12 @@ void IsingNoBits::runSweeps(gsl_rng* ran, bool save, double freq) {
             i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
             rng = randomNumber(ran);
             if (rng >= neighbor_count[i]) {
-                // unconditional flip: rng exceeds max possible local field
+                // 1ST BRANCH: unconditional flip: rng exceeds max possible local field
                 for (int r = 0; r < n_bits; ++r)
                     spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
             }
             else {
-                // flip realization r only if rng >= ΔE(i, r)
+                // 2ND BRANCH:flip realization r only if rng >= ΔE(i, r)
                 for (int r = 0; r < n_bits; ++r)
                     if (rng >= DeltaE(i, r))
                         spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
@@ -73,8 +73,8 @@ void IsingNoBits::evolve(gsl_rng* ran) {
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingNoBits::evolve_save(gsl_rng* ran, double freq) {
-    OpenCSVFiles("../results/magnetizations/magnetizations_nobits.csv");
+void IsingNoBits::evolve_save(gsl_rng* ran, double freq, const string& filename) {
+    OpenCSVFiles(filename); 
     runSweeps(ran, /*save=*/true, freq);
     CloseCSVFiles();
 }
