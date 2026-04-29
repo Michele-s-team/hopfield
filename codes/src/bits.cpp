@@ -254,7 +254,6 @@ Bits Bits::operator == (Bits& m){
     
 }
 
-
 //inline 
 void Bits::operator &= (const Bits& m){
     

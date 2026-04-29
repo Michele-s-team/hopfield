@@ -129,7 +129,6 @@ void IsingBits::tryFlip(int i, int rng,
         Bits_Spin_i.ComplementTo();
         return;
     }
-
     sum.SetAll(0);
     for (int j : neighbors[i]) {
         xnor_ij = (Bits_Spin_i == Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
@@ -148,6 +147,7 @@ void IsingBits::tryFlip(int i, int rng,
 // SWEEP LOOP
 // =====================================================
 
+/*
 // Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
@@ -178,6 +178,56 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
     }
     cout << "\n";
 }
+*/
+
+// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
+// Saves magnetizations every save_stride sweeps if save=true.
+void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
+    // temporaries allocated once for all sweeps and all flips
+    Bits        xnor_ij, mask;
+    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
+    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2));
+    int rng;
+    int i;
+
+    const int progress_stride = max(1, N_sweeps / 10);
+    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+
+    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+        for (int step = 0; step < N_spins; ++step) {
+            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+            rng = randomNumber(ran);
+            Bits& Bits_Spin_i = Bits_Spins_Set[i];
+
+            if (rng >= neighbor_count[i]) {
+                Bits_Spin_i.ComplementTo();
+                continue;
+            }
+            sum.SetAll(0);
+            for (int j : neighbors[i]) {
+                xnor_ij = (Bits_Spin_i == Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
+                sum += &xnor_ij;
+            }
+            sum.MultiplyByTwoTo();  
+
+            threshold.SetAll((unsigned long long int) rng);
+            threshold += &Neighbor_Count[i];
+
+            mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold is useless
+            Bits_Spin_i ^= &mask;
+        }
+
+        if (save && (sweep % save_stride == 0))
+            SaveMagnetizations(sweep);
+
+        if ((sweep + 1) % progress_stride == 0)
+            cout << "\rSweep: " << sweep + 1
+                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
+                 << flush;
+    }
+    cout << "\n";
+}
+    
 
 // =====================================================
 // PUBLIC API

@@ -95,7 +95,7 @@ vector<int> SpinSystem::getSpinsConfig() {
     return spins_set;
 }
 
-// Compute magnetization m = (1/N) Σ σ_i for each realization
+// Compute magnetization m = (1/N) Σ σ_i for each realization //might need to be moved to Ising nobits
 void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;

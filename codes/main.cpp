@@ -97,21 +97,47 @@ void print_neurons(const vector<int>& neurons_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    /*
-
     // ── Parameters ────────────────────────────
     const int    L        = 100;
-    const int    N_sweeps = pow(2, 18);
-    const double T_min    = 0.05;
-    const double T_max    = 5.0;
-    const double dT       = 0.05;
-    const int    totalSteps = (int)((T_max - T_min) / dT) + 1;
+    const int    N_sweeps = pow(2, 16);
 
-    InitGlobals();
+
+    const double T_min    = 0.1;
+    const double step_1   = 0.1;
+    const double T_1      = 1.5;
+    const double step_2   = 0.05;
+    const double T_2      = 2.0;
+    const double step_3   = 0.02;
+    const double T_3      = 2.5;
+    const double step_4   = 0.05;
+    const double T_4      = 3.0;
+    const double step_5   = 0.1;
+    const double T_max    = 4.0;
+
+    vector<double> temperatures;
+
+
+    auto add_segment = [&](double a, double b, double h, bool include_start){
+        int n_start = include_start ? 0 : 1;
+        int n_end = (int)((b - a)/h + 0.5);
+
+        for (int n = n_start; n <= n_end; ++n)
+            temperatures.push_back(a + n*h);
+    };
+
+    add_segment(T_min, T_1, step_1, true);
+    add_segment(T_1,  T_2, step_2, false);
+    add_segment(T_2,  T_3, step_3, false);
+    add_segment(T_3,  T_4, step_4, false);
+    add_segment(T_4,  T_max, step_5, false);
+
 
     cout << "[main] Parameters: N_spins=" << L*L
          << "  n_bits=" << n_bits
          << "  N_sweeps=" << N_sweeps << "\n" << endl;
+
+    for (double T : temperatures) cout <<T <<"  ";
+    cout <<" \n";
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
@@ -130,12 +156,13 @@ int main() {
     cout << "Spin configurations initialized\n" << endl;
 
     // ── Temperature sweep ──────────────────────
-    bits.OpenCSVFiles("../results/test/magnetizations/magnetizations_bits.csv");
 
-    for (int i = 0; i < totalSteps; i++) {
-        const double T  = T_min + i * dT;
+    for (int i = 0; i < temperatures.size(); ++i) {
+        bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
+
+        double T = temperatures[i];
         const double BJ = 1.0 / T;
-        cout << "T=" << T << "  Step " << i+1 << "/" << totalSteps << endl;
+        cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
         bits.setBJ(BJ);
@@ -151,6 +178,7 @@ int main() {
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
 
         /*
+
         // --- Classic simulation (uncomment to compare) ---
         nobits.setBJ(BJ);
         nobits.initSpinsFromConfig(initial_config);
@@ -180,11 +208,15 @@ int main() {
             }
         }
         if (equal) cout << "OK: magnetizations are identical." << endl;
+
+        */
+    bits.CloseCSVFiles();
     }
 
-    bits.CloseCSVFiles();
+    
     gsl_rng_free(ran);
-    */
+
+    /*
 
     // ══════════════════════════════════════════
     // LEGACY: small-scale correctness check
@@ -193,7 +225,7 @@ int main() {
 
     const int    L_test        = 100;
     const double BJ_test       = 0.01;
-    const int    N_sweeps_test = 10000;
+    const int    N_sweeps_test = pow(2,19);
     const int    col_width     = 3;
     const int    prefix_width  = 12;
 
@@ -237,6 +269,8 @@ int main() {
     cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 
     gsl_rng_free(ran_test);
+
+    */
 
     return 0;
 }

@@ -40,7 +40,7 @@ void IsingModel::setBJ(double new_BJ) {
 // Draw a Metropolis threshold from an exponential distribution:
 //   rng ~ min(N_spins, Exp(1) / (2*BJ))
 int IsingModel::randomNumber(gsl_rng* ran) {
-    double val = min((double)N_spins, 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
+    double val = min((double) neighbor_count[0], 1.0 / (2.0 * BJ) * gsl_ran_exponential(ran, 1.0));
     return (int)val;
 }
 

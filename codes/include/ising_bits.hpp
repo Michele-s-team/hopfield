@@ -31,7 +31,7 @@ public:
     //void initEvolveContext();                                               // sync canonical ↔ bitwise + RNG prep
     void evolve(gsl_rng*);                      // reference full-loop implementation
     void evolve_save(gsl_rng*, double freq);    // run simulation and save the magnetization at the frequency freq (between 0 and 1)
-    void GetMagnetizations(vector<double>&);    // get the n_bits magnetizations using the UnsignedInt formalism
+    void GetMagnetizations(vector<double>&) override;    // get the n_bits magnetizations using the UnsignedInt formalism
 
 private:
 
