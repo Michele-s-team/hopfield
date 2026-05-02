@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from matplotlib.colors import hsv_to_rgb
 import mplcursors
 import glob
 import os
 
-def plot_magnetization(csv_folder: str, base_name: str, T: float):
-    # Find all realization files matching the pattern
+def plot_magnetization(csv_folder: str, base_name: str, T: float, N: int = None):
+    # Trouve tous les fichiers de réalisations
     pattern = os.path.join(csv_folder, base_name + "_r*.csv")
     files = sorted(glob.glob(pattern))
 
@@ -21,17 +20,24 @@ def plot_magnetization(csv_folder: str, base_name: str, T: float):
     lines = []
 
     for r, fpath in enumerate(files):
-        data = np.loadtxt(fpath, delimiter=',', skiprows=1)  # skip header T,N,m
+        # Chaque fichier : colonnes T, N, m
+        data = np.loadtxt(fpath, delimiter=',', skiprows=1)
 
+        # Filtre sur T
         mask = data[:, 0] == T
+
+        # Filtre optionnel sur N
+        if N is not None:
+            mask &= data[:, 1] == N
+
         rows = data[mask]
 
         if rows.size == 0:
             print(f"[warning] T={T} introuvable dans {fpath}, ignoré.")
             continue
 
-        sweeps = rows[:, 1].astype(int)
-        mags   = rows[:, 2]
+        sweeps = rows[:, 1].astype(int) if N is None else rows[:, 2]  # N ou m selon cas
+        mags   = rows[:, 2] if N is None else rows[:, 2]
 
         line, = ax.plot(sweeps, mags, lw=0.8, color=colors[r])
         lines.append((line, r))
@@ -60,5 +66,5 @@ def plot_magnetization(csv_folder: str, base_name: str, T: float):
 plot_magnetization(
     csv_folder="../results/magnetizations",
     base_name="magnetizations_bits",
-    T=0.5
+    T=1.5
 )

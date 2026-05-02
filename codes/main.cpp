@@ -99,8 +99,7 @@ int main() {
 
     // ── Parameters ────────────────────────────
     const int    L        = 100;
-    const int    N_sweeps = pow(2, 16);
-    
+    const int    N_sweeps = pow(2, 18);
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;
@@ -125,14 +124,14 @@ int main() {
         for (int n = n_start; n <= n_end; ++n)
             temperatures.push_back(a + n*h);
     };
-
+    /*
     add_segment(T_min, T_1, step_1, true);
     add_segment(T_1,  T_2, step_2, false);
     add_segment(T_2,  T_3, step_3, false);
     add_segment(T_3,  T_4, step_4, false);
-    add_segment(T_4,  T_max, step_5, false);
-
-
+    add_segment(T_4,  T_max, step_5, false)
+    */
+    temperatures.push_back(1.5);
     cout << "[main] Parameters: N_spins=" << L*L
          << "  N_sweeps=" << N_sweeps
          << "\nTemperatures: " <<endl;
@@ -160,7 +159,7 @@ int main() {
     // ── Temperature sweep ──────────────────────
 
     for (int i = 0; i < temperatures.size(); ++i) {
-        bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
+        //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[i];
         const double BJ = 1.0 / T;
@@ -172,11 +171,11 @@ int main() {
         gsl_rng_set(ran, 123);
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve(ran);  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
+        bits.evolve_save(ran,1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 
-        bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
+        //bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
 
         /*
@@ -213,9 +212,8 @@ int main() {
 
         */
 
-    bits.CloseCSVFiles();
+    //bits.CloseCSVFiles();
     }
-
     
     gsl_rng_free(ran);
 

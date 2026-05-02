@@ -118,7 +118,7 @@ ax.errorbar(
 )
 
 # ── Axes ──────────────────────────────────────────────
-ax.set_xlim([0, 5.05])
+ax.set_xlim([0, 4.05])
 ax.set_ylim([-0.002, 1.05])
 ax.xaxis.set_major_locator(ticker.MultipleLocator(0.5))
 ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.2))
