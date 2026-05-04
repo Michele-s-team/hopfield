@@ -119,9 +119,9 @@ int main() {
     // (bits vs classic on a small L, few sweeps)
     // ══════════════════════════════════════════
 
-    const int    L_test        = 100;
+    const int    L_test        = 25;
     const double BJ_test       = 100;
-    const int    N_sweeps_test = pow(2,16);
+    const int    N_sweeps_test = pow(2,17);
     const int    col_width     = 3;
     const int    prefix_width  = 12;
 
