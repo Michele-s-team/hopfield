@@ -71,11 +71,15 @@ void IsingModel::init(gsl_rng* ran) {
 // I/O
 // =====================================================
 
-// Open one CSV file per realization, writing header if the file is new
-void IsingModel::OpenCSVFiles(const string& filename) {
+// Open one CSV file per (L, r), header contains T, N, m
+void IsingModel::OpenCSVFiles(const string& folder) {
     m_csv_files.resize(n_bits);
+
     for (int r = 0; r < n_bits; ++r) {
-        string file_path = filename + "_r" + to_string(r) + ".csv";
+        string file_path = folder
+            + "/L" + to_string(L)
+            + "_r" + to_string(r)
+            + ".csv";
 
         ifstream test(file_path);
         bool file_exists = test.good();
@@ -83,23 +87,20 @@ void IsingModel::OpenCSVFiles(const string& filename) {
 
         m_csv_files[r].open(file_path, ios::app);
         if (m_csv_files[r] && !file_exists)
-            m_csv_files[r] << "T,N,m\n";
+            m_csv_files[r] << "T,N,m\n";   // ← L dans le nom, T et N dans le fichier
     }
 }
 
-// Flush and close all open CSV files
 void IsingModel::CloseCSVFiles() {
     for (auto& f : m_csv_files)
         if (f.is_open()) f.close();
     m_csv_files.clear();
 }
 
-// Append current magnetizations to each realization's CSV file (n_bits different files)
 void IsingModel::SaveMagnetizations(int N) {
     vector<double> magnetizations(n_bits);
     GetMagnetizations(magnetizations);
     double T = 1.0 / BJ;
-
     for (int r = 0; r < n_bits; ++r) {
         if (!m_csv_files[r]) continue;
         m_csv_files[r] << T << "," << N << "," << magnetizations[r] << "\n";

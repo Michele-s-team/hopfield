@@ -33,6 +33,7 @@ public:
     virtual ~IsingModel() = default;
     void setNSweeps(int);                         //sets the number of spins
     void setBJ(double);                           // Sets a new value of β*J (e.g. when sweeping over temperatures)
+                        // Sets the size of the system
     int randomNumber(gsl_rng*);                   //generates a random number following an exponential distribution
     //void initrandomNumbers(gsl_rng*);           // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)

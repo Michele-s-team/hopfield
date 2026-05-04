@@ -22,6 +22,16 @@ SpinSystem::SpinSystem(int L)
       spins_set(n_bits * N_spins, 0)
 {}
 
+
+void SpinSystem::setSize(int new_L) {
+    L       = new_L;
+    N_spins = new_L * new_L;
+    
+    neighbors.assign(N_spins, vector<int>());
+    neighbor_count.assign(N_spins, 0);
+    spins_set.assign(n_bits * N_spins, 0);
+}
+
 // =====================================================
 // NETWORK TOPOLOGY
 // =====================================================
