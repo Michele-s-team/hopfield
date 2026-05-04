@@ -41,9 +41,24 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
-// ──────────────────────────────────────────────
-// Global bit constants (initialized once at startup)
-// ──────────────────────────────────────────────
+// =============================================================================
+// minimal working example  —  Correctness and performance check: IsingBits vs IsingNoBits
+//
+// Runs a small-scale comparison between the bitwise Metropolis implementation
+// (IsingBits) and the reference scalar implementation (IsingNoBits) on an
+// L×L square lattice with periodic boundary conditions.
+//
+// For a given set of parameters (L, BJ, N_sweeps):
+//   - initializes both models from the same random spin configuration
+//   - runs N_sweeps Metropolis sweeps with the same RNG seed on both
+//   - checks that the resulting spin configurations are identical site by site
+//   - reports the wall-clock speedup of IsingBits over IsingNoBits
+//
+// This is used to validate correctness of the bitwise implementation before
+// running production simulations.
+//
+// No output files are written.
+// =============================================================================
 
 // ──────────────────────────────────────────────
 // Print and compare spin configurations across realizations
@@ -58,6 +73,8 @@ void print_neurons(const vector<int>& neurons_before,
     for (int r = 0; r < n_bits; r++) {
 
         ostringstream oss;
+
+        //Uncomment to print the spins when comparing
         /*
         oss << "Realization" << right << setw(3) << r+1;
         cout << oss.str() << "\n";
@@ -97,32 +114,57 @@ void print_neurons(const vector<int>& neurons_before,
 // ──────────────────────────────────────────────
 int main() {
 
-    // ── Parameters ────────────────────────────
-    const double T        = 2.2;
-    const int    N_sweeps = pow(2, 20);
-    vector<int> sizes = {30, 50, 75, 100, 150, 200};
+    // ══════════════════════════════════════════
+    // LEGACY: small-scale correctness check
+    // (bits vs classic on a small L, few sweeps)
+    // ══════════════════════════════════════════
 
+    const int    L_test        = 100;
+    const double BJ_test       = 100;
+    const int    N_sweeps_test = pow(2,16);
+    const int    col_width     = 3;
+    const int    prefix_width  = 12;
 
-    // ── Model initialization ───────────────────
+    cout << "[main] Parameters: N_neurons=" << L_test*L_test
+         << " N_sweeps=" << N_sweeps_test
+         << " Beta*J=" << BJ_test <<"\n";
 
-    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    gsl_rng_set(ran, 42);
+    gsl_rng* ran_test = gsl_rng_alloc(gsl_rng_gfsr4);
+    gsl_rng_set(ran_test, 123);
 
+    IsingBits bits_test(L_test, BJ_test, N_sweeps_test);
+    IsingNoBits classic_test(L_test, BJ_test, N_sweeps_test);
 
-    for (int i = 0; i < sizes.size(); ++i) {
-        int L = sizes[i];
-        cout << "L=" << L << "  Step " << i+1 << "/" << sizes.size() << endl;
-        IsingBits bits(L, 1.0 / T, N_sweeps);
-        bits.initConnections2D_PBC();
-        bits.initSpins(ran);
-        auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,0.1, "../results/magnetizations/");  
-        auto t_end_bits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
-
-        cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
-    }
+    bits_test.initConnections2D_PBC();
+    classic_test.initConnections2D_PBC();
+    cout << "Network initialized\n" << endl;
     
-    gsl_rng_free(ran);
+    bits_test.initSpins(ran_test);
+    vector<int> initial_config = bits_test.getSpinsConfig();    
+    classic_test.initSpinsFromConfig(initial_config);
+    cout << "Spin configurations initialized\n" << endl;
+
+    print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
+
+    gsl_rng_set(ran_test, 45);
+    clock_t start_bits = clock();
+    bits_test.evolve(ran_test);
+    clock_t end_bits = clock();
+    double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
+    cout << "Bits done. Time: " << clock_bits << " s\n";
+
+    gsl_rng_set(ran_test, 45); 
+    clock_t start_ref = clock();
+    classic_test.evolve(ran_test);
+    clock_t end_ref = clock();
+    double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
+    cout << "Classic done. Time: " << clock_ref << " s\n";
+
+    print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
+
+    cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
+
+    gsl_rng_free(ran_test);
+
     return 0;
 }

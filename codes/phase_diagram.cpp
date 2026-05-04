@@ -41,9 +41,29 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
-// ──────────────────────────────────────────────
-// Global bit constants (initialized once at startup)
-// ──────────────────────────────────────────────
+
+// =============================================================================
+// phase_diagram.cpp
+//
+// Simulates the 2D Ising model using a bitwise Metropolis algorithm
+// (IsingBits) on a square lattice of size L×L with periodic boundary
+// conditions, across a range of temperatures.
+//
+// For each temperature T:
+//   - sets the inverse temperature BJ = 1/T
+//   - reinitializes spins from a fixed reference configuration
+//   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
+//     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
+//
+// The temperature grid is defined by several segments with different
+// step sizes, with finer resolution near the critical point Tc ≈ 2.269.
+//
+// An optional classic (non-bitwise) simulation is available for comparison
+// and correctness checking (see commented sections).
+//
+// Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
+// =============================================================================
+
 
 // ──────────────────────────────────────────────
 // Print and compare spin configurations across realizations
