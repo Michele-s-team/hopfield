@@ -71,18 +71,8 @@ void IsingModel::init(gsl_rng* ran) {
 // I/O
 // =====================================================
 
-void IsingModel::CloseCSVFiles() {
-    for (auto& f : m_csv_files)
-        if (f.is_open()) f.close();
-    m_csv_files.clear();
-}
-
 void IsingModel::SaveMagnetizations(int N) {
-    vector<double> magnetizations(n_bits);
-    GetMagnetizations(magnetizations);
-    double T = 1.0 / betaJ;
-    for (int r = 0; r < n_bits; ++r) {
-        if (!m_csv_files[r]) continue;
-        m_csv_files[r] << T << "," << N << "," << magnetizations[r] << "\n";
-    }
-}
+        vector<double> mags(n_bits);
+        GetMagnetizations(mags);
+        m_io.SaveMagnetizations(N, betaJ, mags);
+    }          // saves the magnetizations of all 64 realizations in a file with the speicified number of sweeps

@@ -113,7 +113,7 @@ int main() {
         int L = sizes[i];
         cout << "L=" << L << "  Step " << i+1 << "/" << sizes.size() << endl;
         IsingBits bits(L, 1.0 / T, N_sweeps);
-        bits.initConnections2D_PBC();
+        bits.initNetwork2D_PBC();
         bits.initSpins(ran);
         auto t_start_bits = chrono::high_resolution_clock::now();
         bits.evolve_save(ran,0.1, "../results/magnetizations/");  

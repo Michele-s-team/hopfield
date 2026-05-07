@@ -1,11 +1,11 @@
 //
-//  ising_bits.cpp
+//  spinglass_bits.cpp
 //  hopfield
 //
-//  Created by Bastien on 20/04/2026.
+//  Created by Bastien on 7/05/2026.
 //
 
-#include "ising_bits.hpp"
+#include "spinglass_bits.hpp"
 #include "unsigned_int.hpp"
 #include <numeric>
 #include <filesystem>
@@ -19,20 +19,34 @@
 // =====================================================
 
 // canonical spins {-1,+1} -> bit representation {0,1}
-void IsingBits::fromCanonical(){
+void SpinglassBits::fromCanonical(){
     Bits_Spins_Set.clear();
     Neighbor_Count.clear();
-
+    Couplings.clear();
     Bits_Spins_Set.reserve(N_spins);
     Neighbor_Count.reserve(N_spins);
-    Bits spin_tmp;
+    Couplings.reserve(N_spins);
 
     for (int i = 0; i < N_spins; ++i) {
+        Bits spin_tmp;                          // ← déclaré ici : réinitialisé à chaque i
         for (int r = 0; r < n_bits; ++r) {
-            int bit = (spins_set[r*N_spins+i] + 1) / 2;
-            spin_tmp.Set(r, bit);
+            int spin = (spins_set[r*N_spins+i] + 1) / 2;
+            spin_tmp.Set(r, spin);
         }
-        UnsignedInt neighbor_tmp(neighbor_count[i]);
+
+        Couplings.push_back(vector<Bits>());
+        Couplings.back().reserve(couplings[i].size());
+
+        for (int j = 0; j < couplings[i].size(); ++j) {
+            Bits coupling_tmp;                  // ← déclaré ici : réinitialisé à chaque j
+            for (int r = 0; r < n_bits; ++r) {
+                int coupling = (couplings[i][j][r] + 1) / 2;
+                coupling_tmp.Set(r, coupling);
+            }
+            Couplings.back().push_back(coupling_tmp);
+        }
+
+        UnsignedInt neighbor_tmp;
         neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
         Bits_Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
@@ -40,68 +54,18 @@ void IsingBits::fromCanonical(){
 }
 
 // bit representation {0,1} -> canonical spins {-1,+1}
-void IsingBits::toCanonical(){
+void SpinglassBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
         for (int i = 0; i < N_spins; ++i)
             spins_set[r*N_spins+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
 
 // =====================================================
-// RANDOM THRESHOLDS (disabled)
-// =====================================================
-
-/*
-// Pre-convert double RNG values to UnsignedInt bitwise format
-void IsingBits::convertRandomNumbers()
-{
-    Random_Numbers.clear();
-    Random_Numbers.resize(
-        N_sweeps,
-        vector<UnsignedInt>(
-            N_spins,
-            UnsignedInt(N_spins)
-        )
-    );
-
-    for (int sweep = 0; sweep < N_sweeps; ++sweep)
-        for (int i = 0; i < N_spins; ++i) {
-            unsigned long long v =
-                (unsigned long long) random_numbers[sweep][i];
-            Random_Numbers[sweep][i].SetAll(v);
-        }
-}
-*/
-
-/*
-void IsingBits::initRandomNumbers(gsl_rng* ran){
-    IsingModel::initRandomNumbers(ran);
-    convertRandomNumbers();
-}
-
-void IsingBits::initRandomNumbersFromExp(const vector<vector<double>>& exp_base){
-    IsingModel::initRandomNumbersFromExp(exp_base);
-    convertRandomNumbers();
-}
-*/
-
-// =====================================================
-// EVOLUTION CONTEXT (disabled)
-// =====================================================
-
-/*
-// Sync canonical <-> bitwise representation and prepare RNG
-void IsingBits::initEvolveContext(){
-    fromCanonical();
-    convertRandomNumbers();
-}
-*/
-
-// =====================================================
 // OBSERVABLES
 // =====================================================
 
 // Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
-void IsingBits::GetMagnetizations(vector<double>& magnetizations){
+void SpinglassBits::GetMagnetizations(vector<double>& magnetizations){
     vector<int> ones(n_bits, 0);
 
     for (int i = 0; i < N_spins; ++i)
@@ -120,7 +84,7 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 // Attempt a spin flip at site i using the bitwise Metropolis rule:
 //   - if rng >= neighbor_count[i]: unconditional flip 
 //   - otherwise: flip only realizations where 2*aligned_neighbors <= rng + nc
-void IsingBits::tryFlip(int i, int rng,
+void SpinglassBits::tryFlip(int i, int rng,
                          Bits& xnor_ij, Bits& mask,
                          UnsignedInt& sum, BitSet& threshold){
     Bits& Bits_Spin_i = Bits_Spins_Set[i];
@@ -147,42 +111,10 @@ void IsingBits::tryFlip(int i, int rng,
 // SWEEP LOOP
 // =====================================================
 
-/*
-// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
-// Saves magnetizations every save_stride sweeps if save=true.
-void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
-    // temporaries allocated once for all sweeps and all flips
-    Bits        xnor_ij, mask;
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
-    BitSet      threshold(N_spins);
-    int rng;
-    int i;
-
-    const int progress_stride = max(1, N_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
-
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N_spins; ++step) {
-            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
-            rng = randomNumber(ran);
-            tryFlip(i, rng, xnor_ij, mask, sum, threshold);
-        }
-
-        if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
-                 << flush;
-    }
-    cout << "\n";
-}
-*/
 
 // Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
-void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
+void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
     UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
@@ -208,7 +140,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
             // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
             for (int j : neighbors[i]) {
-                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
+                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Couplings[i][j]);  // the bitwise implementation of J_ij*s_i*s_j with s_i=-1+2*b_i
                 sum += &xnor_ij;
             }
             sum.MultiplyByTwoTo();  
@@ -237,14 +169,14 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // =====================================================
 
 // Run simulation without saving (thermalization)
-void IsingBits::evolve(gsl_rng* ran){
+void SpinglassBits::evolve(gsl_rng* ran){
     fromCanonical();
     runSweeps(ran, /*save=*/false, 0);
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
+void SpinglassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
     OpenCSVFiles(filename);
     runSweeps(ran, /*save=*/true, freq);

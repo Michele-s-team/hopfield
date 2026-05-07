@@ -42,14 +42,10 @@ public:
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different betaJ values)
     //void init(gsl_rng*);                        // Full initialization: spins + random numbers
    void OpenCSVFiles(const std::string& folder) {
-        m_io.OpenCSVFiles(folder, L, n_bits);
+        m_io.OpenCSVFiles(folder, L);
     }
     void CloseCSVFiles() { m_io.CloseCSVFiles(); }
-    void SaveMagnetizations(int N) {
-        vector<double> mags(n_bits);
-        GetMagnetizations(mags);
-        m_io.SaveMagnetizations(N, betaJ, mags);
-    }          // saves the magnetizations of all 64 realizations in a file with the speicified number of sweeps
+    void SaveMagnetizations(int N);
 };
 
 

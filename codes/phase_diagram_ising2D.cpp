@@ -166,8 +166,8 @@ int main() {
     IsingBits   bits  (L, 1.0 / T_min, N_sweeps);
     IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
-    bits.initConnections2D_PBC();
-    nobits.initConnections2D_PBC();
+    bits.initNetwork2D_PBC();
+    nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
     gsl_rng_set(ran, 123);
@@ -186,7 +186,7 @@ int main() {
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
-        bits.setBJ(BJ);
+        bits.setbetaJ(BJ);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 

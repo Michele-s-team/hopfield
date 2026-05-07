@@ -2,7 +2,7 @@
 //  spinglass_model.cpp
 //  hopfield
 //
-//  Created by Bastien on 20/04/2026.
+//  Created by Bastien on 7/05/2026.
 //
 #include "spin_system.hpp"
 #include "spinglass_model.hpp"
@@ -15,8 +15,8 @@
 // CONSTRUCTION
 // =====================================================
 
-SpinglassModel::SpinglassModel(int L, double BJ, int N_sweeps)
-    : SpinSystem(L), beta(beta), inv2beta(1.0 / (2.0 * beta)), N_sweeps(N_sweeps), couplings(L * L)
+SpinglassModel::SpinglassModel(int L, double beta, int N_sweeps)
+    : SpinSystem(L), beta(beta), inv2beta(1.0 / (2.0 * beta)), N_sweeps(N_sweeps)
 {}
 
 // =====================================================
@@ -24,9 +24,13 @@ SpinglassModel::SpinglassModel(int L, double BJ, int N_sweeps)
 // =====================================================
 
 void SpinglassModel::initialize_couplings(gsl_rng* ran){
-    for (int spin=0; spin<L*L; spin++){
-        for (int i=0; i<neighbors[spin].size(); i++){
-            couplings[spin][i]=randomBinary(ran);
+    couplings.resize(L * L);
+    for (int spin = 0; spin < L*L; ++spin) {
+        couplings[spin].resize(neighbors[spin].size());
+        for (int i = 0; i < neighbors[spin].size(); ++i) {
+            couplings[spin][i].resize(n_bits);
+            for (int r = 0; r < n_bits; ++r)
+                couplings[spin][i][r] = randomBinary(ran);
         }
     }
 }

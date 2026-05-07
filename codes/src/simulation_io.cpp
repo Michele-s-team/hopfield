@@ -3,10 +3,11 @@
 #include <string>
 using namespace std;
 
+#include "main.hpp"
+
 
 // Open one CSV file per (L, r), header contains beta (or betaJ), N, m
-void SimulationIO::OpenCSVFiles(const string& folder,
-                                int L, int n_bits) {
+void SimulationIO::OpenCSVFiles(const string& folder, int L) {
     m_L      = L;
     m_n_bits = n_bits;
     m_csv_files.resize(n_bits);

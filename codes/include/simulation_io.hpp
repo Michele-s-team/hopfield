@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
+#include "main.hpp"
 using namespace std;
 
 class SimulationIO {
@@ -12,7 +12,7 @@ public:
     SimulationIO() = default;
     ~SimulationIO() { CloseCSVFiles(); }
 
-    void OpenCSVFiles(const string& folder, int L, int n_bits);
+    void OpenCSVFiles(const string& folder, int L);
     void CloseCSVFiles();
     void SaveMagnetizations(int N, double beta, // either betaJ when Ising or just beta for Sin glass/Hofield
                             const vector<double>& magnetizations);

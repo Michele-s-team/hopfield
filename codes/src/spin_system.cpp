@@ -37,7 +37,7 @@ void SpinSystem::setSize(int new_L) {
 // =====================================================
 
 // 2D square lattice with periodic boundary conditions
-void SpinSystem::initConnections2D_PBC() {
+void SpinSystem::initNetwork2D_PBC() {
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -52,7 +52,7 @@ void SpinSystem::initConnections2D_PBC() {
 }
 
 // 2D square lattice with open boundary conditions (edge spins have fewer neighbors)
-void SpinSystem::initConnections2D_OBC() {
+void SpinSystem::initNetwork2D_OBC() {
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -66,7 +66,7 @@ void SpinSystem::initConnections2D_OBC() {
 }
 
 // Erdos-Renyi random graph: each directed edge (i,j) included with probability p
-void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
+void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     neighbors.assign(N_spins, vector<int>());
     fill(neighbor_count.begin(), neighbor_count.end(), 0);
     for (int i = 0; i < N_spins; i++)
