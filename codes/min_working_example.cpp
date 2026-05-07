@@ -115,13 +115,13 @@ void print_neurons(const vector<int>& neurons_before,
 int main() {
 
     // ══════════════════════════════════════════
-    // LEGACY: small-scale correctness check
+    // small-scale correctness check
     // (bits vs classic on a small L, few sweeps)
     // ══════════════════════════════════════════
 
-    const int    L_test        = 25;
+    const int    L_test        = 100;
     const double BJ_test       = 100;
-    const int    N_sweeps_test = pow(2,17);
+    const int    N_sweeps_test = pow(2,16);
     const int    col_width     = 3;
     const int    prefix_width  = 12;
 
@@ -155,12 +155,12 @@ int main() {
 
     gsl_rng_set(ran_test, 45); 
     clock_t start_ref = clock();
-    classic_test.evolve(ran_test);
+    classic_test.evolveIndependentRNG(ran_test);
     clock_t end_ref = clock();
     double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout << "Classic done. Time: " << clock_ref << " s\n";
 
-    print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
+    //print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
 
     cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 
