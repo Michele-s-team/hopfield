@@ -15,8 +15,8 @@
 // CONSTRUCTION
 // =====================================================
 
-IsingModel::IsingModel(int L, double BJ, int N_sweeps)
-    : SpinSystem(L), BJ(BJ), inv2BJ(1.0 / (2.0 * BJ)), N_sweeps(N_sweeps)
+IsingModel::IsingModel(int L, double betaJ, int N_sweeps)
+    : SpinSystem(L), betaJ(betaJ), inv2betaJ(1.0 / (2.0 * betaJ)), N_sweeps(N_sweeps)
 {}
 
 // =====================================================
@@ -27,9 +27,9 @@ void IsingModel::setNSweeps(int n) {
     N_sweeps = n;
 }
 
-void IsingModel::setBJ(double new_BJ) {
-    BJ = new_BJ;
-    inv2BJ = 1.0 / (2.0 * new_BJ);  
+void IsingModel::setbetaJ(double new_betaJ) {
+    betaJ = new_betaJ;
+    inv2betaJ = 1.0 / (2.0 * new_betaJ);  
 }
 
 // =====================================================
@@ -37,9 +37,9 @@ void IsingModel::setBJ(double new_BJ) {
 // =====================================================
 
 // Draw a Metropolis threshold from an exponential distribution:
-//   rng ~ min(N_spins, Exp(1) / (2*BJ))
+//   rng ~ min(N_spins, Exp(1) / (2*betaJ))
 int IsingModel::randomNumber(gsl_rng* ran) {
-    return (int)min((double)neighbor_count[0], inv2BJ*gsl_ran_exponential(ran, 1.0));
+    return (int)min((double)neighbor_count[0], inv2betaJ*gsl_ran_exponential(ran, 1.0));
 }
 /*
 // Pre-generate all random thresholds for the full simulation
@@ -56,7 +56,7 @@ void IsingModel::initrandomNumbers(gsl_rng* ran) {
 void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
     for (int sweep = 0; sweep < N_sweeps; sweep++)
         for (int i = 0; i < N_spins; i++)
-            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * BJ) * exp_base[sweep][i]);
+            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * betaJ) * exp_base[sweep][i]);
 }
 */
 
@@ -71,26 +71,6 @@ void IsingModel::init(gsl_rng* ran) {
 // I/O
 // =====================================================
 
-// Open one CSV file per (L, r), header contains T, N, m
-void IsingModel::OpenCSVFiles(const string& folder) {
-    m_csv_files.resize(n_bits);
-
-    for (int r = 0; r < n_bits; ++r) {
-        string file_path = folder
-            + "/L" + to_string(L)
-            + "_r" + to_string(r)
-            + ".csv";
-
-        ifstream test(file_path);
-        bool file_exists = test.good();
-        test.close();
-
-        m_csv_files[r].open(file_path, ios::app);
-        if (m_csv_files[r] && !file_exists)
-            m_csv_files[r] << "T,N,m\n";   // ← L dans le nom, T et N dans le fichier
-    }
-}
-
 void IsingModel::CloseCSVFiles() {
     for (auto& f : m_csv_files)
         if (f.is_open()) f.close();
@@ -100,7 +80,7 @@ void IsingModel::CloseCSVFiles() {
 void IsingModel::SaveMagnetizations(int N) {
     vector<double> magnetizations(n_bits);
     GetMagnetizations(magnetizations);
-    double T = 1.0 / BJ;
+    double T = 1.0 / betaJ;
     for (int r = 0; r < n_bits; ++r) {
         if (!m_csv_files[r]) continue;
         m_csv_files[r] << T << "," << N << "," << magnetizations[r] << "\n";

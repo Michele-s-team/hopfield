@@ -33,7 +33,7 @@ public:
     void initConnections2D_PBC();                  // Builds the periodic square lattice connectivity (4 neighbors per spin)
     void initConnections2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
     void initConnections_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
-    int randomSpin(gsl_rng*);                      // initializes randomly a spin +-1
+    int randomBinary(gsl_rng*);                      // initializes randomly a spin +-1
     void initSpins(gsl_rng*);                      // Initializes all spins randomly to ±1 using the GSL RNG
     void initSpinsFromConfig(vector<int>&);        // Initializes spins from a given configuration (deep copy)
     vector<int> getSpinsConfig();                  // Returns a copy of the full spin configuration

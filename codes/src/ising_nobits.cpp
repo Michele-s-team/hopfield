@@ -43,13 +43,13 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
             if (rng >= neighbor_count[i]) {
                 // 1ST BRANCH: unconditional flip: rng exceeds max possible local field
                 for (int r = 0; r < n_bits; ++r)
-                    spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
+                    spins_set[r*N_spins+i] *= -1;
             }
             else {
                 // 2ND BRANCH:flip realization r only if rng >= ΔE(i, r)
                 for (int r = 0; r < n_bits; ++r)
                     if (rng >= DeltaE(i, r))
-                        spins_set[r*N_spins+i] = -spins_set[r*N_spins+i];
+                        spins_set[r*N_spins+i] *= -1;
             }
         }
 

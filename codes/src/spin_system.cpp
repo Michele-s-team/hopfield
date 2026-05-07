@@ -82,14 +82,14 @@ void SpinSystem::initConnections_random(gsl_rng* ran, double p) {
 // =====================================================
 
 // Draw a random spin value in {-1, +1}
-int SpinSystem::randomSpin(gsl_rng* ran){
+int SpinSystem::randomBinary(gsl_rng* ran){
     return 2 * gsl_rng_uniform_int(ran, 2) - 1;
 }
 
 // Initialize all spins randomly across all realizations
 void SpinSystem::initSpins(gsl_rng* ran) {
     for (int i = 0; i < n_bits * N_spins; i++)
-        spins_set[i] = randomSpin(ran);
+        spins_set[i] = randomBinary(ran);
 }
 
 // Set spins from an externally provided configuration
