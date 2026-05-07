@@ -27,9 +27,6 @@ protected:
     int N_sweeps;                    // number of Metropolis sweeps
     vector<vector<vector<int>>> couplings;
     SimulationIO m_io;                  // saving files
-
-private:
-    vector<ofstream> m_csv_files; 
         
 public:
     

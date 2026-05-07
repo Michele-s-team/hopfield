@@ -123,7 +123,7 @@ int main() {
 
     // ── Parameters ────────────────────────────
     const int    L        = 100;
-    const int    N_sweeps = pow(2, 18);
+    const int    N_sweeps = pow(2, 12);
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;
@@ -197,7 +197,7 @@ int main() {
         gsl_rng_set(ran, 123);
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
+        bits.evolve_save(ran,0.1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 

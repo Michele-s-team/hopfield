@@ -139,8 +139,9 @@ void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
             // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
-            for (int j : neighbors[i]) {
-                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Couplings[i][j]);  // the bitwise implementation of J_ij*s_i*s_j with s_i=-1+2*b_i
+            for (int k = 0; k < neighbors[i].size(); ++k) {
+                int j = neighbors[i][k];                  // ← id of the neighbor
+                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Couplings[i][k]);
                 sum += &xnor_ij;
             }
             sum.MultiplyByTwoTo();  
@@ -179,7 +180,9 @@ void SpinglassBits::evolve(gsl_rng* ran){
 void SpinglassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
     OpenCSVFiles(filename);
+    cout << "evolve_save called, opening: " << filename << endl;
     runSweeps(ran, /*save=*/true, freq);
     CloseCSVFiles();
+    cout << "evolve_save called, closing: " << filename << endl;
     toCanonical();
 }
