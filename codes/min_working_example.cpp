@@ -48,7 +48,7 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // (IsingBits) and the reference scalar implementation (IsingNoBits) on an
 // L×L square lattice with periodic boundary conditions.
 //
-// For a given set of parameters (L, BJ, N_sweeps):
+// For a given set of parameters (L, betaJ, N_sweeps):
 //   - initializes both models from the same random spin configuration
 //   - runs N_sweeps Metropolis sweeps with the same RNG seed on both
 //   - checks that the resulting spin configurations are identical site by site

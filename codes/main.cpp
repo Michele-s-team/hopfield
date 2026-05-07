@@ -27,6 +27,9 @@ using namespace std;
 #include "ising_nobits.hpp"
 #include "ising_bits.hpp"
 
+#include "spinglass_model.hpp"
+#include "spinglass_bits.hpp"
+
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
 
 //  compile on mac, without optimization:
@@ -41,9 +44,29 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
-// ──────────────────────────────────────────────
-// Global bit constants (initialized once at startup)
-// ──────────────────────────────────────────────
+
+// =============================================================================
+// phase_diagram.cpp
+//
+// Simulates the 2D Ising model using a bitwise Metropolis algorithm
+// (IsingBits) on a square lattice of size L×L with periodic boundary
+// conditions, across a range of temperatures.
+//
+// For each temperature T:
+//   - sets the inverse temperature betaJ = 1/T
+//   - reinitializes spins from a fixed reference configuration
+//   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
+//     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
+//
+// The temperature grid is defined by several segments with different
+// step sizes, with finer resolution near the critical point Tc ≈ 2.269.
+//
+// An optional classic (non-bitwise) simulation is available for comparison
+// and correctness checking (see commented sections).
+//
+// Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
+// =============================================================================
+
 
 // ──────────────────────────────────────────────
 // Print and compare spin configurations across realizations
@@ -143,17 +166,20 @@ int main() {
     // ── Model initialization ───────────────────
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    IsingBits   bits  (L, 1.0 / T_min, N_sweeps);
-    IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    SpinglassBits   bits  (L, 1.0 / T_min, N_sweeps);
+    //IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
     bits.initNetwork2D_PBC();
-    nobits.initNetwork2D_PBC();
+    //nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
+
+    bits.initialize_couplings(ran);
+    cout << "Couplings initialized\n" << endl;
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
     vector<int> initial_config = bits.getSpinsConfig();
-    nobits.initSpinsFromConfig(initial_config);
+    //nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
     // ── Temperature sweep ──────────────────────
@@ -162,11 +188,11 @@ int main() {
         //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[i];
-        const double BJ = 1.0 / T;
+        const double beta = 1.0 / T;
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
-        bits.setBJ(BJ);
+        bits.setbeta(beta);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 
@@ -180,7 +206,7 @@ int main() {
 
         /*
         // --- Classic simulation (uncomment to compare) ---
-        nobits.setBJ(BJ);
+        nobits.setBJ(betaJ);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 

@@ -23,7 +23,7 @@ using namespace std;
 class SpinglassModel : public SpinSystem {
 protected:
     double beta;                       // inverse temperature times coupling: β*J
-    double inv2beta;                   // =1/(2*BJ)
+    double inv2beta;                   // =1/(2*betaJ)
     int N_sweeps;                    // number of Metropolis sweeps
     vector<vector<vector<int>>> couplings;
     SimulationIO m_io;                  // saving files
@@ -33,7 +33,7 @@ private:
         
 public:
     
-    SpinglassModel(int L, double beta, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature BJ and number of sweeps
+    SpinglassModel(int L, double beta, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
     virtual ~SpinglassModel() = default;
     void initialize_couplings(gsl_rng*);
     void setNSweeps(int);                         //sets the number of spins
@@ -41,7 +41,7 @@ public:
                         // Sets the size of the system
     int randomNumber(gsl_rng*);                   //generates a random number following an exponential distribution
     //void initrandomNumbers(gsl_rng*);           // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
-    //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different BJ values)
+    //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different betaJ values)
     //void init(gsl_rng*);           
     void OpenCSVFiles(const string& folder) {
         m_io.OpenCSVFiles(folder, L);

@@ -50,7 +50,7 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // conditions, across a range of temperatures.
 //
 // For each temperature T:
-//   - sets the inverse temperature BJ = 1/T
+//   - sets the inverse temperature betaJ = 1/T
 //   - reinitializes spins from a fixed reference configuration
 //   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
 //     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
@@ -182,11 +182,11 @@ int main() {
         //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[i];
-        const double BJ = 1.0 / T;
+        const double betaJ = 1.0 / T;
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
-        bits.setbetaJ(BJ);
+        bits.setbetaJ(betaJ);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 
@@ -200,7 +200,7 @@ int main() {
 
         /*
         // --- Classic simulation (uncomment to compare) ---
-        nobits.setBJ(BJ);
+        nobits.setBJ(betaJ);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 

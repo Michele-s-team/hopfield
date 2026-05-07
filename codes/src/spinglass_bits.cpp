@@ -46,7 +46,7 @@ void SpinglassBits::fromCanonical(){
             Couplings.back().push_back(coupling_tmp);
         }
 
-        UnsignedInt neighbor_tmp;
+        UnsignedInt neighbor_tmp(neighbor_count[i]);
         neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
         Bits_Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);

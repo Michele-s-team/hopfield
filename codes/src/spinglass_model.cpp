@@ -49,7 +49,7 @@ void SpinglassModel::setbeta(double new_beta) {
 // =====================================================
 
 // Draw a Metropolis threshold from an exponential distribution:
-//   rng ~ min(N_spins, Exp(1) / (2*BJ))
+//   rng ~ min(N_spins, Exp(1) / (2*betaJ))
 int SpinglassModel::randomNumber(gsl_rng* ran) {
     return (int)min((double)neighbor_count[0], inv2beta*gsl_ran_exponential(ran, 1.0));
 }
@@ -68,7 +68,7 @@ void SpinglassModel::initrandomNumbers(gsl_rng* ran) {
 void SpinglassModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
     for (int sweep = 0; sweep < N_sweeps; sweep++)
         for (int i = 0; i < N_spins; i++)
-            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * BJ) * exp_base[sweep][i]);
+            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * betaJ) * exp_base[sweep][i]);
 }
 */
 
