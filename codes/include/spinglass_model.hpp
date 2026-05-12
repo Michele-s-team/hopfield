@@ -33,7 +33,8 @@ public:
     
     SpinglassModel(int L, double beta, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
     virtual ~SpinglassModel() = default;
-    void initialize_couplings(gsl_rng*);
+    void initCouplings(gsl_rng*);
+    void initCouplingsFromConfig(vector<vector<vector<int>>>);
     void setNSweeps(int);                         //sets the number of spins
     void setbeta(double);                           // Sets a new value of β*J (e.g. when sweeping over temperatures)
                         // Sets the size of the system
@@ -41,6 +42,7 @@ public:
     //void initrandomNumbers(gsl_rng*);           // Pre-generates exponential random numbers for the Metropolis criterion using the GSL RNG    
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base); // Pre-generates random numbers from a pre-computed exponential base (useful to keep the same noise across different betaJ values)
     //void init(gsl_rng*);           
+    vector<vector<vector<int>>> getCouplingsConfig(); 
     void OpenCSVFiles(const string& folder) {
         m_io.OpenCSVFiles(folder, L);
     }

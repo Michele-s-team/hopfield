@@ -32,7 +32,7 @@ int SpinglassModel::neighbor_index(int spin, int target) const {
     return find(nb.begin(), nb.end(), target) - nb.begin();
 }
 
-void SpinglassModel::initialize_couplings(gsl_rng* ran) {
+void SpinglassModel::initCouplings(gsl_rng* ran) {
     couplings.assign(L * L, {});
     for (int spin = 0; spin < L * L; ++spin)
         couplings[spin].assign(neighbors[spin].size(), std::vector<int>(n_bits));
@@ -47,6 +47,14 @@ void SpinglassModel::initialize_couplings(gsl_rng* ran) {
             couplings[nb][neighbor_index(nb, spin)] = J; // mirror
         }
     }
+}
+
+vector<vector<vector<int>>> SpinglassModel::getCouplingsConfig() {
+    return couplings;
+}
+
+void SpinglassModel::initCouplingsFromConfig(vector<vector<vector<int>>> config) {
+    couplings = config;
 }
 
 void SpinglassModel::setNSweeps(int n) {

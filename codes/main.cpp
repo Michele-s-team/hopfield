@@ -29,6 +29,7 @@ using namespace std;
 
 #include "spinglass_model.hpp"
 #include "spinglass_bits.hpp"
+#include "spinglass_nobits.hpp"
 
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
 
@@ -123,7 +124,7 @@ int main() {
 
     // ── Parameters ────────────────────────────
     const int    L        = 25;
-    const int    N_sweeps = pow(2, 18);
+    const int    N_sweeps = pow(2, 12);
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;
@@ -167,19 +168,20 @@ int main() {
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     SpinglassBits   bits  (L, 1.0 / T_min, N_sweeps);
-    //IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    SpinglassNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
     bits.initNetwork2D_PBC();
-    //nobits.initNetwork2D_PBC();
+    nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
     bits.initialize_couplings(ran);
+    nobits.initialize_couplings(ran);
     cout << "Couplings initialized\n" << endl;
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
     vector<int> initial_config = bits.getSpinsConfig();
-    //nobits.initSpinsFromConfig(initial_config);
+    nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
     // ── Temperature sweep ──────────────────────
@@ -190,33 +192,33 @@ int main() {
         double T = temperatures[i];
         const double beta = 1.0 / T;
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
-
+        /*
         // --- Bitwise simulation ---
         bits.setbeta(beta);
         bits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
+        bits.evolve_save(ran,0.1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 
         //bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
+        */
 
-        /*
         // --- Classic simulation (uncomment to compare) ---
-        nobits.setBJ(betaJ);
+        nobits.setbeta(beta);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 
         auto t_stard_nobits = chrono::high_resolution_clock::now();
-        nobits.evolve(ran);
+        nobits.evolveSharedRNG(ran);
         auto t_end_nobits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_nobits = t_end_nobits - t_stard_nobits;
 
         cout << "  > NoBits: " << dt_nobits.count() / 1000.0 << " s" << endl;
-        cout << "  > Speedup: " << dt_nobits.count() / dt_bits.count() << "x" << endl;
+        //cout << "  > Speedup: " << dt_nobits.count() / dt_bits.count() << "x" << endl;
         cout << "------------------------------------------" << endl;
 
         // --- Magnetization comparison ---
@@ -234,8 +236,6 @@ int main() {
             }
         }
         if (equal) cout << "OK: magnetizations are identical." << endl;
-
-        */
 
     //bits.CloseCSVFiles();
     }

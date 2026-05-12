@@ -2,7 +2,7 @@
 //  spinglass_nobits.hpp
 //  hopfield
 //
-//  Created by Bastien on 20/04/2026.
+//  Created by Bastien on 12/05/2026.
 //
 // THIS CLASS IMPLEMENTS THE CLASSIC SIMULATION OF THE ISING HAMILTONIAN ON THE GENERATED NETWORK
 

@@ -2,7 +2,7 @@
 //  spinglassnobits.cpp
 //  hopfield
 //
-//  Created by Bastien on 20/04/2026.
+//  Created by Bastien on 12/05/2026.
 //
 #include "spinglass_nobits.hpp"
 #include "lib.hpp"
