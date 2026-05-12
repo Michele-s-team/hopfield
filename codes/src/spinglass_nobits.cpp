@@ -1,10 +1,10 @@
 //
-//  isingnobits.cpp
+//  spinglassnobits.cpp
 //  hopfield
 //
 //  Created by Bastien on 20/04/2026.
 //
-#include "ising_nobits.hpp"
+#include "spinglass_nobits.hpp"
 #include "lib.hpp"
 #include "main.hpp"
 #include "gsl_math.h"
@@ -15,12 +15,14 @@
 // =====================================================
 
 // Local energy cost of flipping spin i in realization r:
-//   ΔE(i, r) = σ_i * Σ_j σ_j
-double IsingNoBits::DeltaE(int spin, int realization) {
+//   ΔE(i, r) =   Σ_j J_ij(r) σ_i(r) σ_j(r)
+double SpinglassNoBits::DeltaE(int spin, int r) {
     int sum = 0;
-    for (int j : neighbors[spin])
-        sum += spins_set[realization*N_spins+j];
-    return spins_set[realization*N_spins+spin] * sum;
+    for (int k = 0; k < neighbors[spin].size(); ++k) {
+        int j = neighbors[spin][k];                
+        sum += spins_set[r*N_spins+j]*couplings[spin][k][r];
+    }
+    return spins_set[r*N_spins+spin] * sum;
 }
 
 // =====================================================
@@ -30,7 +32,7 @@ double IsingNoBits::DeltaE(int spin, int realization) {
 // Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
 // random numbers are shared among the 64 realizations
 // Saves magnetizations every save_stride sweeps if save=true.
-void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
+void SpinglassNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     const int progress_stride = max(1, N_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
     int rng;
@@ -68,7 +70,7 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 // Core simulation loop: N_sweeps of N_spins random flip attempts each.
 // each realization has its own random number
 // Saves magnetizations every save_stride sweeps if save=true.
-void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
+void SpinglassNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
     const int progress_stride = max(1, N_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
     int rng;
@@ -102,17 +104,17 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
 // =====================================================
 
 // Run simulation without saving (thermalization)
-void IsingNoBits::evolveSharedRNG(gsl_rng* ran) {
+void SpinglassNoBits::evolveSharedRNG(gsl_rng* ran) {
     runSweepsSharedRNG(ran, /*save=*/false, 0);
 }
 
 // Run simulation without saving (thermalization)
-void IsingNoBits::evolveIndependentRNG(gsl_rng* ran) {
+void SpinglassNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, /*save=*/false, 0);
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename) {
+void SpinglassNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename) {
     OpenCSVFiles(filename); 
     runSweepsSharedRNG(ran, /*save=*/true, freq);
     CloseCSVFiles();

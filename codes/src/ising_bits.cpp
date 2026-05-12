@@ -47,56 +47,6 @@ void IsingBits::toCanonical(){
 }
 
 // =====================================================
-// RANDOM THRESHOLDS (disabled)
-// =====================================================
-
-/*
-// Pre-convert double RNG values to UnsignedInt bitwise format
-void IsingBits::convertRandomNumbers()
-{
-    Random_Numbers.clear();
-    Random_Numbers.resize(
-        N_sweeps,
-        vector<UnsignedInt>(
-            N_spins,
-            UnsignedInt(N_spins)
-        )
-    );
-
-    for (int sweep = 0; sweep < N_sweeps; ++sweep)
-        for (int i = 0; i < N_spins; ++i) {
-            unsigned long long v =
-                (unsigned long long) random_numbers[sweep][i];
-            Random_Numbers[sweep][i].SetAll(v);
-        }
-}
-*/
-
-/*
-void IsingBits::initRandomNumbers(gsl_rng* ran){
-    IsingModel::initRandomNumbers(ran);
-    convertRandomNumbers();
-}
-
-void IsingBits::initRandomNumbersFromExp(const vector<vector<double>>& exp_base){
-    IsingModel::initRandomNumbersFromExp(exp_base);
-    convertRandomNumbers();
-}
-*/
-
-// =====================================================
-// EVOLUTION CONTEXT (disabled)
-// =====================================================
-
-/*
-// Sync canonical <-> bitwise representation and prepare RNG
-void IsingBits::initEvolveContext(){
-    fromCanonical();
-    convertRandomNumbers();
-}
-*/
-
-// =====================================================
 // OBSERVABLES
 // =====================================================
 
@@ -117,69 +67,6 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 // METROPOLIS DYNAMICS
 // =====================================================
 
-// Attempt a spin flip at site i using the bitwise Metropolis rule:
-//   - if rng >= neighbor_count[i]: unconditional flip 
-//   - otherwise: flip only realizations where 2*aligned_neighbors <= rng + nc
-void IsingBits::tryFlip(int i, int rng,
-                         Bits& xnor_ij, Bits& mask,
-                         UnsignedInt& sum, BitSet& threshold){
-    Bits& Bits_Spin_i = Bits_Spins_Set[i];
-
-    if (rng >= neighbor_count[i]) {
-        Bits_Spin_i.ComplementTo();
-        return;
-    }
-    sum.SetAll(0);
-    for (int j : neighbors[i]) {
-        xnor_ij = (Bits_Spin_i == Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
-        sum += &xnor_ij;
-    }
-    sum.MultiplyByTwoTo();  
-
-    threshold.SetAll((unsigned long long int) rng);
-    threshold += &Neighbor_Count[i];
-
-    mask = (sum <= threshold);
-    Bits_Spin_i ^= &mask;
-}
-
-// =====================================================
-// SWEEP LOOP
-// =====================================================
-
-/*
-// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
-// Saves magnetizations every save_stride sweeps if save=true.
-void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
-    // temporaries allocated once for all sweeps and all flips
-    Bits        xnor_ij, mask;
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
-    BitSet      threshold(N_spins);
-    int rng;
-    int i;
-
-    const int progress_stride = max(1, N_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
-
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N_spins; ++step) {
-            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
-            rng = randomNumber(ran);
-            tryFlip(i, rng, xnor_ij, mask, sum, threshold);
-        }
-
-        if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
-                 << flush;
-    }
-    cout << "\n";
-}
-*/
-
 // Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
@@ -188,33 +75,33 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
     UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
     UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2)); // no need for more space allocation
     int rng;
-    int i;
+    int spin;
 
     const int progress_stride = max(1, N_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
         for (int step = 0; step < N_spins; ++step) {
-            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+            spin = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
             rng = randomNumber(ran);
-            Bits& Bits_Spin_i = Bits_Spins_Set[i];
+            Bits& Bits_Spin_i = Bits_Spins_Set[spin];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
-            if (rng >= neighbor_count[i]) {  
+            if (rng >= neighbor_count[spin]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
             }
 
             // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
-            for (int j : neighbors[i]) {
+            for (int j : neighbors[spin]) {
                 xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
                 sum += &xnor_ij;
             }
             sum.MultiplyByTwoTo();  
 
             threshold.SetAll((unsigned long long int) rng);
-            threshold += &Neighbor_Count[i];
+            threshold += &Neighbor_Count[spin];
 
             mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold value is useless
             Bits_Spin_i ^= &mask;
