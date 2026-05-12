@@ -141,7 +141,7 @@ void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
             sum.SetAll(0);
             for (int k = 0; k < neighbors[i].size(); ++k) {
                 int j = neighbors[i][k];                  // ← id of the neighbor
-                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Couplings[i][k]);
+                xnor_ij = (Bits_Spin_i ^ Bits_Spins_Set[j] ^ Couplings[i][k]);
                 sum += &xnor_ij;
             }
             sum.MultiplyByTwoTo();  
