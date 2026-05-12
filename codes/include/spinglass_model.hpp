@@ -27,6 +27,7 @@ protected:
     int N_sweeps;                    // number of Metropolis sweeps
     vector<vector<vector<int>>> couplings;
     SimulationIO m_io;                  // saving files
+    int neighbor_index(int, int) const;
         
 public:
     

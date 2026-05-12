@@ -10,6 +10,9 @@
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
+#include <algorithm>
+
+using namespace std;
 
 // =====================================================
 // CONSTRUCTION
@@ -23,14 +26,25 @@ SpinglassModel::SpinglassModel(int L, double beta, int N_sweeps)
 // SETTERS
 // =====================================================
 
-void SpinglassModel::initialize_couplings(gsl_rng* ran){
-    couplings.resize(L * L);
-    for (int spin = 0; spin < L*L; ++spin) {
-        couplings[spin].resize(neighbors[spin].size());
+// Return the local index of 'target' in the neighbor list of 'spin'
+int SpinglassModel::neighbor_index(int spin, int target) const {
+    const auto& nb = neighbors[spin];
+    return find(nb.begin(), nb.end(), target) - nb.begin();
+}
+
+void SpinglassModel::initialize_couplings(gsl_rng* ran) {
+    couplings.assign(L * L, {});
+    for (int spin = 0; spin < L * L; ++spin)
+        couplings[spin].assign(neighbors[spin].size(), std::vector<int>(n_bits));
+
+    for (int spin = 0; spin < L * L; ++spin) {
         for (int i = 0; i < neighbors[spin].size(); ++i) {
-            couplings[spin][i].resize(n_bits);
-            for (int r = 0; r < n_bits; ++r)
-                couplings[spin][i][r] = randomBinary(ran);
+            int nb = neighbors[spin][i];
+            if (nb <= spin) continue;
+
+            auto& J = couplings[spin][i];
+            generate(J.begin(), J.end(), [&]{ return randomBinary(ran); });
+            couplings[nb][neighbor_index(nb, spin)] = J; // mirror
         }
     }
 }
@@ -53,28 +67,3 @@ void SpinglassModel::setbeta(double new_beta) {
 int SpinglassModel::randomNumber(gsl_rng* ran) {
     return (int)min((double)neighbor_count[0], inv2beta*gsl_ran_exponential(ran, 1.0));
 }
-/*
-// Pre-generate all random thresholds for the full simulation
-void SpinglassModel::initrandomNumbers(gsl_rng* ran) {
-    double val;
-    for (int sweep = 0; sweep < N_sweeps; sweep++)
-        for (int i = 0; i < N_spins; i++){
-            val = randomNumber(ran);
-            random_numbers[sweep][i] = (int)val;
-        }
-}
-
-// Initialize thresholds from an externally provided exponential base
-void SpinglassModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
-    for (int sweep = 0; sweep < N_sweeps; sweep++)
-        for (int i = 0; i < N_spins; i++)
-            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * betaJ) * exp_base[sweep][i]);
-}
-*/
-
-/*
-void SpinglassModel::init(gsl_rng* ran) {
-    initSpins(ran);
-    initrandomNumbers(ran);
-}
-*/

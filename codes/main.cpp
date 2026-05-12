@@ -122,7 +122,7 @@ void print_neurons(const vector<int>& neurons_before,
 int main() {
 
     // ── Parameters ────────────────────────────
-    const int    L        = 100;
+    const int    L        = 25;
     const int    N_sweeps = pow(2, 18);
     // ── Temperature Range ───────────────────
 
