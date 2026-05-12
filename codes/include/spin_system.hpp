@@ -35,8 +35,8 @@ public:
     void initNetwork_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
     int randomBinary(gsl_rng*);                      // initializes randomly a spin +-1
     void initSpins(gsl_rng*);                      // Initializes all spins randomly to ±1 using the GSL RNG
-    void initSpinsFromConfig(vector<int>&);        // Initializes spins from a given configuration (deep copy)
-    vector<int> getSpinsConfig();                  // Returns a copy of the full spin configuration
+    void initSpinsFromConfig(vector<int>&);        // Initializes couplings from a given configuration (deep copy)
+    vector<int> getSpinsConfig();                  // Returns a copy of the full couplings configuration
     virtual void GetMagnetizations(vector<double>&);       // Computes the magnetization m = (1/N) * sum_i s_i for each realisation
     double GetAverageMagnetization();              // Returns the average magnetization over all realisations    
     //void SaveMagnetizations(const string& filename); // Appends the magnetizations of all realisations to a CSV file

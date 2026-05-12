@@ -124,7 +124,7 @@ int main() {
 
     // ── Parameters ────────────────────────────
     const int    L        = 25;
-    const int    N_sweeps = pow(2, 15);
+    const int    N_sweeps = pow(2, 18);
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;
@@ -162,35 +162,40 @@ int main() {
          << "\nTemperatures: " <<endl;
 
     for (double T : temperatures) cout <<T <<"  ";
-    cout <<" \n";
+    cout <<" \n\n";
 
     // ── Model initialization ───────────────────
-
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+
+    // Initialize both models with the same lattice size, inverse temperature, and sweep count
     SpinglassBits   bits  (L, 1.0 / T_min, N_sweeps);
     SpinglassNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
+    // Build the 2D periodic boundary condition network for both models
     bits.initNetwork2D_PBC();
     nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
+    // Generate couplings once with a fixed seed, then share them across both models
+    // to ensure identical disorder realizations
     gsl_rng_set(ran, 123);
     bits.initCouplings(ran);
     vector<vector<vector<int>>> initial_couplings = bits.getCouplingsConfig();
-
     nobits.initCouplingsFromConfig(initial_couplings);
     cout << "Couplings initialized\n" << endl;
 
+    // Generate the initial spin configuration once and share it across both models
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
     vector<int> initial_config = bits.getSpinsConfig();
     nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
-    // ── Temperature sweep ──────────────────────
-
+    // ── Temperature sweep ──────────────────────────────────────────────────────
+    // Iterate over the temperature schedule; at each step both models are reset
+    // to the same initial spin configuration and run with the same RNG seed,
+    // so that any difference in magnetizations reflects algorithmic divergence only.
     for (int i = 0; i < temperatures.size(); ++i) {
-        //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[i];
         const double beta = 1.0 / T;
@@ -198,32 +203,33 @@ int main() {
 
         // --- Bitwise simulation ---
         bits.setbeta(beta);
-        bits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
+        bits.initSpinsFromConfig(initial_config);   // reset to shared initial state
+        gsl_rng_set(ran, 123);                      // reset RNG for reproducibility
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,0.1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
+        bits.evolve_save(ran, 0.1, "../results/magnetizations/magnetizations_bits");
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
-
-        //bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
 
-        // --- Classic simulation (uncomment to compare) ---
+        // --- Classic (scalar) simulation ---
         nobits.setbeta(beta);
-        nobits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
+        nobits.initSpinsFromConfig(initial_config); // reset to the same initial state
+        gsl_rng_set(ran, 123);                      // same seed as bits for fair comparison
 
-        auto t_stard_nobits = chrono::high_resolution_clock::now();
+        auto t_start_nobits = chrono::high_resolution_clock::now();
         nobits.evolveSharedRNG(ran);
         auto t_end_nobits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_nobits = t_end_nobits - t_stard_nobits;
-
+        chrono::duration<double, milli> dt_nobits = t_end_nobits - t_start_nobits;
         cout << "  > NoBits: " << dt_nobits.count() / 1000.0 << " s" << endl;
+
+        // Report the wall-clock speedup of the bitwise approach
         cout << "  > Speedup: " << dt_nobits.count() / dt_bits.count() << "x" << endl;
         cout << "------------------------------------------" << endl;
 
         // --- Magnetization comparison ---
+        // Verify that both implementations produce identical magnetizations for every replica.
+        // Any discrepancy indicates a bug in one of the two update rules.
         vector<double> mag_bits(n_bits), mag_nobits(n_bits);
         bits.GetMagnetizations(mag_bits);
         nobits.GetMagnetizations(mag_nobits);
@@ -233,15 +239,14 @@ int main() {
             if (mag_bits[r] != mag_nobits[r]) {
                 equal = false;
                 cout << "Difference at r=" << r
-                     << ": bits=" << mag_bits[r]
-                     << " nobits=" << mag_nobits[r] << endl;
+                    << ": bits=" << mag_bits[r]
+                    << " nobits=" << mag_nobits[r] << endl;
             }
         }
         if (equal) cout << "OK: magnetizations are identical." << endl;
-
-    //bits.CloseCSVFiles();
     }
-    
+
+    // Release the RNG resource
     gsl_rng_free(ran);
     return 0;
 }

@@ -23,7 +23,7 @@ void SimulationIO::CloseCSVFiles() {
     for (auto& f : m_csv_files)
         if (f.is_open()) f.close();
     m_csv_files.clear();
-    cout <<"files closed"<<endl;
+    //cout <<"files closed"<<endl;
 }
 
 void SimulationIO::SaveMagnetizations(int N, double B, // either betaJ when Ising or just beta for Sin glass/Hofield

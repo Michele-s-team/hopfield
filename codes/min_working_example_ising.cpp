@@ -127,7 +127,7 @@ int main() {
 
     cout << "[main] Parameters: N_neurons=" << L_test*L_test
          << " N_sweeps=" << N_sweeps_test
-         << " Beta*J=" << BJ_test <<"\n";
+         << " Beta*J=" << BJ_test <<"\n\n";
 
     gsl_rng* ran_test = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran_test, 123);
