@@ -19,15 +19,15 @@
 double IsingNoBits::DeltaE(int spin, int realization) {
     int sum = 0;
     for (int j : neighbors[spin])
-        sum += spins_set[realization*N_spins+j];
-    return spins_set[realization*N_spins+spin] * sum;
+        sum += spins_set[realization*N+j];
+    return spins_set[realization*N+spin] * sum;
 }
 
 // =====================================================
 // SWEEP LOOP
 // =====================================================
 
-// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
+// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 // random numbers are shared among the 64 realizations
 // Saves magnetizations every save_stride sweeps if save=true.
 void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
@@ -37,19 +37,19 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     int spin;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N_spins; ++step) {
-            spin = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+        for (int step = 0; step < N; ++step) {
+            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
             rng = randomNumber(ran);
             if (rng >= neighbor_count[spin]) {
                 // 1ST BRANCH: unconditional flip: rng exceeds max possible local field
                 for (int r = 0; r < n_bits; ++r)
-                    spins_set[r*N_spins+spin] *= -1;
+                    spins_set[r*N+spin] *= -1;
             }
             else {
                 // 2ND BRANCH:flip realization r only if rng >= ΔE(i, r)
                 for (int r = 0; r < n_bits; ++r)
                     if (rng >= DeltaE(spin, r))
-                        spins_set[r*N_spins+spin] *= -1;
+                        spins_set[r*N+spin] *= -1;
             }
         }
 
@@ -65,7 +65,7 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 }
 
 
-// Core simulation loop: N_sweeps of N_spins random flip attempts each.
+// Core simulation loop: N_sweeps of N random flip attempts each.
 // each realization has its own random number
 // Saves magnetizations every save_stride sweeps if save=true.
 void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
@@ -75,13 +75,13 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
     int spin;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N_spins; ++step) {
-            spin = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+        for (int step = 0; step < N; ++step) {
+            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
 
                 for (int r = 0; r < n_bits; ++r){
                     rng = randomNumber(ran);
                     if (rng >= DeltaE(spin, r))
-                        spins_set[r*N_spins+spin] *= -1;
+                        spins_set[r*N+spin] *= -1;
                 }
             }
 

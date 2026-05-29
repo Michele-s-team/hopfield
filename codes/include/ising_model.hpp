@@ -32,7 +32,7 @@ private:
         
 public:
     
-    IsingModel(int L, double betaJ, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
+    IsingModel(int N, double betaJ, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
     virtual ~IsingModel() = default;
     void setNSweeps(int);                         //sets the number of spins
     void setbetaJ(double);                           // Sets a new value of β*J (e.g. when sweeping over temperatures)

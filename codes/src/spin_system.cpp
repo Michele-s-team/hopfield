@@ -9,27 +9,26 @@
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
+#include <math.h>
 
 // =====================================================
 // CONSTRUCTION
 // =====================================================
 
-SpinSystem::SpinSystem(int L)
-    : L(L),
-      N_spins(L * L),
+SpinSystem::SpinSystem(int N)
+    : N(N),
       neighbors(L * L),
       neighbor_count(L * L, 0),
-      spins_set(n_bits * N_spins, 0)
+      spins_set(n_bits * N, 0)
 {}
 
 
-void SpinSystem::setSize(int new_L) {
-    L       = new_L;
-    N_spins = new_L * new_L;
+void SpinSystem::setSize(int new_N) {
+    N = new_N;
     
-    neighbors.assign(N_spins, vector<int>());
-    neighbor_count.assign(N_spins, 0);
-    spins_set.assign(n_bits * N_spins, 0);
+    neighbors.assign(N, vector<int>());
+    neighbor_count.assign(N, 0);
+    spins_set.assign(n_bits * N, 0);
 }
 
 // =====================================================
@@ -38,6 +37,7 @@ void SpinSystem::setSize(int new_L) {
 
 // 2D square lattice with periodic boundary conditions
 void SpinSystem::initNetwork2D_PBC() {
+    int L = sqrt(N);
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -53,6 +53,7 @@ void SpinSystem::initNetwork2D_PBC() {
 
 // 2D square lattice with open boundary conditions (edge spins have fewer neighbors)
 void SpinSystem::initNetwork2D_OBC() {
+    int L = sqrt(N);
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
             int i = x + L * y;
@@ -67,10 +68,10 @@ void SpinSystem::initNetwork2D_OBC() {
 
 // Erdos-Renyi random graph: each directed edge (i,j) included with probability p
 void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
-    neighbors.assign(N_spins, vector<int>());
+    neighbors.assign(N, vector<int>());
     fill(neighbor_count.begin(), neighbor_count.end(), 0);
-    for (int i = 0; i < N_spins; i++)
-        for (int j = 0; j < N_spins; j++)
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
             if (i != j && gsl_rng_uniform(ran) < p) {
                 neighbors[i].push_back(j);
                 neighbor_count[i]++;
@@ -88,7 +89,7 @@ int SpinSystem::randomBinary(gsl_rng* ran){
 
 // Initialize all spins randomly across all realizations
 void SpinSystem::initSpins(gsl_rng* ran) {
-    for (int i = 0; i < n_bits * N_spins; i++)
+    for (int i = 0; i < n_bits * N; i++)
         spins_set[i] = randomBinary(ran);
 }
 
@@ -109,8 +110,8 @@ vector<int> SpinSystem::getSpinsConfig() {
 void SpinSystem::GetMagnetizations(vector<double>& magnetizations) {
     for (int r = 0; r < n_bits; r++) {
         double sum = 0;
-        for (int i = 0; i < N_spins; i++) sum += spins_set[r*N_spins+i];
-        magnetizations[r] = sum / N_spins;
+        for (int i = 0; i < N; i++) sum += spins_set[r*N+i];
+        magnetizations[r] = sum / N;
     }
 }
 
@@ -127,19 +128,17 @@ double SpinSystem::GetAverageMagnetization() {
 // I/O
 // =====================================================
 
-// Appends the 2D spin configuration of each realization to its own CSV file
+// Appends the spin configuration of each realization to its own CSV file
 void SpinSystem::SaveSpins(const string& filename) {
     for (int r = 0; r < n_bits; ++r) {
         string fname = filename + "_r" + to_string(r) + ".csv";
         ofstream f(fname, ios::app);
-        for (int y = 0; y < L; ++y) {
-            for (int x = 0; x < L; ++x) {
-                int i = x + L * y;
-                f << spins_set[r * N_spins + i];
-                if (x < L - 1) f << ",";
-            }
-            f << "\n";
+
+        for (int i = 0; i < N; ++i) {
+            f << spins_set[r * N + i];
+            if (i < N - 1) f << ",";
         }
+        f << "\n";
         f.close();
     }
 }

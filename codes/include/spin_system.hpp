@@ -19,11 +19,10 @@ using namespace std;
 
 class SpinSystem {
 protected:
-    int L;                              // linear size of the lattice (L x L)
-    int N_spins;                        // total number of spins (L*L)
+    int N;                              // total number of spins
     vector<vector<int>> neighbors;      // neighbors[i] = liste of neigbhors of each spins
     vector<int> neighbor_count;         // number of neighbors for each spin
-    vector<int> spins_set;              // spin configurations (±1), shape: [n_bits*N_spins]: [configurations 1 for all spins, configurations 2 for all spins ...]
+    vector<int> spins_set;              // spin configurations (±1), shape: [n_bits*N]: [configurations 1 for all spins, configurations 2 for all spins ...]
 
 public:
    

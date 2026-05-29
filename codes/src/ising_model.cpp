@@ -15,8 +15,8 @@
 // CONSTRUCTION
 // =====================================================
 
-IsingModel::IsingModel(int L, double betaJ, int N_sweeps)
-    : SpinSystem(L), betaJ(betaJ), inv2betaJ(1.0 / (2.0 * betaJ)), N_sweeps(N_sweeps)
+IsingModel::IsingModel(int N, double betaJ, int N_sweeps)
+    : SpinSystem(N), betaJ(betaJ), inv2betaJ(1.0 / (2.0 * betaJ)), N_sweeps(N_sweeps)
 {}
 
 // =====================================================
@@ -37,7 +37,7 @@ void IsingModel::setbetaJ(double new_betaJ) {
 // =====================================================
 
 // Draw a Metropolis threshold from an exponential distribution:
-//   rng ~ min(N_spins, Exp(1) / (2*betaJ))
+//   rng ~ min(N, Exp(1) / (2*betaJ))
 int IsingModel::randomNumber(gsl_rng* ran) {
     return (int)min((double)neighbor_count[0], inv2betaJ*gsl_ran_exponential(ran, 1.0));
 }
@@ -46,7 +46,7 @@ int IsingModel::randomNumber(gsl_rng* ran) {
 void IsingModel::initrandomNumbers(gsl_rng* ran) {
     double val;
     for (int sweep = 0; sweep < N_sweeps; sweep++)
-        for (int i = 0; i < N_spins; i++){
+        for (int i = 0; i < N; i++){
             val = randomNumber(ran);
             random_numbers[sweep][i] = (int)val;
         }
@@ -55,8 +55,8 @@ void IsingModel::initrandomNumbers(gsl_rng* ran) {
 // Initialize thresholds from an externally provided exponential base
 void IsingModel::initRandomNumbersFromExp(const vector<vector<double>>& exp_base) {
     for (int sweep = 0; sweep < N_sweeps; sweep++)
-        for (int i = 0; i < N_spins; i++)
-            random_numbers[sweep][i] = (int) min((double) N_spins, 1.0 / (2.0 * betaJ) * exp_base[sweep][i]);
+        for (int i = 0; i < N; i++)
+            random_numbers[sweep][i] = (int) min((double) N, 1.0 / (2.0 * betaJ) * exp_base[sweep][i]);
 }
 */
 

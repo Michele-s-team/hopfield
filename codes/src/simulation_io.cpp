@@ -6,15 +6,18 @@ using namespace std;
 #include "main.hpp"
 
 
-void SimulationIO::OpenCSVFiles(const string& folder, int L) {
+void SimulationIO::OpenCSVFiles(const string& folder, int N) {
     m_csv_files.resize(n_bits);
+
     for (int r = 0; r < n_bits; ++r) {
         string path = folder
-            + "_L" + to_string(L)
+            + "_N" + to_string(N)
             + "_r" + to_string(r)
             + ".csv";
+
         m_csv_files[r].open(path, ios::app);
-        if (m_csv_files[r].tellp() == 0)    // ← fichier vide = nouveau
+
+        if (m_csv_files[r].tellp() == 0)
             m_csv_files[r] << "T,N,m\n";
     }
 }

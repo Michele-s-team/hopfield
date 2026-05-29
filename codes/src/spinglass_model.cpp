@@ -17,8 +17,8 @@ using namespace std;
 // CONSTRUCTION
 // =====================================================
 
-SpinglassModel::SpinglassModel(int L, double beta, int N_sweeps)
-    : SpinSystem(L), beta(beta), inv2beta(1.0 / (2.0 * beta)), N_sweeps(N_sweeps)
+SpinglassModel::SpinglassModel(int N, double beta, int N_sweeps)
+    : SpinSystem(N), beta(beta), inv2beta(1.0 / (2.0 * beta)), N_sweeps(N_sweeps)
 {}
 
 // =====================================================
@@ -37,14 +37,14 @@ int SpinglassModel::neighbor_index(int spin, int target) const {
 // Each edge (spin, nb) with spin < nb is generated once and then
 // mirrored onto the neighbor side to guarantee J_ij = J_ji.
 void SpinglassModel::initCouplings(gsl_rng* ran) {
-    couplings.assign(L * L, {});
+    couplings.assign(N, {});
 
     // Allocate one vector of n_bits integers per neighbor of each spin
-    for (int spin = 0; spin < L * L; ++spin)
+    for (int spin = 0; spin < N; ++spin)
         couplings[spin].assign(neighbors[spin].size(), std::vector<int>(n_bits));
 
     // Fill each edge exactly once (spin < nb), then mirror
-    for (int spin = 0; spin < L * L; ++spin) {
+    for (int spin = 0; spin < N; ++spin) {
         for (int i = 0; i < neighbors[spin].size(); ++i) {
             int nb = neighbors[spin][i];
             if (nb <= spin) continue;   // skip already-filled edges

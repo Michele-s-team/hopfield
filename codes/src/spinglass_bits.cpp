@@ -23,14 +23,14 @@ void SpinglassBits::fromCanonical(){
     Bits_Spins_Set.clear();
     Neighbor_Count.clear();
     Couplings.clear();
-    Bits_Spins_Set.reserve(N_spins);
-    Neighbor_Count.reserve(N_spins);
-    Couplings.reserve(N_spins);
+    Bits_Spins_Set.reserve(N);
+    Neighbor_Count.reserve(N);
+    Couplings.reserve(N);
 
-    for (int i = 0; i < N_spins; ++i) {
+    for (int i = 0; i < N; ++i) {
         Bits spin_tmp;                          // ← déclaré ici : réinitialisé à chaque i
         for (int r = 0; r < n_bits; ++r) {
-            int spin = (spins_set[r*N_spins+i] + 1) / 2;
+            int spin = (spins_set[r*N+i] + 1) / 2;
             spin_tmp.Set(r, spin);
         }
 
@@ -56,8 +56,8 @@ void SpinglassBits::fromCanonical(){
 // bit representation {0,1} -> canonical spins {-1,+1}
 void SpinglassBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
-        for (int i = 0; i < N_spins; ++i)
-            spins_set[r*N_spins+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
+        for (int i = 0; i < N; ++i)
+            spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
 
 // =====================================================
@@ -68,12 +68,12 @@ void SpinglassBits::toCanonical(){
 void SpinglassBits::GetMagnetizations(vector<double>& magnetizations){
     vector<int> ones(n_bits, 0);
 
-    for (int i = 0; i < N_spins; ++i)
+    for (int i = 0; i < N; ++i)
         for (int r = 0; r < n_bits; ++r)
             ones[r] += Bits_Spins_Set[i].Get(r);
 
     for (int r = 0; r < n_bits; ++r)
-        magnetizations[r] = (2.0 * ones[r] - N_spins) / N_spins;
+        magnetizations[r] = (2.0 * ones[r] - N) / N;
 }
 
 
@@ -112,7 +112,7 @@ void SpinglassBits::tryFlip(int i, int rng,
 // =====================================================
 
 
-// Core simulation loop: N_sweeps sweeps of N_spins random flip attempts each.
+// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
 void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
@@ -126,8 +126,8 @@ void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N_spins; ++step) {
-            i = gsl_rng_uniform_int(ran, N_spins);  // pick a random spin
+        for (int step = 0; step < N; ++step) {
+            i = gsl_rng_uniform_int(ran, N);  // pick a random spin
             rng = randomNumber(ran);
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 

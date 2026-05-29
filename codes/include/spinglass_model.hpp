@@ -22,8 +22,8 @@ using namespace std;
 
 class SpinglassModel : public SpinSystem {
 protected:
-    double beta;                       // inverse temperature times coupling: β*J
-    double inv2beta;                   // =1/(2*betaJ)
+    double beta;                       // inverse temperature
+    double inv2beta;                   // =1/(2*beta)
     int N_sweeps;                    // number of Metropolis sweeps
     vector<vector<vector<int>>> couplings;
     SimulationIO m_io;                  // saving files
@@ -31,7 +31,7 @@ protected:
         
 public:
     
-    SpinglassModel(int L, double beta, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
+    SpinglassModel(int N, double beta, int N_sweeps);   // Constructor: allocates all vectors for an L x L lattice with given inverse temperature betaJ and number of sweeps
     virtual ~SpinglassModel() = default;
     void initCouplings(gsl_rng*);
     void initCouplingsFromConfig(vector<vector<vector<int>>>);
