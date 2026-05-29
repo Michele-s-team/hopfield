@@ -141,8 +141,8 @@ int main() {
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
     // Construct both models with identical parameters
-    SpinglassBits   bits  (L, beta, N_sweeps);
-    SpinglassNoBits nobits(L, beta, N_sweeps);
+    SpinglassBits   bits  (L * L, beta, N_sweeps);
+    SpinglassNoBits nobits(L * L, beta, N_sweeps);
 
     // Build the 2D square lattice with periodic boundary conditions
     bits.initNetwork2D_PBC();
