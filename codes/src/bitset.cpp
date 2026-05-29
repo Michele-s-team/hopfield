@@ -336,18 +336,14 @@ Bits& BitSet::operator [] (const unsigned int& i){
 
 
 
-//return *this + *addend
-BitSet BitSet::operator + (BitSet* addend) {
-    
+BitSet BitSet::operator+(BitSet* addend) {
     BitSet a;
-    
-    a = (*this);
-    a += addend;
-
+    if (addend->GetSize() >= this->GetSize())
+        a = *addend, a += this;
+    else
+        a = *this, a += addend;
     return a;
-
 }
-
 
 //return *this - m
 BitSet BitSet::operator - (BitSet* addend) {

@@ -32,7 +32,7 @@ csv_folder = "../results/magnetizations"
 
 # ── Load data ─────────────────────────────────────────
 # One file per (L, realization): extract L from filename
-files = sorted(glob.glob(os.path.join(csv_folder, "L*_r*.csv")))
+files = sorted(glob.glob(os.path.join(csv_folder, "magnetizations_bits_L*_r*.csv")))
 if not files:
     raise ValueError(f"No files found in {csv_folder}")
 
@@ -95,27 +95,28 @@ for L, color in zip(L_vals, palette):
     err_rms_m = std_m2 / (2 * rms_m * np.sqrt(n_real))
 
     # Individual realizations (light scatter)
+    # Individual realizations
     for r in range(n_real):
         ax.scatter(T, np.abs(mags[:, r]),
-                   color=color, alpha=0.2, s=8, linewidths=0,
-                   label=f"$L={L}$ realizations" if r == 0 else None,
+                   color="blue", alpha=0.2, s=8, linewidths=0,
+                   label="64 realizations" if r == 0 else None,
                    zorder=2)
 
-    # Mean with error bars
+    # Mean — points only, no line
     ax.errorbar(T, rms_m, yerr=err_rms_m,
-                fmt="o-", color=color, linewidth=1.6,
+                fmt="o", color="black", linewidth=0,
                 elinewidth=1.0, capsize=3, capthick=1.0,
                 markersize=4, markeredgewidth=0,
-                label=f"$L = {L}$", zorder=4)
+                label=f"average", zorder=4)
 
 # Critical temperature
-ax.axvline(Tc, color=sns.color_palette("deep")[3],
-           linestyle="--", linewidth=1.3, alpha=0.85,
+ax.axvline(Tc, color="darkred",
+           linestyle="--", linewidth=1.5, alpha=0.85,
            label=r"$T_c/J \approx 2.269$", zorder=5)
 
 # Onsager exact solution
 ax.plot(T_th, mag_th,
-        color=sns.color_palette("deep")[2], linewidth=2.0,
+        color="darkgreen", linewidth=2.0,
         zorder=6, label="Onsager exact solution")
 
 # ── Axes ──────────────────────────────────────────────
@@ -129,10 +130,10 @@ ax.tick_params(which="minor", length=3)
 ax.tick_params(which="major", length=5)
 ax.set_xlabel(r"$T\,/\,J$", labelpad=8)
 ax.set_ylabel(r"$\sqrt{\langle m^2 \rangle}$", labelpad=8)
-ax.set_title("Magnetization vs. temperature  —  2D Ising model", pad=12)
+ax.set_title("Magnetization vs. temperature  —  L=100  —  2D Ising model", pad=12)
 ax.legend(loc="upper right", framealpha=0.9, borderpad=0.7, labelspacing=0.4)
 sns.despine(ax=ax, left=False, bottom=False)
 
 plt.tight_layout()
-plt.savefig("../results/magnetizations.png", dpi=200, bbox_inches="tight")
+plt.savefig("../results/magnetizations.svg", format='svg', dpi=200, bbox_inches="tight")
 plt.show()

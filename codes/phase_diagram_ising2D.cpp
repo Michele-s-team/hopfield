@@ -123,18 +123,21 @@ int main() {
     const int    N_sweeps = pow(2, 18);
     // ── Temperature Range ───────────────────
 
-    vector<double> temperatures;
-
+    vector<double> temperatures;    
     const double T_min    = 0.1;
     const double step_1   = 0.1;
     const double T_1      = 1.5;
     const double step_2   = 0.05;
     const double T_2      = 2.0;
     const double step_3   = 0.02;
-    const double T_3      = 2.5;
-    const double step_4   = 0.05;
-    const double T_4      = 3.0;
-    const double step_5   = 0.1;
+    const double T_3      = 2.2;
+    const double step_4   = 0.005;
+    const double T_4      = 2.3;
+    const double step_5   = 0.02;
+    const double T_5      = 2.5;
+    const double step_6   = 0.05;
+    const double T_6      = 3.0;
+    const double step_7   = 0.1;
     const double T_max    = 4.0;
 
 
@@ -150,8 +153,11 @@ int main() {
     add_segment(T_1,  T_2, step_2, false);
     add_segment(T_2,  T_3, step_3, false);
     add_segment(T_3,  T_4, step_4, false);
-    add_segment(T_4,  T_max, step_5, false)
+    add_segment(T_4,  T_5, step_5, false);
+    add_segment(T_5,  T_6, step_6, false);
+    add_segment(T_6,  T_max, step_7, false); 
     */
+
     temperatures.push_back(1.5);
     cout << "[main] Parameters: N_spins=" << L*L
          << "  N_sweeps=" << N_sweeps
@@ -163,17 +169,17 @@ int main() {
     // ── Model initialization ───────────────────
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    IsingBits   bits  (L, 1.0 / T_min, N_sweeps);
-    IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    IsingBits   bits  (L, 1.0 / 1.5, N_sweeps);
+    //IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
     bits.initNetwork2D_PBC();
-    nobits.initNetwork2D_PBC();
+    //nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
-    vector<int> initial_config = bits.getSpinsConfig();
-    nobits.initSpinsFromConfig(initial_config);
+    //vector<int> initial_config = bits.getSpinsConfig();
+    //nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
     // ── Temperature sweep ──────────────────────
@@ -181,22 +187,28 @@ int main() {
     for (int i = 0; i < temperatures.size(); ++i) {
         //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
 
-        double T = temperatures[i];
+        double T = temperatures[temperatures.size()-i-1];
         const double betaJ = 1.0 / T;
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
         bits.setbetaJ(betaJ);
-        bits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
+        //bits.initSpinsFromConfig(initial_config);
+        //gsl_rng_set(ran, 123);
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
+        //bits.evolve(ran);
+        bits.evolve_save(ran,0.1, "../results/magnetizations/T=1.5/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
 
-        //bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
+        bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
+        //bits.CloseCSVFiles();
+
+
+
+        
 
         /*
         // --- Classic simulation (uncomment to compare) ---
@@ -231,7 +243,7 @@ int main() {
 
         */
 
-    //bits.CloseCSVFiles();
+
     }
     
     gsl_rng_free(ran);

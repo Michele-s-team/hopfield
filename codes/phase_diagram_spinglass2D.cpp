@@ -207,7 +207,8 @@ int main() {
         gsl_rng_set(ran, 123);                      // reset RNG for reproducibility
 
         auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran, 0.1, "../results/magnetizations/magnetizations_bits");
+        //bits.evolve_save(ran, 0.1, "../results/magnetizations/magnetizations_bits");
+        bits.evolve(ran);
         auto t_end_bits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
@@ -218,7 +219,7 @@ int main() {
         gsl_rng_set(ran, 123);                      // same seed as bits for fair comparison
 
         auto t_start_nobits = chrono::high_resolution_clock::now();
-        nobits.evolveSharedRNG(ran);
+        nobits.evolveIndependentRNG(ran);
         auto t_end_nobits = chrono::high_resolution_clock::now();
         chrono::duration<double, milli> dt_nobits = t_end_nobits - t_start_nobits;
         cout << "  > NoBits: " << dt_nobits.count() / 1000.0 << " s" << endl;

@@ -126,14 +126,16 @@ int main() {
 
     // ── Simulation parameters ─────────────────────────────────────────────────
     const int    L         = 100;       // linear lattice size (L×L spins)
-    const double beta      = 100;       // inverse temperature
-    const int    N_sweeps  = pow(2,10); // number of Metropolis sweeps
+    const double beta      = 1/1.5;       // inverse temperature
+    const int    N_sweeps  = pow(2,14); // number of Metropolis sweeps
     const int    col_width    = 3;      // column width for spin display
     const int    prefix_width = 12;     // label width for spin display
 
-    cout << "[main] Parameters: N_neurons=" << L*L
+    cout << "\n";
+    cout << "SpinGlass 2D \n\n";
+    cout << "Parameters: N_neurons=" << L*L
          << " N_sweeps=" << N_sweeps
-         << " Beta=" << beta << "\n\n";
+         << " T=" << 1.5 << "\n\n";
 
     // ── Model initialization ──────────────────────────────────────────────────
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
@@ -179,7 +181,7 @@ int main() {
     // ── Evolution: SpinglassNoBits ────────────────────────────────────────────
     gsl_rng_set(ran, 42);   // reset to same seed for a fair comparison
     clock_t start_ref = clock();
-    nobits.evolveSharedRNG(ran);
+    nobits.evolveIndependentRNG(ran);
     clock_t end_ref = clock();
     double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout << "Classic done. Time: " << clock_ref << " s\n";
@@ -191,7 +193,7 @@ int main() {
     bits.GetMagnetizations(mag_bits);
     nobits.GetMagnetizations(mag_nobits);
 
-    bool equal = true;
+    /*bool equal = true;
     for (int r = 0; r < n_bits; r++) {
         if (mag_bits[r] != mag_nobits[r]) {
             equal = false;
@@ -202,8 +204,9 @@ int main() {
     }
     if (equal) {
         cout << "OK: magnetizations are identical." << endl;
-        cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
     }
+    */
+    cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 
     // Note: m_io (SimulationIO member of bits/nobits) closes any open CSV files
     // automatically via its destructor when the objects go out of scope here.
