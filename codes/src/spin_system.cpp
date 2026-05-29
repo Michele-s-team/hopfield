@@ -17,8 +17,8 @@
 
 SpinSystem::SpinSystem(int N)
     : N(N),
-      neighbors(L * L),
-      neighbor_count(L * L, 0),
+      neighbors(N),
+      neighbor_count(N, 0),
       spins_set(n_bits * N, 0)
 {}
 

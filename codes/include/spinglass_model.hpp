@@ -44,7 +44,7 @@ public:
     //void init(gsl_rng*);           
     vector<vector<vector<int>>> getCouplingsConfig(); 
     void OpenCSVFiles(const string& folder) {
-        m_io.OpenCSVFiles(folder, L);
+        m_io.OpenCSVFiles(folder, N);
     }
     void CloseCSVFiles() { m_io.CloseCSVFiles(); }
     void SaveMagnetizations(int N) {
