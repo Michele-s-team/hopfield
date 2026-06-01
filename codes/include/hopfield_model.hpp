@@ -2,7 +2,7 @@
 //  hopfield_model.hpp
 //  hopfield
 //
-//  Created by Bastien on 7/05/2026.
+//  Created by Bastien on 1/06/2026.
 //
 //THIS CLASS SETS UP THE VARIABLES USED FOR THE SIMULATION OF THE THERMALIZATION OF A SPIN GLASS HAMILTONIAN ON THE GENERATED NETWORK
 #ifndef hopfield_model_hpp

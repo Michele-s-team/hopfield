@@ -2,7 +2,7 @@
 //  hopfield_model.cpp
 //  hopfield
 //
-//  Created by Bastien on 7/05/2026.
+//  Created by Bastien on 1/06/2026.
 //
 #include "spin_system.hpp"
 #include "hopfield_model.hpp"
