@@ -1,0 +1,40 @@
+//
+//  hopfield_nobits.hpp
+//  hopfield
+//
+//  Created by Bastien on 12/05/2026.
+//
+// THIS CLASS IMPLEMENTS THE CLASSIC SIMULATION OF THE ISING HAMILTONIAN ON THE GENERATED NETWORK
+
+#ifndef hopfieldnobits_hpp
+#define hopfieldnobits_hpp
+
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <vector>
+
+#include "hopfield_model.hpp"
+
+using namespace std;
+
+class HopfieldNoBits : public HopfieldModel {
+
+public:
+    using HopfieldModel::HopfieldModel;
+
+    //void evolveOneSweep(int, gsl_rng*);   // single Monte Carlo sweep (classic spin implementation)
+    //void evolve_modular(gsl_rng*) override;    // modular version of classic evolution loop
+    void evolveSharedRNG(gsl_rng*); // reference full-loop implementation (non-modular)
+    void evolveIndependentRNG(gsl_rng*); // reference full-loop implementation (non-modular)
+    void evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename);  // run simulation and save the magnetization at the frequency freq (between 0 and 1) in filename
+
+private:
+
+    double DeltaE(int spin, int realization); // local energy variation for spin flip decision
+    void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
+    void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
+};
+
+
+#endif
