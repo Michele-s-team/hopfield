@@ -181,7 +181,7 @@ int main() {
     // ── Evolution: SpinglassNoBits ────────────────────────────────────────────
     gsl_rng_set(ran, 42);   // reset to same seed for a fair comparison
     clock_t start_ref = clock();
-    nobits.evolveIndependentRNG(ran);
+    nobits.evolveSharedRNG(ran);
     clock_t end_ref = clock();
     double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout << "Classic done. Time: " << clock_ref << " s\n";
