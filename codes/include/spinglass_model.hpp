@@ -40,7 +40,7 @@ public:
     // Model interface - must be implemented by derived classes
     virtual void GetMagnetizations(vector<double>& magnetizations) override = 0;
 
-    int neighbor_index(int , int ) const;
+    int neighbor_index(int , int) const;
 };
 
 #endif

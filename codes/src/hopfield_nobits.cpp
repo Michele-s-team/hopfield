@@ -30,7 +30,7 @@ double HopfieldNoBits::DeltaE(int spin, int r) {
 }
 
 // =====================================================
-// SHARED RNG (même seuil aléatoire pour toutes les réplicas)
+// SHARED RNG (same random threshold among replicas)
 // =====================================================
 
 void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
@@ -41,9 +41,9 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             int spin = gsl_rng_uniform_int(ran, N);
-            int rng = randomNumber(ran, neighbor_count[spin]);
+            int rng = randomNumber(ran, neighbor_count[spin]*P, N);
 
-            if (rng >= neighbor_count[spin]) {
+            if (rng >= P * neighbor_count[spin]) {
                 // 1ST BRANCH: unconditional flip in all replicas
                 for (int r = 0; r < n_bits; ++r)
                     spins_set[r * N + spin] *= -1;
@@ -67,7 +67,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 }
 
 // =====================================================
-// INDEPENDENT RNG (seuil différent pour chaque réplica)
+// INDEPENDENT RNG (different random threshold among replicas)
 // =====================================================
 
 void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
@@ -114,3 +114,4 @@ void HopfieldNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const strin
     runSweepsSharedRNG(ran, true, freq);
     CloseCSVFiles();
 }
+

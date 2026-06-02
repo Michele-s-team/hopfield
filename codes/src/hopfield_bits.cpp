@@ -99,8 +99,9 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
-    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2)); // no need for more space allocation
+    UnsignedInt sum((unsigned long long int)(2* neighbor_count[0] * P)); // max value of sum= 2* neighbor_count[i] * P and all spons have same number of neighbors 
+                                                                         //works only for regular networks, else have to specify max(neighbor_count[i])
+    UnsignedInt threshold((unsigned long long int)(2* neighbor_count[0] * P)); // no need for more space allocation
     int rng;
     int i;
 
@@ -111,11 +112,11 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran, neighbor_count[0]);
+            rng = randomNumber(ran, neighbor_count[0]*P, N);  //works only for regular networks, else have to specify neighbor_count[i]
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
-            if (rng >= neighbor_count[i]) {  
+            if (rng >= P * neighbor_count[i]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
             }
@@ -125,7 +126,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             for (int k = 0; k < neighbors[i].size(); ++k) {
                 int j = neighbors[i][k];                  // id of the neighbor
                 for (int p = 0; p < P; ++p) {
-                    xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Patterns[p][i] ^ Patterns[p][j]); // the bitwise rule
+                    xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Patterns[p][i] ^ Patterns[p][j]); // the bitwise rule for the Hebbian weights
                     sum += &xnor_ij;
                 }
             }
@@ -134,7 +135,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             threshold.SetAll((unsigned long long int) rng);
             threshold += &Neighbor_Count[i];
 
-            mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold value is useless
+            mask = (sum <= threshold);   
             Bits_Spin_i ^= &mask;
         }
 

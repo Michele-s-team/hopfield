@@ -39,7 +39,9 @@ public:
         return N_sweeps;
     }
 
-    int randomNumber(gsl_rng*, int);
+    // Metropolis random threshold generator
+    // factor: multiplicative factor (default = 1.0 for backward compatibility)
+    int randomNumber(gsl_rng* ran, int max_neighbor_count, double factor = 1.0);
 };
 
 #endif

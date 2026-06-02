@@ -39,7 +39,7 @@ public:
     // =========================
 
     // Metropolis random threshold generator
-    int randomNumber(gsl_rng* ran, int max_neighbor_count);
+    int randomNumber(gsl_rng* ran, int max_neighbor_count, int factor =1);
 
     // Simulation length (if you want to remove N_sweeps from models)
     int getNSweeps() const;

@@ -53,8 +53,8 @@ void SimulationBase::SaveMagnetizations(
 // METROPOLIS
 // =====================================================
 
-int SimulationBase::randomNumber(gsl_rng* ran, int max_neighbor_count) {
-    return m_metropolis.randomNumber(ran, max_neighbor_count);
+int SimulationBase::randomNumber(gsl_rng* ran, int max_neighbor_count, int factor) {
+    return m_metropolis.randomNumber(ran, max_neighbor_count, factor);
 }
 
 int SimulationBase::getNSweeps() const {

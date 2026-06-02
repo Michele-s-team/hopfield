@@ -19,8 +19,6 @@ public:
 
 private:
     vector<ofstream> m_csv_files;
-    int m_L     = 0;
-    int m_n_bits = 0;
 };
 
 #endif
