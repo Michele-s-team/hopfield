@@ -18,7 +18,7 @@
 using namespace std;
 
 
-class SpinglassBits : public SpinGlassModel {
+class SpinGlassBits : public SpinGlassModel {
 
     vector<Bits> Bits_Spins_Set;                 // bitwise spins across all realizations
     vector<UnsignedInt> Neighbor_Count;          // degree encoded for vectorized ops

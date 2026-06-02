@@ -48,15 +48,15 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 
 // =============================================================================
 // Minimal working example — correctness and performance check:
-//   SpinglassBits vs SpinglassNoBits
+//   SpinGlassBits vs SpinGlassNoBits
 //
 // Both models are initialized from the same disorder realization (couplings)
 // and the same initial spin configuration. They are then evolved with the same
 // RNG seed so that each flip attempt draws the same random number in both cases.
 // The resulting magnetizations are compared replica by replica.
 //
-// Purpose: validate that the bitwise implementation (SpinglassBits) produces
-// the same physics as the reference scalar implementation (SpinglassNoBits),
+// Purpose: validate that the bitwise implementation (SpinGlassBits) produces
+// the same physics as the reference scalar implementation (SpinGlassNoBits),
 // and measure the wall-clock speedup.
 //
 // No output files are written.
@@ -141,8 +141,8 @@ int main() {
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
     // Construct both models with identical parameters
-    SpinglassBits   bits  (L * L, beta, N_sweeps);
-    SpinglassNoBits nobits(L * L, beta, N_sweeps);
+    SpinGlassBits   bits  (L * L, beta, N_sweeps);
+    SpinGlassNoBits nobits(L * L, beta, N_sweeps);
 
     // Build the 2D square lattice with periodic boundary conditions
     bits.initNetwork2D_PBC();
@@ -168,7 +168,7 @@ int main() {
     print_neurons(initial_config, nobits.getSpinsConfig(),
                   bits.getSpinsConfig(), L*L, prefix_width, col_width);
 
-    // ── Evolution: SpinglassBits ──────────────────────────────────────────────
+    // ── Evolution: SpinGlassBits ──────────────────────────────────────────────
     // Both models use the same seed (42) so that flip decisions draw the same
     // sequence of random numbers, making the comparison meaningful.
     gsl_rng_set(ran, 42);
@@ -178,7 +178,7 @@ int main() {
     double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout << "Bits done. Time: " << clock_bits << " s\n";
 
-    // ── Evolution: SpinglassNoBits ────────────────────────────────────────────
+    // ── Evolution: SpinGlassNoBits ────────────────────────────────────────────
     gsl_rng_set(ran, 42);   // reset to same seed for a fair comparison
     clock_t start_ref = clock();
     nobits.evolveSharedRNG(ran);

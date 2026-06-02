@@ -168,8 +168,8 @@ int main() {
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
     // Initialize both models with the same lattice size, inverse temperature, and sweep count
-    SpinglassBits   bits  (L, 1.0 / T_min, N_sweeps);
-    SpinglassNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    SpinGlassBits   bits  (L, 1.0 / T_min, N_sweeps);
+    SpinGlassNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
     // Build the 2D periodic boundary condition network for both models
     bits.initNetwork2D_PBC();

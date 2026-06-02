@@ -167,15 +167,15 @@ int main() {
     // ── Model initialization ───────────────────
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    SpinglassBits   bits  (L, 1.0 / T_min, N_sweeps);
-    SpinglassNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    SpinGlassBits   bits  (L, 1.0 / T_min, N_sweeps);
+    SpinGlassNoBits nobits(L, 1.0 / T_min, N_sweeps);
 
     bits.initNetwork2D_PBC();
     nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
-    bits.initialize_couplings(ran);
-    nobits.initialize_couplings(ran);
+    bits.initCouplings(ran);
+    nobits.initCouplings(ran);
     cout << "Couplings initialized\n" << endl;
 
     gsl_rng_set(ran, 123);

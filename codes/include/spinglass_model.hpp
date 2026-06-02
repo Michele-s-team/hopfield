@@ -36,9 +36,6 @@ public:
     void initCouplings(gsl_rng* ran);
     void initCouplingsFromConfig(vector<vector<vector<int>>> config);
     vector<vector<vector<int>>> getCouplingsConfig();
-    
-    // Model interface - must be implemented by derived classes
-    virtual void GetMagnetizations(vector<double>& magnetizations) override = 0;
 
     int neighbor_index(int , int) const;
 };

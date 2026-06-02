@@ -33,6 +33,21 @@ void SimulationBase::CloseCSVFiles() {
 }
 
 // =====================================================
+// GET MAGNETIZATIONS (implémentation par défaut)
+// =====================================================
+
+void SimulationBase::GetMagnetizations(vector<double>& magnetizations) {
+    magnetizations.resize(n_bits);
+    for (int r = 0; r < n_bits; ++r) {
+        double sum = 0.0;
+        for (int i = 0; i < N; ++i) {
+            sum += spins_set[r * N + i];
+        }
+        magnetizations[r] = sum / N;
+    }
+}
+
+// =====================================================
 // OBSERVABLE SAVING
 // =====================================================
 
@@ -58,5 +73,13 @@ int SimulationBase::randomNumber(gsl_rng* ran, int max_neighbor_count, int facto
 }
 
 int SimulationBase::getNSweeps() const {
-    return m_metropolis.getNSweeps();  // si Metropolis a cette méthode
+    return m_metropolis.getNSweeps();
+}
+
+void SimulationBase::setNSweeps(int n) {
+    m_metropolis.setNSweeps(n);
+}
+
+void SimulationBase::setBeta(double new_beta) {
+    m_metropolis.setBeta(new_beta);
 }

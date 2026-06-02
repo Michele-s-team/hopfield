@@ -33,7 +33,7 @@ void Metropolis::setNSweeps(int n) {
     N_sweeps = n;
 }
 
-void Metropolis::setbeta(double new_beta) {
+void Metropolis::setBeta(double new_beta) {
     beta     = new_beta;
     inv2beta = 1.0 / (2.0 * new_beta);
 }
@@ -42,9 +42,9 @@ void Metropolis::setbeta(double new_beta) {
 // RANDOM NUMBER GENERATION
 // =====================================================
 
-int Metropolis::randomNumber(gsl_rng* ran, int max_neighbor_count) {
+int Metropolis::randomNumber(gsl_rng* ran, int max_neighbor_count, double factor) {
     return static_cast<int>(
         min(static_cast<double>(max_neighbor_count),
-            inv2beta * gsl_ran_exponential(ran, 1.0))
+            factor * inv2beta * gsl_ran_exponential(ran, 1.0))
     );
 }

@@ -8,8 +8,8 @@
 // AND RANDOM NUMBER GENERATION UTILITIES.
 //
 
-#ifndef METROPOLIS_HPP
-#define METROPOLIS_HPP
+#ifndef metropolis_hpp
+#define metropolis_hpp
 
 #include "gsl_rng.h"
 
@@ -28,7 +28,7 @@ public:
 
     virtual ~Metropolis() = default;
 
-    void setbeta(double);
+    void setBeta(double);
     void setNSweeps(int);
 
     double getBeta() const {

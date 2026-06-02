@@ -4,10 +4,10 @@
 //
 //  Created by Bastien on 12/05/2026.
 //
-// THIS CLASS IMPLEMENTS THE CLASSIC SIMULATION OF THE ISING HAMILTONIAN ON THE GENERATED NETWORK
+// THIS CLASS IMPLEMENTS THE CLASSIC SIMULATION OF THE HOPFIELD HAMILTONIAN ON THE GENERATED NETWORK
 
-#ifndef isingnobits_hpp
-#define isingnobits_hpp
+#ifndef hopfieldnobits_hpp
+#define hopfieldnobits_hpp
 
 #include <iostream>
 #include <sstream>
