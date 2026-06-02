@@ -22,6 +22,7 @@ class HopfieldBits : public HopfieldModel {
 
     vector<Bits> Bits_Spins_Set;            // bitwise spins across all realizations
     vector<UnsignedInt> Neighbor_Count;     // degree encoded for vectorized ops
+    vector<UnsignedInt> P_times_Neighbor_Count; // P*degree encoded for vectorized ops
     vector<vector<Bits>> Patterns;          // patterns encoded for vectorized ops
     vector<vector<Bits>> Couplings;         // couplings encoded for vectorized ops
 

@@ -41,7 +41,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             int spin = gsl_rng_uniform_int(ran, N);
-            int rng = randomNumber(ran, neighbor_count[spin]*P, N);
+            int rng = randomNumber(ran, P * neighbor_count[spin], N);
 
             if (rng >= P * neighbor_count[spin]) {
                 // 1ST BRANCH: unconditional flip in all replicas

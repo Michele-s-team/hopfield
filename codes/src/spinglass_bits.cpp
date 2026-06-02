@@ -19,7 +19,7 @@
 // =====================================================
 
 // canonical spins {-1,+1} -> bit representation {0,1}
-void SpinglassBits::fromCanonical(){
+void SpinGlassBits::fromCanonical(){
     Bits_Spins_Set.clear();
     Neighbor_Count.clear();
     Couplings.clear();
@@ -54,7 +54,7 @@ void SpinglassBits::fromCanonical(){
 }
 
 // bit representation {0,1} -> canonical spins {-1,+1}
-void SpinglassBits::toCanonical(){
+void SpinGlassBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
         for (int i = 0; i < N; ++i)
             spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
@@ -65,7 +65,7 @@ void SpinglassBits::toCanonical(){
 // =====================================================
 
 // Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
-void SpinglassBits::GetMagnetizations(vector<double>& magnetizations){
+void SpinGlassBits::GetMagnetizations(vector<double>& magnetizations){
     magnetizations.resize(n_bits);
     vector<int> ones(n_bits, 0);
 
@@ -83,7 +83,7 @@ void SpinglassBits::GetMagnetizations(vector<double>& magnetizations){
 
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
-void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
+void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
     UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
@@ -140,14 +140,14 @@ void SpinglassBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // =====================================================
 
 // Run simulation without saving (thermalization)
-void SpinglassBits::evolve(gsl_rng* ran){
+void SpinGlassBits::evolve(gsl_rng* ran){
     fromCanonical();
     runSweeps(ran, /*save=*/false, 0.0);
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
-void SpinglassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
+void SpinGlassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
     OpenCSVFiles(filename);
     cout << "evolve_save called, opening: " << filename << endl;

@@ -36,6 +36,9 @@ using namespace std;
 #include "hopfield_nobits.hpp"
 #include "hopfield_bits.hpp"
 
+//g++ min_working_example_hopfield.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -flto -Wno-deprecated -Iinclude -I/usr/include/gsl -DHAVE_INLINE -o main.o
+
+
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
 
 // =============================================================================
@@ -64,14 +67,14 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 void print_neurons(const vector<int>& neurons_before,
                    const vector<int>& neurons_classic,
                    const vector<int>& neurons_bits,
-                   int N_neurons, int n_bits_replicas) {
+                   int N) {
 
     bool all_equal = true;
 
-    for (int r = 0; r < n_bits_replicas; r++) {
+    for (int r = 0; r < n_bits; r++) {
         // Site-by-site comparison for this replica
-        for (int i = 0; i < N_neurons; i++) {
-            if (neurons_classic[r * N_neurons + i] != neurons_bits[r * N_neurons + i]) {
+        for (int i = 0; i < N; i++) {
+            if (neurons_classic[r * N + i] != neurons_bits[r * N + i]) {
                 all_equal = false;
                 cout << "Mismatch at r=" << r << " i=" << i << endl;
             }
@@ -90,10 +93,10 @@ void print_neurons(const vector<int>& neurons_before,
 int main() {
 
     // ── Simulation parameters ─────────────────────────────────────────────────
-    const int L         = 10;        // linear lattice size (L×L spins)
-    const double beta   = 1.0 / 1.5; // inverse temperature (T=1.5)
-    const int P         = 3;         // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 14;   // number of Metropolis sweeps (16384)
+    const int L         = 50;        // linear lattice size (L×L spins)
+    const double beta   = 1.0 / 1.5; // inverse temperature
+    const int P         = 30;         // number of patterns (small for testing)
+    const int N_sweeps  = 1 << 14;   // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";
@@ -103,7 +106,6 @@ int main() {
     cout << "  Temperature:   " << 1.0/beta << "\n";
     cout << "  Beta:          " << beta << "\n";
     cout << "  Sweeps:        " << N_sweeps << "\n";
-    cout << "  Replicas:      " << n_bits << "\n\n";
 
     // ── Model initialization ──────────────────────────────────────────────────
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
@@ -133,7 +135,7 @@ int main() {
 
     // Verify that both models start from the same spin state before evolving
     print_neurons(initial_config, nobits.getSpinsConfig(),
-                  bits.getSpinsConfig(), L*L, n_bits);
+                  bits.getSpinsConfig(), L*L);
 
     // ── Evolution: HopfieldBits ──────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // fixed seed for RNG comparison

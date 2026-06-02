@@ -132,8 +132,8 @@ int main() {
     gsl_rng* ran_test = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran_test, 123);
 
-    IsingBits bits_test(L_test, BJ_test, N_sweeps_test);
-    IsingNoBits classic_test(L_test, BJ_test, N_sweeps_test);
+    IsingBits bits_test(L_test * L_test, BJ_test, N_sweeps_test);
+    IsingNoBits classic_test(L_test * L_test, BJ_test, N_sweeps_test);
 
     bits_test.initNetwork2D_PBC();
     classic_test.initNetwork2D_PBC();

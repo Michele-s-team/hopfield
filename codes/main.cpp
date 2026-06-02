@@ -208,7 +208,7 @@ int main() {
         */
 
         // --- Classic simulation (uncomment to compare) ---
-        nobits.setbeta(beta);
+        nobits.setBeta(beta);
         nobits.initSpinsFromConfig(initial_config);
         gsl_rng_set(ran, 123);
 

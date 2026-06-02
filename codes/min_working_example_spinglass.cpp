@@ -127,7 +127,7 @@ int main() {
     // ── Simulation parameters ─────────────────────────────────────────────────
     const int    L         = 100;       // linear lattice size (L×L spins)
     const double beta      = 1/1.5;       // inverse temperature
-    const int    N_sweeps  = pow(2,14); // number of Metropolis sweeps
+    const int    N_sweeps  = pow(2,10); // number of Metropolis sweeps
     const int    col_width    = 3;      // column width for spin display
     const int    prefix_width = 12;     // label width for spin display
 
@@ -193,7 +193,7 @@ int main() {
     bits.GetMagnetizations(mag_bits);
     nobits.GetMagnetizations(mag_nobits);
 
-    /*bool equal = true;
+    bool equal = true;
     for (int r = 0; r < n_bits; r++) {
         if (mag_bits[r] != mag_nobits[r]) {
             equal = false;
@@ -205,7 +205,6 @@ int main() {
     if (equal) {
         cout << "OK: magnetizations are identical." << endl;
     }
-    */
     cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 
     // Note: m_io (SimulationIO member of bits/nobits) closes any open CSV files

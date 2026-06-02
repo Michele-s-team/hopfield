@@ -22,10 +22,12 @@
 void HopfieldBits::fromCanonical(){
     Bits_Spins_Set.clear();
     Neighbor_Count.clear();
+    P_times_Neighbor_Count.clear();
     Patterns.clear();
     Couplings.clear();
     Bits_Spins_Set.reserve(N);
     Neighbor_Count.reserve(N);
+    P_times_Neighbor_Count.reserve(N);
     Couplings.reserve(N);
     Patterns.reserve(P);
 
@@ -60,9 +62,12 @@ void HopfieldBits::fromCanonical(){
             Couplings.back().push_back(coupling_tmp);
         }
         UnsignedInt neighbor_tmp(neighbor_count[i]);
+        UnsignedInt P_times_neighbor_tmp(P*neighbor_count[i]);
         neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
+        P_times_neighbor_tmp.SetAll((unsigned long long int) (P* neighbor_count[i]));
         Bits_Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
+        P_times_Neighbor_Count.push_back(P_times_neighbor_tmp);
     }
 }
 
@@ -133,7 +138,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             sum.MultiplyByTwoTo();  
 
             threshold.SetAll((unsigned long long int) rng);
-            threshold += &Neighbor_Count[i];
+            threshold += &P_times_Neighbor_Count[i];
 
             mask = (sum <= threshold);   
             Bits_Spin_i ^= &mask;
