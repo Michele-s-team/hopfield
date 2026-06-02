@@ -50,8 +50,9 @@ void IsingBits::toCanonical(){
 // OBSERVABLES
 // =====================================================
 
-// Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
+// Compute magnetization m = (2*ones - N)/N for each realization 
 void IsingBits::GetMagnetizations(vector<double>& magnetizations){
+    magnetizations.resize(n_bits);
     vector<int> ones(n_bits, 0);
 
     for (int i = 0; i < N; ++i)
@@ -62,31 +63,31 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
         magnetizations[r] = (2.0 * ones[r] - N) / N;
 }
 
-
 // =====================================================
 // METROPOLIS DYNAMICS
 // =====================================================
 
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
-// Saves magnetizations every save_stride sweeps if save=true.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
-    Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
-    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2)); // no need for more space allocation
+    Bits xnor_ij, mask;
+    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
+    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2));
     int rng;
     int spin;
 
+    const int N_sweeps = getNSweeps();  // Use base class method
     const int progress_stride = max(1, N_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+    const int save_stride = (save && freq > 0) ? max(1, (int)round(1.0 / freq)) : 0;
 
     for (int sweep = 0; sweep < N_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
-            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran);
+            spin = gsl_rng_uniform_int(ran, N);
+            // Use base class randomNumber method
+            rng = randomNumber(ran, neighbor_count[0]);
             Bits& Bits_Spin_i = Bits_Spins_Set[spin];
 
-            // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
+            // 1ST BRANCH: UNCONDITIONAL FLIP IN EVERY REPLICA
             if (rng >= neighbor_count[spin]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
@@ -95,7 +96,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
             // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
             for (int j : neighbors[spin]) {
-                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j]);  // the bitwise implementation of s_i*s_j with s_i=-1+2*b_i
+                xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j]);
                 sum += &xnor_ij;
             }
             sum.MultiplyByTwoTo();  
@@ -103,7 +104,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
             threshold.SetAll((unsigned long long int) rng);
             threshold += &Neighbor_Count[spin];
 
-            mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold value is useless
+            mask = (sum <= threshold);
             Bits_Spin_i ^= &mask;
         }
 
@@ -117,7 +118,6 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
     }
     cout << "\n";
 }
-    
 
 // =====================================================
 // PUBLIC API
@@ -126,15 +126,15 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // Run simulation without saving (thermalization)
 void IsingBits::evolve(gsl_rng* ran){
     fromCanonical();
-    runSweeps(ran, /*save=*/false, 0);
+    runSweeps(ran, /*save=*/false, 0.0);
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
+void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& folder){
     fromCanonical();
-    OpenCSVFiles(filename);
+    OpenCSVFiles(folder);  // Use base class method
     runSweeps(ran, /*save=*/true, freq);
-    CloseCSVFiles();
+    CloseCSVFiles();       // Use base class method
     toCanonical();
 }

@@ -4,6 +4,7 @@
 //
 //  Created by Bastien on 12/05/2026.
 //
+
 #include "hopfield_nobits.hpp"
 #include "lib.hpp"
 #include "main.hpp"
@@ -15,45 +16,42 @@
 // =====================================================
 
 // Local energy cost of flipping spin i in realization r:
-//   ΔE(i, r) =   Σ_j J_ij(r) σ_i(r) σ_j(r)
+//   ΔE(i, r) = 2 * σ_i(r) * Σ_j J_ij(r) σ_j(r)
+// For Hopfield: J_ij = (1/N) * Σ_p ξ_i^p ξ_j^p
 double HopfieldNoBits::DeltaE(int spin, int r) {
-    int sum = 0;
+    double sum = 0.0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
-        for (int p=0;p<P; p++){
-            int j = neighbors[spin][k];                
-            sum += spins_set[r*N+j]*patterns[p][spin][r]*patterns[p][j][r];
+        int j = neighbors[spin][k];
+        for (int p = 0; p < P; ++p) {
+            sum += spins_set[r * N + j] * patterns[p][spin][r] * patterns[p][j][r];
         }
     }
-    return spins_set[r*N+spin] * sum;
+    return 2.0 * spins_set[r * N + spin] * sum;
 }
 
 // =====================================================
-// SWEEP LOOP
+// SHARED RNG (même seuil aléatoire pour toutes les réplicas)
 // =====================================================
 
-// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
-// random numbers are shared among the 64 realizations
-// Saves magnetizations every save_stride sweeps if save=true.
 void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
-    const int progress_stride = max(1, N_sweeps / 10);
+    const int total_sweeps = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
-    int rng;
-    int spin;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
-            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran);
+            int spin = gsl_rng_uniform_int(ran, N);
+            int rng = randomNumber(ran, neighbor_count[spin]);
+
             if (rng >= neighbor_count[spin]) {
-                // 1ST BRANCH: unconditional flip: rng exceeds max possible local field
+                // 1ST BRANCH: unconditional flip in all replicas
                 for (int r = 0; r < n_bits; ++r)
-                    spins_set[r*N+spin] *= -1;
-            }
-            else {
-                // 2ND BRANCH:flip realization r only if rng >= ΔE(i, r)
+                    spins_set[r * N + spin] *= -1;
+            } else {
+                // 2ND BRANCH: flip replica r only if rng >= DeltaE(spin, r)
                 for (int r = 0; r < n_bits; ++r)
                     if (rng >= DeltaE(spin, r))
-                        spins_set[r*N+spin] *= -1;
+                        spins_set[r * N + spin] *= -1;
             }
         }
 
@@ -62,62 +60,57 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
     cout << "\n";
 }
 
+// =====================================================
+// INDEPENDENT RNG (seuil différent pour chaque réplica)
+// =====================================================
 
-// Core simulation loop: N_sweeps of N random flip attempts each.
-// each realization has its own random number
-// Saves magnetizations every save_stride sweeps if save=true.
 void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
-    const int progress_stride = max(1, N_sweeps / 10);
+    const int total_sweeps = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
-    int rng;
-    int spin;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
-            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
+            int spin = gsl_rng_uniform_int(ran, N);
 
-                for (int r = 0; r < n_bits; ++r){
-                    rng = randomNumber(ran);
-                    if (rng >= DeltaE(spin, r))
-                        spins_set[r*N+spin] *= -1;
-                }
+            for (int r = 0; r < n_bits; ++r) {
+                int rng = randomNumber(ran, neighbor_count[spin]);
+                if (rng >= DeltaE(spin, r))
+                    spins_set[r * N + spin] *= -1;
             }
+        }
 
         if (save && (sweep % save_stride == 0))
             SaveMagnetizations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
     cout << "\n";
 }
-
 
 // =====================================================
 // PUBLIC API
 // =====================================================
 
-// Run simulation without saving (thermalization)
 void HopfieldNoBits::evolveSharedRNG(gsl_rng* ran) {
-    runSweepsSharedRNG(ran, /*save=*/false, 0);
+    runSweepsSharedRNG(ran, false, 0.0);
 }
 
-// Run simulation without saving (thermalization)
 void HopfieldNoBits::evolveIndependentRNG(gsl_rng* ran) {
-    runSweepsIndependentRNG(ran, /*save=*/false, 0);
+    runSweepsIndependentRNG(ran, false, 0.0);
 }
 
-// Run simulation and save magnetizations at the given frequency
-void HopfieldNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename) {
-    OpenCSVFiles(filename); 
-    runSweepsSharedRNG(ran, /*save=*/true, freq);
+void HopfieldNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& folder) {
+    OpenCSVFiles(folder);
+    runSweepsSharedRNG(ran, true, freq);
     CloseCSVFiles();
 }

@@ -18,10 +18,10 @@
 
 using namespace std;
 
-class SpinglassNoBits : public SpinglassModel {
+class SpinGlassNoBits : public SpinGlassModel {
 
 public:
-    using SpinglassModel::SpinglassModel;
+    using SpinGlassModel::SpinGlassModel;
 
     //void evolveOneSweep(int, gsl_rng*);   // single Monte Carlo sweep (classic spin implementation)
     //void evolve_modular(gsl_rng*) override;    // modular version of classic evolution loop

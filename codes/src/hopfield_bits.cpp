@@ -51,7 +51,7 @@ void HopfieldBits::fromCanonical(){
         }
         Couplings.push_back(vector<Bits>());
         Couplings.back().reserve(couplings[i].size());
-        for (int j = 0; j < (int)couplings[i].size(); ++j) {
+        for (int j = 0; j < couplings[i].size(); ++j) {
             Bits coupling_tmp;
             for (int r = 0; r < n_bits; ++r) {
                 int coupling = (couplings[i][j][r] + 1) / 2;
@@ -79,6 +79,7 @@ void HopfieldBits::toCanonical(){
 
 // Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
 void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
+    magnetizations.resize(n_bits);
     vector<int> ones(n_bits, 0);
 
     for (int i = 0; i < N; ++i)
@@ -88,7 +89,6 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
     for (int r = 0; r < n_bits; ++r)
         magnetizations[r] = (2.0 * ones[r] - N) / N;
 }
-
 
 // =====================================================
 // METROPOLIS DYNAMICS
@@ -104,13 +104,14 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     int rng;
     int i;
 
-    const int progress_stride = max(1, N_sweeps / 10);
+    const int total_sweeps = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran);
+            rng = randomNumber(ran, neighbor_count[0]);
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
@@ -122,9 +123,9 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
             sum.SetAll(0);
             for (int k = 0; k < neighbors[i].size(); ++k) {
-                int j = neighbors[i][k];                  // ← id of the neighbor
-                for (int p=0; p<P; p++){
-                    xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Patterns[p][i] ^ Patterns[p][j]); // the btiwise rule
+                int j = neighbors[i][k];                  // id of the neighbor
+                for (int p = 0; p < P; ++p) {
+                    xnor_ij = ~(Bits_Spin_i ^ Bits_Spins_Set[j] ^ Patterns[p][i] ^ Patterns[p][j]); // the bitwise rule
                     sum += &xnor_ij;
                 }
             }
@@ -142,12 +143,11 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
     cout << "\n";
 }
-    
 
 // =====================================================
 // PUBLIC API
@@ -156,7 +156,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // Run simulation without saving (thermalization)
 void HopfieldBits::evolve(gsl_rng* ran){
     fromCanonical();
-    runSweeps(ran, /*save=*/false, 0);
+    runSweeps(ran, /*save=*/false, 0.0);
     toCanonical();
 }
 

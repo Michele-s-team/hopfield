@@ -16,7 +16,7 @@
 
 // Local energy cost of flipping spin i in realization r:
 //   ΔE(i, r) =   Σ_j J_ij(r) σ_i(r) σ_j(r)
-double SpinglassNoBits::DeltaE(int spin, int r) {
+double SpinGlassNoBits::DeltaE(int spin, int r) {
     int sum = 0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];                
@@ -26,32 +26,35 @@ double SpinglassNoBits::DeltaE(int spin, int r) {
 }
 
 // =====================================================
-// SWEEP LOOP
+// SHARED RNG
 // =====================================================
 
-// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
-// random numbers are shared among the 64 realizations
-// Saves magnetizations every save_stride sweeps if save=true.
-void SpinglassNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
-    const int progress_stride = max(1, N_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+void SpinGlassNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
+
+    const int progress_stride = std::max(1, getNSweeps() / 10);
+    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
+
     int rng;
     int spin;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+    for (int sweep = 0; sweep < getNSweeps(); ++sweep) {
+
         for (int step = 0; step < N; ++step) {
-            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran);
+
+            spin = gsl_rng_uniform_int(ran, N);
+
+            rng = randomNumber(ran, neighbor_count[spin]);
+
             if (rng >= neighbor_count[spin]) {
-                // 1ST BRANCH: unconditional flip: rng exceeds max possible local field
+
                 for (int r = 0; r < n_bits; ++r)
-                    spins_set[r*N+spin] *= -1;
+                    spins_set[r * N + spin] *= -1;
             }
             else {
-                // 2ND BRANCH:flip realization r only if rng >= ΔE(i, r)
+
                 for (int r = 0; r < n_bits; ++r)
                     if (rng >= DeltaE(spin, r))
-                        spins_set[r*N+spin] *= -1;
+                        spins_set[r * N + spin] *= -1;
             }
         }
 
@@ -59,63 +62,70 @@ void SpinglassNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
             SaveMagnetizations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
-                 << flush;
+            std::cout << "\rSweep: " << sweep + 1
+                      << " (" << (sweep + 1) * 100 / getNSweeps() << "%)    "
+                      << std::flush;
     }
-    cout << "\n";
+
+    std::cout << "\n";
 }
 
+// =====================================================
+// INDEPENDENT RNG
+// =====================================================
 
-// Core simulation loop: N_sweeps of N random flip attempts each.
-// each realization has its own random number
-// Saves magnetizations every save_stride sweeps if save=true.
-void SpinglassNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
-    const int progress_stride = max(1, N_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+void SpinGlassNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
+
+    const int progress_stride = std::max(1, getNSweeps() / 10);
+    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
+
     int rng;
     int spin;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-            spin = gsl_rng_uniform_int(ran, N);  // pick a random spin
+    for (int sweep = 0; sweep < getNSweeps(); ++sweep) {
 
-                for (int r = 0; r < n_bits; ++r){
-                    rng = randomNumber(ran);
-                    if (rng >= DeltaE(spin, r))
-                        spins_set[r*N+spin] *= -1;
-                }
+        for (int step = 0; step < N; ++step) {
+
+            spin = gsl_rng_uniform_int(ran, N);
+
+            for (int r = 0; r < n_bits; ++r) {
+
+                rng = randomNumber(ran, neighbor_count[spin]);
+
+                if (rng >= DeltaE(spin, r))
+                    spins_set[r * N + spin] *= -1;
             }
+        }
 
         if (save && (sweep % save_stride == 0))
             SaveMagnetizations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
-                 << flush;
+            std::cout << "\rSweep: " << sweep + 1
+                      << " (" << (sweep + 1) * 100 / getNSweeps() << "%)    "
+                      << std::flush;
     }
-    cout << "\n";
-}
 
+    std::cout << "\n";
+}
 
 // =====================================================
 // PUBLIC API
 // =====================================================
 
-// Run simulation without saving (thermalization)
-void SpinglassNoBits::evolveSharedRNG(gsl_rng* ran) {
-    runSweepsSharedRNG(ran, /*save=*/false, 0);
+void SpinGlassNoBits::evolveSharedRNG(gsl_rng* ran) {
+    runSweepsSharedRNG(ran, false, 0);
 }
 
-// Run simulation without saving (thermalization)
-void SpinglassNoBits::evolveIndependentRNG(gsl_rng* ran) {
-    runSweepsIndependentRNG(ran, /*save=*/false, 0);
+void SpinGlassNoBits::evolveIndependentRNG(gsl_rng* ran) {
+    runSweepsIndependentRNG(ran, false, 0);
 }
 
-// Run simulation and save magnetizations at the given frequency
-void SpinglassNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename) {
-    OpenCSVFiles(filename); 
-    runSweepsSharedRNG(ran, /*save=*/true, freq);
+void SpinGlassNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const std::string& filename) {
+
+    OpenCSVFiles(filename);
+
+    runSweepsSharedRNG(ran, true, freq);
+
     CloseCSVFiles();
 }
