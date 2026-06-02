@@ -96,7 +96,7 @@ int main() {
     const int L         = 50;        // linear lattice size (L×L spins)
     const double beta   = 1.0 / 1.5; // inverse temperature
     const int P         = 30;         // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 14;   // number of Metropolis sweeps 
+    const int N_sweeps  = 1 << 10;   // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";

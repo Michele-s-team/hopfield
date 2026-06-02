@@ -23,90 +23,60 @@ using namespace std;
 
 #include "main.hpp"
 #include "int.hpp"
+
 #include "ising_model.hpp"
 #include "ising_nobits.hpp"
 #include "ising_bits.hpp"
 
 #include "spinglass_model.hpp"
-#include "spinglass_bits.hpp"
 #include "spinglass_nobits.hpp"
+#include "spinglass_bits.hpp"
+
+#include "hopfield_model.hpp"
+#include "hopfield_nobits.hpp"
+#include "hopfield_bits.hpp"
+
+//g++ min_working_example_hopfield.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -flto -Wno-deprecated -Iinclude -I/usr/include/gsl -DHAVE_INLINE -o main.o
+
 
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
 
-//  compile on mac, without optimization:
-//  clear; clear;  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O0 -Wno-deprecated -I/Users/michelecastellana/Documents/office_stuff/work/stages/stage_bastien_dumont_2026/hopfield/codes/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
-
-//  compile on mac, with optimization:
-//  g++ main.cpp src/*.cpp -llapack -lgsl -lcblas -lm -O3 -ftlo -Wno-deprecated  -I/Users/michelecastellana/Documents/gillespie/include -I/usr/local/include/gsl/ -o main.o -Wall -DHAVE_INLINE
-
-//  compile on calcsub:
-//  clear; clear;  g++ main.cpp src/*.cpp  -llapack -lgsl -lgslcblas -lm -O3 -Wno-deprecated -I /usr/include/gsl/ -I./include/ -o main.o -Wall -DHAVE_INLINE
-
-//  compile on abacus:
-//  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
-
-
 // =============================================================================
-// phase_diagram.cpp
+// Minimal working example — correctness and performance check:
+//   HopfieldBits vs HopfieldNoBits
 //
-// Simulates the 2D Ising model using a bitwise Metropolis algorithm
-// (IsingBits) on a square lattice of size L×L with periodic boundary
-// conditions, across a range of temperatures.
+// Both models are initialized from the same disorder realization (patterns)
+// and the same initial spin configuration. They are then evolved with the same
+// RNG seed so that each flip attempt draws the same random number in both cases.
+// The resulting magnetizations are compared replica by replica.
 //
-// For each temperature T:
-//   - sets the inverse temperature betaJ = 1/T
-//   - reinitializes spins from a fixed reference configuration
-//   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
-//     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
+// Purpose: validate that the bitwise implementation (HopfieldBits) produces
+// the same physics as the reference scalar implementation (HopfieldNoBits),
+// and measure the wall-clock speedup.
 //
-// The temperature grid is defined by several segments with different
-// step sizes, with finer resolution near the critical point Tc ≈ 2.269.
-//
-// An optional classic (non-bitwise) simulation is available for comparison
-// and correctness checking (see commented sections).
-//
-// Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
+// No output files are written.
 // =============================================================================
 
-
-// ──────────────────────────────────────────────
-// Print and compare spin configurations across realizations
-// ──────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────
+// print_neurons
+//
+// Compare the spin configurations of the classic and bitwise models, replica
+// by replica and site by site. Reports the first mismatch found, or confirms
+// that both configurations are identical.
+// ──────────────────────────────────────────────────────────────────────────────
 void print_neurons(const vector<int>& neurons_before,
                    const vector<int>& neurons_classic,
                    const vector<int>& neurons_bits,
-                   int N_neurons, int prefix_width, int col_width) {
+                   int N) {
 
     bool all_equal = true;
 
     for (int r = 0; r < n_bits; r++) {
-
-        ostringstream oss;
-        //Uncomment to print the spins when comparing
-        /*
-        oss << "Realization" << right << setw(3) << r+1;
-        cout << oss.str() << "\n";
-
-        cout << left << setw(prefix_width) << "       before: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_before[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "after classic: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_classic[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "   after bits: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_bits[r*N_neurons+i] << " ";
-        cout << "\n\n";
-        */
-
-        for (int i = 0; i < N_neurons; i++) {
-            if (neurons_classic[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
+        // Site-by-site comparison for this replica
+        for (int i = 0; i < N; i++) {
+            if (neurons_classic[r * N + i] != neurons_bits[r * N + i]) {
                 all_equal = false;
-                cout << "Mismatch at r=" << r+1 << " i=" << i+1 << endl;
+                cout << "Mismatch at r=" << r << " i=" << i << endl;
             }
         }
     }
@@ -117,129 +87,97 @@ void print_neurons(const vector<int>& neurons_before,
         cout << "WARNING: differences detected between classic and bitwise results\n";
 }
 
-// ──────────────────────────────────────────────
-// Main
-// ──────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────
+// main
+// ──────────────────────────────────────────────────────────────────────────────
 int main() {
 
-    // ── Parameters ────────────────────────────
-    const int    L        = 25;
-    const int    N_sweeps = pow(2, 12);
-    // ── Temperature Range ───────────────────
+    // ── Simulation parameters ─────────────────────────────────────────────────
+    const int L         = 50;        // linear lattice size (L×L spins)
+    const double beta   = 1.0 / 1.5; // inverse temperature
+    const int P         = 30;         // number of patterns (small for testing)
+    const int N_sweeps  = 1 << 14;   // number of Metropolis sweeps 
 
-    vector<double> temperatures;
+    cout << "\n";
+    cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";
+    cout << "Parameters:\n";
+    cout << "  Lattice:       " << L << " x " << L << " = " << L*L << " neurons\n";
+    cout << "  Patterns (P):  " << P << "\n";
+    cout << "  Temperature:   " << 1.0/beta << "\n";
+    cout << "  Beta:          " << beta << "\n";
+    cout << "  Sweeps:        " << N_sweeps << "\n";
 
-    const double T_min    = 0.1;
-    const double step_1   = 0.1;
-    const double T_1      = 1.5;
-    const double step_2   = 0.05;
-    const double T_2      = 2.0;
-    const double step_3   = 0.02;
-    const double T_3      = 2.5;
-    const double step_4   = 0.05;
-    const double T_4      = 3.0;
-    const double step_5   = 0.1;
-    const double T_max    = 4.0;
-
-
-    auto add_segment = [&](double a, double b, double h, bool include_start){
-        int n_start = include_start ? 0 : 1;
-        int n_end = (int)((b - a)/h + 0.5);
-
-        for (int n = n_start; n <= n_end; ++n)
-            temperatures.push_back(a + n*h);
-    };
-    /*
-    add_segment(T_min, T_1, step_1, true);
-    add_segment(T_1,  T_2, step_2, false);
-    add_segment(T_2,  T_3, step_3, false);
-    add_segment(T_3,  T_4, step_4, false);
-    add_segment(T_4,  T_max, step_5, false)
-    */
-    temperatures.push_back(1.5);
-    cout << "[main] Parameters: N_spins=" << L*L
-         << "  N_sweeps=" << N_sweeps
-         << "\nTemperatures: " <<endl;
-
-    for (double T : temperatures) cout <<T <<"  ";
-    cout <<" \n";
-
-    // ── Model initialization ───────────────────
-
+    // ── Model initialization ──────────────────────────────────────────────────
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    SpinGlassBits   bits  (L, 1.0 / T_min, N_sweeps);
-    SpinGlassNoBits nobits(L, 1.0 / T_min, N_sweeps);
+    gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
+    // Construct both models with identical parameters
+    HopfieldBits   bits  (L * L, beta, N_sweeps, P);
+    HopfieldNoBits nobits(L * L, beta, N_sweeps, P);
+
+    // Build the 2D square lattice with periodic boundary conditions
     bits.initNetwork2D_PBC();
     nobits.initNetwork2D_PBC();
-    cout << "Network initialized\n" << endl;
+    cout << "Network initialized (2D square lattice with PBC)\n";
 
-    bits.initCouplings(ran);
-    nobits.initCouplings(ran);
-    cout << "Couplings initialized\n" << endl;
+    // Generate patterns once, then copy them to nobits so both models
+    // share the exact same pattern realization
+    bits.initPatterns(ran);
+    vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
+    nobits.initPatternsFromConfig(initial_patterns);
+    cout << "Patterns initialized and shared between models\n";
 
-    gsl_rng_set(ran, 123);
+    // Generate the initial spin configuration once and share it across both models
     bits.initSpins(ran);
     vector<int> initial_config = bits.getSpinsConfig();
     nobits.initSpinsFromConfig(initial_config);
-    cout << "Spin configurations initialized\n" << endl;
+    cout << "Spin configurations initialized and shared\n";
 
-    // ── Temperature sweep ──────────────────────
+    // Verify that both models start from the same spin state before evolving
+    print_neurons(initial_config, nobits.getSpinsConfig(),
+                  bits.getSpinsConfig(), L*L);
 
-    for (int i = 0; i < temperatures.size(); ++i) {
-        //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
+    // ── Evolution: HopfieldBits ──────────────────────────────────────────────
+    gsl_rng_set(ran, 42);  // fixed seed for RNG comparison
+    clock_t start_bits = clock();
+    bits.evolve(ran);
+    clock_t end_bits = clock();
+    double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
+    cout << "\nHopfieldBits done. Time: " << clock_bits << " s\n";
 
-        double T = temperatures[i];
-        const double beta = 1.0 / T;
-        cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
-        /*
-        // --- Bitwise simulation ---
-        bits.setbeta(beta);
-        bits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
+    // ── Evolution: HopfieldNoBits ────────────────────────────────────────────
+    gsl_rng_set(ran, 42);  // same seed for fair comparison
+    clock_t start_ref = clock();
+    nobits.evolveSharedRNG(ran);
+    clock_t end_ref = clock();
+    double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
+    cout << "HopfieldNoBits done. Time: " << clock_ref << " s\n";
 
-        auto t_start_bits = chrono::high_resolution_clock::now();
-        bits.evolve_save(ran,0.1, "../results/magnetizations/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
-        auto t_end_bits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
+    // ── Magnetization comparison ──────────────────────────────────────────────
+    vector<double> mag_bits(n_bits), mag_nobits(n_bits);
+    bits.GetMagnetizations(mag_bits);
+    nobits.GetMagnetizations(mag_nobits);
 
-        //bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
-        cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
-        */
-
-        // --- Classic simulation (uncomment to compare) ---
-        nobits.setBeta(beta);
-        nobits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
-
-        auto t_stard_nobits = chrono::high_resolution_clock::now();
-        nobits.evolveSharedRNG(ran);
-        auto t_end_nobits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_nobits = t_end_nobits - t_stard_nobits;
-
-        cout << "  > NoBits: " << dt_nobits.count() / 1000.0 << " s" << endl;
-        //cout << "  > Speedup: " << dt_nobits.count() / dt_bits.count() << "x" << endl;
-        cout << "------------------------------------------" << endl;
-
-        // --- Magnetization comparison ---
-        vector<double> mag_bits(n_bits), mag_nobits(n_bits);
-        bits.GetMagnetizations(mag_bits);
-        nobits.GetMagnetizations(mag_nobits);
-
-        bool equal = true;
-        for (int r = 0; r < n_bits; r++) {
-            if (mag_bits[r] != mag_nobits[r]) {
-                equal = false;
-                cout << "Difference at r=" << r
-                     << ": bits=" << mag_bits[r]
-                     << " nobits=" << mag_nobits[r] << endl;
-            }
+    bool mags_equal = true;
+    for (int r = 0; r < n_bits; r++) {
+        if (abs(mag_bits[r] - mag_nobits[r]) > 1e-10) {
+            mags_equal = false;
+            cout << "Difference at r=" << r
+                 << ": bits=" << mag_bits[r]
+                 << " nobits=" << mag_nobits[r] << endl;
         }
-        if (equal) cout << "OK: magnetizations are identical." << endl;
-
-    //bits.CloseCSVFiles();
     }
-    
+    if (mags_equal) {
+        cout << "OK: magnetizations are identical.\n";
+    }
+
+    // ── Performance summary ───────────────────────────────────────────────────
+    cout << "\n=== Performance Summary ===\n";
+    cout << "HopfieldBits time:   " << clock_bits << " s\n";
+    cout << "HopfieldNoBits time: " << clock_ref << " s\n";
+    cout << "Acceleration factor: " << clock_ref / clock_bits << "x\n";
+
     gsl_rng_free(ran);
+
     return 0;
 }
