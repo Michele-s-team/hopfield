@@ -95,7 +95,7 @@ int main() {
     // ── Simulation parameters ─────────────────────────────────────────────────
     const int L         = 50;        // linear lattice size (L×L spins)
     const double beta   = 1.0 / 1.5; // inverse temperature
-    const int P         = 30;         // number of patterns (small for testing)
+    const int P         = 20;         // number of patterns (small for testing)
     const int N_sweeps  = 1 << 10;   // number of Metropolis sweeps 
 
     cout << "\n";

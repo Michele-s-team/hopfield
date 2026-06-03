@@ -22,14 +22,13 @@ double HopfieldNoBits::DeltaE(int spin, int r) {
     double sum = 0.0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];
-        for (int p = 0; p < P; ++p) {
-            sum += patterns[p][spin][r] * patterns[p][j][r];
-        }
-        sum = sum* spins_set[r * N + j]; 
+        double contrib = 0.0;
+        for (int p = 0; p < P; ++p)
+            contrib += patterns[p][spin][r] * patterns[p][j][r];
+        sum += contrib * spins_set[r * N + j];
     }
     return 2.0 * spins_set[r * N + spin] * sum;
 }
-
 // =====================================================
 // SHARED RNG (same random threshold among replicas)
 // =====================================================
@@ -50,9 +49,22 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
                     spins_set[r * N + spin] *= -1;
             } else {
                 // 2ND BRANCH: flip replica r only if rng >= DeltaE(spin, r)
-                for (int r = 0; r < n_bits; ++r)
-                    if (rng >= DeltaE(spin, r))
-                        spins_set[r * N + spin] *= -1;
+                for (int r = 0; r < n_bits; ++r) {
+                    double dE = DeltaE(spin, r);
+                    bool flip = (rng >= dE);
+                    
+                    /*
+                    #ifdef DEBUG_FLIP
+                    cout << "[NOBITS] sweep=" << sweep << " step=" << step
+                        << " spin=" << spin << " r=" << r
+                        << " rng=" << rng
+                        << " DeltaE=" << dE
+                        << " flip=" << flip << "\n";
+                    #endif
+                    */
+                    
+                    if (flip) spins_set[r * N + spin] *= -1;
+                }
             }
         }
 
