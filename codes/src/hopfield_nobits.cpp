@@ -49,24 +49,9 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
                     spins_set[r * N + spin] *= -1;
             } else {
                 // 2ND BRANCH: flip replica r only if rng >= DeltaE(spin, r)
-                for (int r = 0; r < n_bits; ++r) {
-                    double dE = DeltaE(spin, r);
-                    
-                    bool flip = (rng >= dE);
-                    
-                    /*
-                    #ifdef DEBUG_FLIP
-                    cout << "[NOBITS] sweep=" << sweep << " step=" << step
-                        << " spin=" << spin << " r=" << r
-                        << " rng=" << rng
-                        << " DeltaE=" << dE
-                        << " flip=" << flip << "\n";
-                    #endif
-
-                    */
-                    
-                    if (flip) spins_set[r * N + spin] *= -1;
-                }
+                for (int r = 0; r < n_bits; ++r)
+                    if (rng >= DeltaE(spin, r))
+                        spins_set[r * N + spin] *= -1;
             }
         }
 

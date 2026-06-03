@@ -143,22 +143,6 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
             mask = (sum <= threshold);   
             Bits_Spin_i ^= &mask;
-
-           /*
-            #ifdef DEBUG_FLIP
-            // Convertir sum et threshold en entiers pour affichage
-            for (int r = 0; r < n_bits; ++r) {
-                // sum et threshold sont des UnsignedInt par réplica
-                // si tu as un accesseur Get(r) ou ToInt(r) :
-                cout << "[BITS] sweep=" << sweep << " step=" << step
-                    << " spin=" << i << " r=" << r
-                    << " rng=" << rng
-                    << " sum[r]=" << sum.Get(r)          // valeur de la somme pour réplica r
-                    << " threshold[r]=" << threshold.Get(r)
-                    << " flip=" << (int)mask.Get(r) << "\n";
-            }
-            #endif
-            */
         }
 
         if (save && (sweep % save_stride == 0))
