@@ -93,11 +93,11 @@ void print_neurons(const vector<int>& neurons_before,
 int main() {
 
     // ── Simulation parameters ─────────────────────────────────────────────────
-    const int L         = 50;        // linear lattice size (L×L spins)
-    const double beta   = 1.0 / 1.5; // inverse temperature
-    const double alpha= 0.1;
-    const int P         = L*L * alpha;         // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 12;   // number of Metropolis sweeps 
+    const int L         = 50;           // linear lattice size (L×L spins)
+    const double beta   = 1.0 / 1.5;    // inverse temperature
+    const double alpha  = 0.1;          // alpha = P/N
+    const int P         = L*L * alpha;  // number of patterns (small for testing)
+    const int N_sweeps  = 1 << 12;      // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";

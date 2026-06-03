@@ -104,7 +104,7 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(4* neighbor_count[0] * P)); // max value of sum= 2* neighbor_count[i] * P and all spons have same number of neighbors 
+    UnsignedInt sum((unsigned long long int)(4* neighbor_count[0] * P)); // max value of sum = 4* neighbor_count[i] * P and all spons have same number of neighbors 
                                                                          //works only for regular networks, else have to specify max(neighbor_count[i])
     UnsignedInt threshold((unsigned long long int)(4* neighbor_count[0] * P)); // no need for more space allocation
     int rng;
