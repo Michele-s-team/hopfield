@@ -95,17 +95,18 @@ int main() {
     // ── Simulation parameters ─────────────────────────────────────────────────
     const int L         = 50;        // linear lattice size (L×L spins)
     const double beta   = 1.0 / 1.5; // inverse temperature
-    const int P         = 20;         // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 10;   // number of Metropolis sweeps 
+    const double alpha= 0.1;
+    const int P         = L*L * alpha;         // number of patterns (small for testing)
+    const int N_sweeps  = 1 << 12;   // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";
     cout << "Parameters:\n";
     cout << "  Lattice:       " << L << " x " << L << " = " << L*L << " neurons\n";
+    cout << "  alpha:         " << alpha << "\n";
     cout << "  Patterns (P):  " << P << "\n";
     cout << "  Temperature:   " << 1.0/beta << "\n";
-    cout << "  Beta:          " << beta << "\n";
-    cout << "  Sweeps:        " << N_sweeps << "\n";
+    cout << "  Sweeps:        " << N_sweeps << "\n\n";
 
     // ── Model initialization ──────────────────────────────────────────────────
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
