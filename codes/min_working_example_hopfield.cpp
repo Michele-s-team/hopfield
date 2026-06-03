@@ -97,7 +97,7 @@ int main() {
     const double beta   = 1.0 / 1.5;    // inverse temperature
     const double alpha  = 0.1;          // alpha = P/N
     const int P         = L*L * alpha;  // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 12;      // number of Metropolis sweeps 
+    const int N_sweeps  = 1 << 8;      // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";

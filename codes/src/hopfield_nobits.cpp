@@ -18,16 +18,16 @@
 // Local energy cost of flipping spin i in realization r:
 //   ΔE(i, r) = 2 * σ_i(r) * Σ_j J_ij(r) σ_j(r)
 // For Hopfield: J_ij = (1/N) * Σ_p ξ_i^p ξ_j^p
-double HopfieldNoBits::DeltaE(int spin, int r) {
-    double sum = 0.0;
+int HopfieldNoBits::DeltaE(int spin, int r) {
+    int sum = 0.0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];
-        double contrib = 0.0;
+        int contrib = 0;
         for (int p = 0; p < P; ++p)
             contrib += patterns[p][spin][r] * patterns[p][j][r];
         sum += contrib * spins_set[r * N + j];
     }
-    return 2.0 * spins_set[r * N + spin] * sum;
+    return spins_set[r * N + spin] * sum;
 }
 // =====================================================
 // SHARED RNG (same random threshold among replicas)

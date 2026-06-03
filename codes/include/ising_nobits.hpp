@@ -31,7 +31,7 @@ public:
 
 private:
 
-    double DeltaE(int spin, int realization); // local energy variation for spin flip decision
+    int DeltaE(int spin, int realization); // local energy variation for spin flip decision
     void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
     void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
 };

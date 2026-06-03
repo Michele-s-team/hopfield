@@ -16,7 +16,7 @@
 
 // Local energy cost of flipping spin i in realization r:
 //   ΔE(i, r) =   Σ_j J_ij(r) σ_i(r) σ_j(r)
-double SpinGlassNoBits::DeltaE(int spin, int r) {
+int SpinGlassNoBits::DeltaE(int spin, int r) {
     int sum = 0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];                

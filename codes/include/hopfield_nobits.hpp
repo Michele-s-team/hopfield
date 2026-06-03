@@ -27,7 +27,7 @@ public:
 
 private:
 
-    double DeltaE(int spin, int realization);
+    int DeltaE(int spin, int realization);
 
     void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
     void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);

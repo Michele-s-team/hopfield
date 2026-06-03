@@ -16,7 +16,7 @@
 // ENERGY
 // =====================================================
 
-double IsingNoBits::DeltaE(int spin, int realization) {
+int IsingNoBits::DeltaE(int spin, int realization) {
 
     int sum = 0;
 

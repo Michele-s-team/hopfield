@@ -22,12 +22,12 @@
 void HopfieldBits::fromCanonical(){
     Bits_Spins_Set.clear();
     Neighbor_Count.clear();
-    Two_P_times_Neighbor_Count.clear();
+    P_times_Neighbor_Count.clear();
     Patterns.clear();
     Couplings.clear();
     Bits_Spins_Set.reserve(N);
     Neighbor_Count.reserve(N);
-    Two_P_times_Neighbor_Count.reserve(N);
+    P_times_Neighbor_Count.reserve(N);
     Couplings.reserve(N);
     Patterns.reserve(P);
 
@@ -62,12 +62,12 @@ void HopfieldBits::fromCanonical(){
             Couplings.back().push_back(coupling_tmp);
         }
         UnsignedInt neighbor_tmp(neighbor_count[i]);
-        UnsignedInt Two_P_times_neighbor_tmp(2*P*neighbor_count[i]);
+        UnsignedInt P_times_neighbor_tmp(P*neighbor_count[i]);
         neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
-        Two_P_times_neighbor_tmp.SetAll((unsigned long long int) (2*P* neighbor_count[i]));
+        P_times_neighbor_tmp.SetAll((unsigned long long int) (P* neighbor_count[i]));
         Bits_Spins_Set.push_back(spin_tmp);
         Neighbor_Count.push_back(neighbor_tmp);
-        Two_P_times_Neighbor_Count.push_back(Two_P_times_neighbor_tmp);
+        P_times_Neighbor_Count.push_back(P_times_neighbor_tmp);
     }
 }
 
@@ -104,9 +104,9 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(4* neighbor_count[0] * P)); // max value of sum = 4* neighbor_count[i] * P and all spons have same number of neighbors 
+    UnsignedInt sum((unsigned long long int)(2* neighbor_count[0] * P)); // max value of sum = 4* neighbor_count[i] * P and all spons have same number of neighbors 
                                                                          //works only for regular networks, else have to specify max(neighbor_count[i])
-    UnsignedInt threshold((unsigned long long int)(4* neighbor_count[0] * P)); // no need for more space allocation
+    UnsignedInt threshold((unsigned long long int)(2* neighbor_count[0] * P)); // no need for more space allocation
     int rng;
     int i;
 
@@ -117,7 +117,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran, neighbor_count[0]*P, N);  //works only for regular networks, else have to specify neighbor_count[i]
+            rng = randomNumber(ran, neighbor_count[i]*P, N);  //works only for regular networks, else have to specify neighbor_count[i]
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
@@ -136,10 +136,9 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
                 }
             }
             sum.MultiplyByTwoTo(); 
-            sum.MultiplyByTwoTo();   
 
             threshold.SetAll((unsigned long long int) rng);
-            threshold += &Two_P_times_Neighbor_Count[i];
+            threshold += &P_times_Neighbor_Count[i];
 
             mask = (sum <= threshold);   
             Bits_Spin_i ^= &mask;
