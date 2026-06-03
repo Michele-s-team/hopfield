@@ -21,9 +21,9 @@ class HopfieldNoBits : public HopfieldModel {
 public:
     using HopfieldModel::HopfieldModel;
 
-    void evolveSharedRNG(gsl_rng*);
+    void evolve(gsl_rng*);
     void evolveIndependentRNG(gsl_rng*);
-    void evolveSharedRNG_save(gsl_rng*, double freq, const std::string& filename);
+    void evolve_save(gsl_rng*, double freq, const std::string& filename);
 
 private:
 

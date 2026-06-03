@@ -114,7 +114,7 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
 // PUBLIC API
 // =====================================================
 
-void IsingNoBits::evolveSharedRNG(gsl_rng* ran) {
+void IsingNoBits::evolve(gsl_rng* ran) {
     runSweepsSharedRNG(ran, false, 0);
 }
 
@@ -122,7 +122,7 @@ void IsingNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, false, 0);
 }
 
-void IsingNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const std::string& filename) {
+void IsingNoBits::evolve_save(gsl_rng* ran, double freq, const std::string& filename) {
 
     OpenCSVFiles(filename);
 

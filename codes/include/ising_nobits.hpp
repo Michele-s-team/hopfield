@@ -25,9 +25,9 @@ public:
 
     //void evolveOneSweep(int, gsl_rng*);   // single Monte Carlo sweep (classic spin implementation)
     //void evolve_modular(gsl_rng*) override;    // modular version of classic evolution loop
-    void evolveSharedRNG(gsl_rng*); // reference full-loop implementation (non-modular)
+    void evolve(gsl_rng*); // reference full-loop implementation (non-modular)
     void evolveIndependentRNG(gsl_rng*); // reference full-loop implementation (non-modular)
-    void evolveSharedRNG_save(gsl_rng* ran, double freq, const string& filename);  // run simulation and save the magnetization at the frequency freq (between 0 and 1) in filename
+    void evolve_save(gsl_rng* ran, double freq, const string& filename);  // run simulation and save the magnetization at the frequency freq (between 0 and 1) in filename
 
 private:
 

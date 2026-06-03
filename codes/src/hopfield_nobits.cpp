@@ -101,7 +101,7 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
 // PUBLIC API
 // =====================================================
 
-void HopfieldNoBits::evolveSharedRNG(gsl_rng* ran) {
+void HopfieldNoBits::evolve(gsl_rng* ran) {
     runSweepsSharedRNG(ran, false, 0.0);
 }
 
@@ -109,7 +109,7 @@ void HopfieldNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, false, 0.0);
 }
 
-void HopfieldNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const string& folder) {
+void HopfieldNoBits::evolve_save(gsl_rng* ran, double freq, const string& folder) {
     OpenCSVFiles(folder);
     runSweepsSharedRNG(ran, true, freq);
     CloseCSVFiles();

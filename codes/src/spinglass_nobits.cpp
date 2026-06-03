@@ -113,7 +113,7 @@ void SpinGlassNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fr
 // PUBLIC API
 // =====================================================
 
-void SpinGlassNoBits::evolveSharedRNG(gsl_rng* ran) {
+void SpinGlassNoBits::evolve(gsl_rng* ran) {
     runSweepsSharedRNG(ran, false, 0);
 }
 
@@ -121,7 +121,7 @@ void SpinGlassNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, false, 0);
 }
 
-void SpinGlassNoBits::evolveSharedRNG_save(gsl_rng* ran, double freq, const std::string& filename) {
+void SpinGlassNoBits::evolve_save(gsl_rng* ran, double freq, const std::string& filename) {
 
     OpenCSVFiles(filename);
 

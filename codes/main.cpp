@@ -148,7 +148,7 @@ int main() {
     // ── Evolution: HopfieldNoBits ────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // same seed for fair comparison
     clock_t start_ref = clock();
-    nobits.evolveSharedRNG(ran);
+    nobits.evolve(ran);
     clock_t end_ref = clock();
     double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout << "HopfieldNoBits done. Time: " << clock_ref << " s\n";
