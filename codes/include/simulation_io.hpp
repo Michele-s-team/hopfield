@@ -4,21 +4,44 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include "main.hpp"
+#include <cstdint>
+
 using namespace std;
 
 class SimulationIO {
 public:
-    SimulationIO() = default;
-    ~SimulationIO() { CloseCSVFiles(); }
 
-    void OpenCSVFiles(const string& folder, int N);
-    void CloseCSVFiles();
-    void SaveMagnetizations(int N, double beta, // either betaJ when Ising or just beta for Sin glass/Hofield
-                            const vector<double>& magnetizations);
+    static constexpr int BITS_PER_BLOCK = 64;
+    static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
+    SimulationIO() = default;
+    ~SimulationIO();
+
+    void OpenMagnetizationFiles(const string& folder, int N, double beta);
+    void CloseMagnetizationFiles();
+
+    void OpenSpinFiles(const string& folder, int N, double beta);
+    void CloseSpinFiles();
+
+    void SaveMagnetizations(
+        int N,
+        const vector<double>& magnetizations);
+
+    void SaveSpinConfigurations(
+        int N,
+        int mc_step,
+        const vector<int>& spins_set);
+
+    void SavePatterns(
+        const string& folder,
+        int N,
+        const vector<vector<vector<int>>>& patterns);
 
 private:
-    vector<ofstream> m_csv_files;
+
+    static inline int num_blocks(int N);
+    vector<ofstream> m_magnetization_files;
+    vector<ofstream> m_spin_files;
+    
 };
 
 #endif

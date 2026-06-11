@@ -6,6 +6,7 @@
 //
 
 #include "simulation_base.hpp"
+#include "main.hpp"
 
 // =====================================================
 // CONSTRUCTION
