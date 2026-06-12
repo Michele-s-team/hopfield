@@ -185,7 +185,7 @@ int main() {
     // ── Temperature sweep ──────────────────────
 
     for (int i = 0; i < temperatures.size(); ++i) {
-        //bits.OpenCSVFiles("../results/magnetizations/magnetizations_bits");
+        //bits.OpenSpinFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[temperatures.size()-i-1];
         const double betaJ = 1.0 / T;
@@ -204,7 +204,7 @@ int main() {
 
         bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
         cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
-        //bits.CloseCSVFiles();
+        //bits.CloseSpinFiles();
 
 
 

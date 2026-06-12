@@ -149,10 +149,10 @@ void SpinGlassBits::evolve(gsl_rng* ran){
 // Run simulation and save magnetizations at the given frequency
 void SpinGlassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
-    OpenCSVFiles(filename);
+    OpenSpinFiles(filename);
     cout << "evolve_save called, opening: " << filename << endl;
     runSweeps(ran, /*save=*/true, freq);
-    CloseCSVFiles();
+    CloseSpinFiles();
     cout << "evolve_save called, closing: " << filename << endl;
     toCanonical();
 }

@@ -123,9 +123,9 @@ void SpinGlassNoBits::evolveIndependentRNG(gsl_rng* ran) {
 
 void SpinGlassNoBits::evolve_save(gsl_rng* ran, double freq, const std::string& filename) {
 
-    OpenCSVFiles(filename);
+    OpenSpinFiles(filename);
 
     runSweepsSharedRNG(ran, true, freq);
 
-    CloseCSVFiles();
+    CloseSpinFiles();
 }

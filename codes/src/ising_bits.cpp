@@ -133,8 +133,8 @@ void IsingBits::evolve(gsl_rng* ran){
 // Run simulation and save magnetizations at the given frequency
 void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& folder){
     fromCanonical();
-    OpenCSVFiles(folder);  // Use base class method
+    OpenSpinFiles(folder);  // Use base class method
     runSweeps(ran, /*save=*/true, freq);
-    CloseCSVFiles();       // Use base class method
+    CloseSpinFiles();       // Use base class method
     toCanonical();
 }

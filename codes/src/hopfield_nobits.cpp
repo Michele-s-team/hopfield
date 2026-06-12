@@ -110,8 +110,8 @@ void HopfieldNoBits::evolveIndependentRNG(gsl_rng* ran) {
 }
 
 void HopfieldNoBits::evolve_save(gsl_rng* ran, double freq, const string& folder) {
-    OpenCSVFiles(folder);
+    OpenSpinFiles(folder);
     runSweepsSharedRNG(ran, true, freq);
-    CloseCSVFiles();
+    CloseSpinFiles();
 }
 
