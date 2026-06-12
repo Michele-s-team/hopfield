@@ -11,7 +11,6 @@ import re
 
 root_dir = Path("../results")
 
-
 # ============================================================
 # UTIL: PARSING
 # ============================================================
@@ -24,7 +23,6 @@ def extract_r(name):
 def extract_N(name):
     m = re.search(r"N(\d+)", name)
     return int(m.group(1)) if m else None
-
 
 # ============================================================
 # OVERLAP
@@ -50,7 +48,6 @@ def overlap_binary(config_row, pattern_row, N):
 
     return corr / N
 
-
 # ============================================================
 # MAX OVERLAP
 # ============================================================
@@ -65,12 +62,11 @@ def compute_max_overlap(config_file, pattern_file, N):
     m_max = -1.0
 
     for _, pattern_row in pattern_df.iterrows():
-        m = overlap_binary(config_row, pattern_row, N)
+        m = abs(overlap_binary(config_row, pattern_row, N))
         if m > m_max:
             m_max = m
 
     return m_max
-
 
 # ============================================================
 # BUILD INDEX
@@ -104,7 +100,6 @@ def build_index(root_dir):
 
     return index
 
-
 # ============================================================
 # DETECT N
 # ============================================================
@@ -114,13 +109,11 @@ N = extract_N(any_pattern.name)
 
 print("[INFO] Detected N =", N)
 
-
 # ============================================================
 # INDEX DATA
 # ============================================================
 
 index = build_index(root_dir)
-
 
 # ============================================================
 # MAIN LOOP

@@ -71,18 +71,21 @@ int main() {
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 50;           // lattice size (L×L spins)
     const double beta   = 2;            // inverse temperature
-    const int N_sweeps  = 1 << 12;      // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 14;      // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
-    // ── Loop over alpha from 0.00 to 0.20 in steps of 0.01 ───────────────────
-    double step=0.008;
-    double alpha_max=0.2;
 
-    int n_steps = static_cast<int>(round(alpha_max / step)); // computed from step and alpha_max
+    double step=0.005;
+    double alpha_min=0.08;
+    double alpha_max=0.18;
 
-    for (int k = 1; k <= n_steps; k++) {
-        double alpha = k * step;
+    int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
+
+    clock_t start_all = clock();
+
+    for (int k = 0; k <= n_steps; k++) {
+        double alpha = alpha_min + k * step;
         int P = static_cast<int>(round(L * L * alpha)); // number of patterns
 
         // Build folder name using alpha value directly
@@ -98,7 +101,7 @@ int main() {
         make_dir(base_folder);
 
         cout << "\n==============================================\n";
-        cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k<<"/"<<n_steps << ")\n";
+        cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k <<"/"<<n_steps << ")\n";
         cout << "  Lattice:       " << L << " x " << L << " = " << L*L << " neurons\n";
         cout << "  Temperature:   " << 1.0/beta << "\n";
         cout << "  Sweeps:        " << N_sweeps << "\n";
@@ -134,6 +137,13 @@ int main() {
         cout << "\nHopfieldBits done for alpha = " << alpha
              << ". Time: " << clock_bits << " s\n";
     }
+    
+    clock_t end_all = clock();
+    double clock_all = double(end_all - start_all) / CLOCKS_PER_SEC;
+
+    cout << "\nSimulation Complete. \n"
+             << "Total Time: " << clock_all << " s\n";
+    
     gsl_rng_free(ran);
 
     return 0;
