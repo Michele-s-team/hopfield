@@ -84,7 +84,7 @@ void SimulationIO::OpenSpinFiles(const string& folder, int N, double beta){
     for (int r = 0; r < n_bits; ++r){
         string path =
             folder +
-            "_spins_N" + to_string(N) +
+            "spins_N" + to_string(N) +
             "_beta" + format_beta(beta) +
             "_r" + to_string(r) +
             ".csv";
@@ -150,7 +150,7 @@ void SimulationIO::SavePatterns(const string& folder, int N, const vector<vector
     for (int r = 0; r < n_bits; ++r){
         string path =
             folder + 
-            "_patterns_N" + to_string(N) +
+            "patterns_N" + to_string(N) +
             "_r" + to_string(r) +
             ".csv";
 

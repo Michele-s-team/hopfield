@@ -70,13 +70,13 @@ int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 50;           // lattice size (L×L spins)
-    const double beta   = 1.0 / 1.5;    // inverse temperature
-    const int N_sweeps  = 1 << 18;      // number of Metropolis sweeps
+    const double beta   = 2;            // inverse temperature
+    const int N_sweeps  = 1 << 12;      // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
     // ── Loop over alpha from 0.00 to 0.20 in steps of 0.01 ───────────────────
-    double step=0.004;
+    double step=0.008;
     double alpha_max=0.2;
 
     int n_steps = static_cast<int>(round(alpha_max / step)); // computed from step and alpha_max
@@ -85,10 +85,16 @@ int main() {
         double alpha = k * step;
         int P = static_cast<int>(round(L * L * alpha)); // number of patterns
 
-        // Build the folder name, e.g. "alpha_00", "alpha_01", ..., "alpha_20"
+        // Build folder name using alpha value directly
         ostringstream folder_name;
-        folder_name << "../results/alpha_" << setw(5) << setfill('0') << k << "/";
-        string base_folder = folder_name.str();
+
+        folder_name << "../results/alpha_"
+                    << std::fixed << std::setprecision(3)
+                    << alpha
+                    << "/";
+
+        std::string base_folder = folder_name.str();
+
         make_dir(base_folder);
 
         cout << "\n==============================================\n";
@@ -122,7 +128,7 @@ int main() {
         // ── Evolution: HopfieldBits ──────────────────────────────────────────
         gsl_rng_set(ran, 42);  // fixed seed for the dynamics
         clock_t start_bits = clock();
-        bits.evolve(ran, "configurations/");
+        bits.evolve(ran, "spins/");
         clock_t end_bits = clock();
         double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
         cout << "\nHopfieldBits done for alpha = " << alpha
