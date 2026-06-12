@@ -1,3 +1,12 @@
+//
+//  simulation_io.hpp
+//  hopfield
+//
+//  Created by Bastien on 02/06/2026.
+//
+//
+
+
 #ifndef simulation_io_hpp
 #define simulation_io_hpp
 
@@ -22,23 +31,14 @@ public:
     void OpenSpinFiles(const string& folder, int N, double beta);
     void CloseSpinFiles();
 
-    void SaveMagnetizations(
-        int N,
-        const vector<double>& magnetizations);
-
-    void SaveSpinConfigurations(
-        int N,
-        int mc_step,
-        const vector<int>& spins_set);
-
-    void SavePatterns(
-        const string& folder,
-        int N,
-        const vector<vector<vector<int>>>& patterns);
+    void SaveMagnetizations(const int sweep, const vector<double>& magnetizations);
+    void SaveSpinConfigurations(int N, int sweep, const vector<int>& spins_set);
+    void SavePatterns(const string& folder, int N, const vector<vector<vector<int>>>& patterns);
 
 private:
-
     static inline int num_blocks(int N);
+    static uint64_t PackBlock(const int* data, int start, int end);
+
     vector<ofstream> m_magnetization_files;
     vector<ofstream> m_spin_files;
     
