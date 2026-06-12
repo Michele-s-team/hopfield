@@ -30,6 +30,7 @@ public:
     void evolve(gsl_rng* ran);                                               // reference full-loop implementation
     void evolve_save(gsl_rng* ran, double freq, const string& filename);     // run simulation and save the magnetization at the frequency freq (between 0 and 1)
     void GetMagnetizations(vector<double>& magnetizations) override;         // get the n_bits magnetizations using the Bits formalism
+    void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 
 private:
     void toCanonical();                                            // convert Bits → ±1 spin representation

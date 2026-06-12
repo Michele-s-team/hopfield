@@ -29,7 +29,8 @@ public:
     
     virtual ~IsingBits() = default;
     
-    void GetMagnetizations(std::vector<double>& magnetizations) override;
+    void GetMagnetizations(std::vector<double>& magnetizations) override;    // get the n_bits magnetizations using the Bits formalism
+    void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
     void evolve(gsl_rng* ran);
     void evolve_save(gsl_rng* ran, double freq, const std::string& folder);
 };

@@ -82,7 +82,7 @@ void HopfieldBits::toCanonical(){
 // OBSERVABLES
 // =====================================================
 
-// Compute magnetization m = (2*ones - N) / N for each realization using the BitSet implementation 
+// Compute magnetization m = (2*ones - N)/N for each realization 
 void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
     magnetizations.resize(n_bits);
     vector<int> ones(n_bits, 0);
@@ -93,6 +93,24 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
 
     for (int r = 0; r < n_bits; ++r)
         magnetizations[r] = (2.0 * ones[r] - N) / N;
+}
+
+// Converts spin configurations (already in bits) into packed blocks for each realisation
+void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
+    const int n_blocks = num_blocks(N);
+    configs.assign(n_bits, vector<uint64_t>(n_blocks));
+
+    for (int b = 0; b < n_blocks; ++b){
+        int start = b * BITS_PER_BLOCK;
+        int end   = min(N, start + BITS_PER_BLOCK);
+
+        for (int i = start; i < end; ++i){
+            for (int r = 0; r < n_bits; ++r){
+                if (Bits_Spins_Set[i].Get(r))
+                    configs[r][b] |= (uint64_t(1) << (i - start));
+            }
+        }
+    }
 }
 
 // =====================================================
@@ -145,7 +163,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
+            SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1

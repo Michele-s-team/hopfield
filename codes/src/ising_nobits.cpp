@@ -60,7 +60,7 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
+            SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             std::cout << "\rSweep: " << sweep + 1
@@ -99,7 +99,7 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
+            SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             std::cout << "\rSweep: " << sweep + 1

@@ -20,12 +20,34 @@ SimulationBase::SimulationBase(int N,
       m_metropolis(beta, N_sweeps)
 {}
 
+void SimulationBase::SetBaseFolder(const string& folder){
+    m_base_folder = folder;
+}
+
+// =====================================================
+// UTILITIES
+// =====================================================
+
+int SimulationBase::num_blocks(int N){
+    return (N + BLOCK_MASK) / BITS_PER_BLOCK;
+}
+
+uint64_t SimulationBase::PackBlock(const int* data, int start, int end){
+    uint64_t packed = 0;
+    for (int i = start; i < end; ++i){
+        packed <<= 1;
+        if (data[i] > 0)
+            packed |= 1ULL;
+    }
+    return packed;
+}
+
 // =====================================================
 // FILE MANAGEMENT — MAGNETIZATIONS
 // =====================================================
 
-void SimulationBase::OpenMagnetizationFiles(const string& folder){
-    m_io.OpenMagnetizationFiles(folder, N, m_metropolis.getBeta());
+void SimulationBase::OpenMagnetizationFiles(const string& subfolder){
+    m_io.OpenMagnetizationFiles(m_base_folder + subfolder, N, m_metropolis.getBeta());
 }
 
 void SimulationBase::CloseMagnetizationFiles(){
@@ -36,15 +58,15 @@ void SimulationBase::CloseMagnetizationFiles(){
 // FILE MANAGEMENT — SPIN CONFIGURATIONS
 // =====================================================
 
-void SimulationBase::OpenSpinFiles(const string& folder){
-    m_io.OpenSpinFiles(folder, N, m_metropolis.getBeta());
+void SimulationBase::OpenSpinFiles(const string& subfolder){
+    m_io.OpenSpinFiles(m_base_folder + subfolder, N, m_metropolis.getBeta());
 }
 void SimulationBase::CloseSpinFiles(){
     m_io.CloseSpinFiles();
 }
 
 // =====================================================
-// GET MAGNETIZATIONS (implémentation par défaut)
+// GET OBSERVABLES
 // =====================================================
 
 void SimulationBase::GetMagnetizations(vector<double>& magnetizations){
@@ -58,6 +80,25 @@ void SimulationBase::GetMagnetizations(vector<double>& magnetizations){
     }
 }
 
+// Converts the +-1 spins into packed binary blocks, for each iteration
+void SimulationBase::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
+    const int n_blocks = num_blocks(N);
+    configs.assign(n_bits, vector<uint64_t>(n_blocks));
+
+    vector<int> binary(N);
+    for (int r = 0; r < n_bits; ++r){
+        for (int i = 0; i < N; ++i)
+            binary[i] = (spins_set[r * N + i] > 0) ? 1 : 0;
+
+        for (int b = 0; b < n_blocks; ++b){
+            int start = b * BITS_PER_BLOCK;
+            int end   = min(N, start + BITS_PER_BLOCK);
+            configs[r][b] = PackBlock(binary.data(), start, end);
+        }
+    }
+}
+
+
 // =====================================================
 // OBSERVABLE SAVING
 // =====================================================
@@ -69,12 +110,14 @@ void SimulationBase::SaveMagnetizations(int sweep){
 }
 
 void SimulationBase::SaveSpinConfigurations(int sweep){
-    m_io.SaveSpinConfigurations(N, sweep, spins_set);
+    vector<vector<uint64_t>> configs;
+    GetSpinConfigurations(configs);
+    m_io.SaveSpinConfigurations(sweep, configs);
 }
 
-void SimulationBase::SavePatterns(const string& folder,
+void SimulationBase::SavePatterns(const string& subfolder,
                                    const vector<vector<vector<int>>>& patterns){
-    m_io.SavePatterns(folder, N, patterns);
+    m_io.SavePatterns(m_base_folder + subfolder, N, patterns);
 }
 
 // =====================================================

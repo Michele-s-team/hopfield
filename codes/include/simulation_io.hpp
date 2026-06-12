@@ -19,11 +19,16 @@ using namespace std;
 
 class SimulationIO {
 public:
+   
+string m_base_folder;
 
     static constexpr int BITS_PER_BLOCK = 64;
     static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
+
     SimulationIO() = default;
     ~SimulationIO();
+
+    int SpinToBit(int s);
 
     void OpenMagnetizationFiles(const string& folder, int N, double beta);
     void CloseMagnetizationFiles();
@@ -32,7 +37,7 @@ public:
     void CloseSpinFiles();
 
     void SaveMagnetizations(const int sweep, const vector<double>& magnetizations);
-    void SaveSpinConfigurations(int N, int sweep, const vector<int>& spins_set);
+    void SaveSpinConfigurations(int sweep, const vector<vector<uint64_t>>& configs);
     void SavePatterns(const string& folder, int N, const vector<vector<vector<int>>>& patterns);
 
 private:

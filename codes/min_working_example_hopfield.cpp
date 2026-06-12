@@ -97,7 +97,7 @@ int main() {
     const double beta   = 1.0 / 1.5;    // inverse temperature
     const double alpha  = 0.1;          // alpha = P/N
     const int P         = L*L * alpha;  // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 8;      // number of Metropolis sweeps 
+    const int N_sweeps  = 1 << 15;      // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";
@@ -116,6 +116,8 @@ int main() {
     HopfieldBits   bits  (L * L, beta, N_sweeps, P);
     HopfieldNoBits nobits(L * L, beta, N_sweeps, P);
 
+    bits.SetBaseFolder("../results/");
+
     // Build the 2D square lattice with periodic boundary conditions
     bits.initNetwork2D_PBC();
     nobits.initNetwork2D_PBC();
@@ -125,6 +127,7 @@ int main() {
     // share the exact same pattern realization
     bits.initPatterns(ran);
     vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
+    bits.SavePatterns("patterns/",initial_patterns);
     nobits.initPatternsFromConfig(initial_patterns);
     cout << "Patterns initialized and shared between models\n";
 
@@ -141,10 +144,12 @@ int main() {
     // ── Evolution: HopfieldBits ──────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // fixed seed for RNG comparison
     clock_t start_bits = clock();
-    bits.evolve(ran);
+    bits.evolve_save(ran, 1,"configurations/");
     clock_t end_bits = clock();
     double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout << "\nHopfieldBits done. Time: " << clock_bits << " s\n";
+
+    /*
 
     // ── Evolution: HopfieldNoBits ────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // same seed for fair comparison
@@ -177,6 +182,8 @@ int main() {
     cout << "HopfieldBits time:   " << clock_bits << " s\n";
     cout << "HopfieldNoBits time: " << clock_ref << " s\n";
     cout << "Acceleration factor: " << clock_ref / clock_bits << "x\n";
+
+    */
 
     gsl_rng_free(ran);
 

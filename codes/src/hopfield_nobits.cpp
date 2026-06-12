@@ -56,7 +56,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
+            SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
@@ -87,7 +87,7 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveMagnetizations(sweep);
+            SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
