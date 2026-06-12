@@ -162,7 +162,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             Bits_Spin_i ^= &mask;
         }
 
-        if (save && (sweep % save_stride == 0))
+        if (save && sweep > 0 && sweep < total_sweeps && (sweep % save_stride == 0))
             SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
@@ -178,9 +178,15 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // =====================================================
 
 // Run simulation without saving (thermalization)
-void HopfieldBits::evolve(gsl_rng* ran){
+void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
     fromCanonical();
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
     runSweeps(ran, /*save=*/false, 0.0);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve called, closing: " << filename << endl;
+    toCanonical();
     toCanonical();
 }
 
@@ -188,8 +194,10 @@ void HopfieldBits::evolve(gsl_rng* ran){
 void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
     OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
     cout << "evolve_save called, opening: " << filename << endl;
     runSweeps(ran, /*save=*/true, freq);
+    SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_save called, closing: " << filename << endl;
     toCanonical();
