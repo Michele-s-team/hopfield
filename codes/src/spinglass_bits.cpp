@@ -14,6 +14,7 @@
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
+
 // =====================================================
 // STATE CONVERSIONS
 // =====================================================
@@ -78,9 +79,11 @@ void SpinGlassBits::GetMagnetizations(vector<double>& magnetizations){
 }
 
 // Converts spin configurations (already in bits) into packed blocks for each realisation
+// Uses the same MSB-first convention as PackBlock (and SavePatterns), so that
+// spins and patterns are bit-comparable.
 void SpinGlassBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
     const int n_blocks = num_blocks(N);
-    configs.assign(n_bits, vector<uint64_t>(n_blocks));
+    configs.assign(n_bits, vector<uint64_t>(n_blocks, 0));
 
     for (int b = 0; b < n_blocks; ++b){
         int start = b * BITS_PER_BLOCK;
@@ -88,8 +91,9 @@ void SpinGlassBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 
         for (int i = start; i < end; ++i){
             for (int r = 0; r < n_bits; ++r){
+                configs[r][b] <<= 1;
                 if (Bits_Spins_Set[i].Get(r))
-                    configs[r][b] |= (uint64_t(1) << (i - start));
+                    configs[r][b] |= 1ULL;
             }
         }
     }

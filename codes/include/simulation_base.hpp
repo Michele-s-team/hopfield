@@ -24,13 +24,12 @@ protected:
     SimulationIO m_io;
     string       m_base_folder;
 
-    static int num_blocks(int N);
+    
     static uint64_t PackBlock(const int* data, int start, int end);
 
 public:
 
-    static constexpr int BITS_PER_BLOCK = 64;
-    static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
+    static int num_blocks(int N);
 
     void SetBaseFolder(const string& folder);
         

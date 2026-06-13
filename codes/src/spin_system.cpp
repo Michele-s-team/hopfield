@@ -66,6 +66,19 @@ void SpinSystem::initNetwork2D_OBC() {
         }
 }
 
+// Fully connected network: every site is connected to every other site
+void SpinSystem::initNetworkFullyConnected(){
+    for (int i = 0; i < N; ++i) {
+        neighbors[i].clear();
+        neighbors[i].reserve(N - 1);
+        for (int j = 0; j < N; ++j) {
+            if (j != i)
+                neighbors[i].push_back(j);
+        }
+        neighbor_count[i] = N - 1;
+    }
+}
+
 // Erdos-Renyi random graph: each directed edge (i,j) included with probability p
 void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     neighbors.assign(N, vector<int>());

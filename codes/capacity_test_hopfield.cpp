@@ -69,15 +69,15 @@ void make_dir(const string& path) {
 int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L         = 50;           // lattice size (L×L spins)
-    const double beta   = 2;            // inverse temperature
-    const int N_sweeps  = 1 << 14;      // number of Metropolis sweeps
+    const int L         = 20;           // lattice size (L×L spins)
+    const double beta   = 5;           // inverse temperature
+    const int N_sweeps  = 1 << 14;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
     double step=0.005;
-    double alpha_min=0.08;
+    double alpha_min=0.005;
     double alpha_max=0.18;
 
     int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
@@ -115,11 +115,12 @@ int main() {
         bits.SetBaseFolder(base_folder.c_str());
 
         // Build the 2D square lattice with periodic boundary conditions
-        bits.initNetwork2D_PBC();
-        cout << "Network initialized (2D square lattice with PBC)\n";
+        bits.initNetworkFullyConnected();
+        cout << "Network initialized (Fully Connected)\n";
 
         // Generate and save the patterns
         bits.initPatterns(ran);
+
         vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
         bits.SavePatterns("patterns/", initial_patterns);
         cout << "Patterns initialized and saved\n";
@@ -131,7 +132,7 @@ int main() {
         // ── Evolution: HopfieldBits ──────────────────────────────────────────
         gsl_rng_set(ran, 42);  // fixed seed for the dynamics
         clock_t start_bits = clock();
-        bits.evolve(ran, "spins/");
+        bits.evolve_save(ran, 0.1, "spins/");
         clock_t end_bits = clock();
         double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
         cout << "\nHopfieldBits done for alpha = " << alpha

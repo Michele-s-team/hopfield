@@ -93,11 +93,11 @@ void print_neurons(const vector<int>& neurons_before,
 int main() {
 
     // ── Simulation parameters ─────────────────────────────────────────────────
-    const int L         = 50;           // linear lattice size (L×L spins)
-    const double beta   = 1.0 / 1.5;    // inverse temperature
-    const double alpha  = 0.1;          // alpha = P/N
-    const int P         = L*L * alpha;  // number of patterns (small for testing)
-    const int N_sweeps  = 1 << 15;      // number of Metropolis sweeps 
+    const int L         = 50;             // linear lattice size (L×L spins)
+    const double beta   = 10;             // inverse temperature
+    const double alpha  = 0.1;            // alpha = P/N
+    const int P         = L * L * alpha;  // number of patterns (small for testing)
+    const int N_sweeps  = 1 << 10;        // number of Metropolis sweeps 
 
     cout << "\n";
     cout << "Hopfield 2D Model - Bits vs NoBits Comparison\n\n";
@@ -114,37 +114,36 @@ int main() {
 
     // Construct both models with identical parameters
     HopfieldBits   bits  (L * L, beta, N_sweeps, P);
-    HopfieldNoBits nobits(L * L, beta, N_sweeps, P);
+    //HopfieldNoBits nobits(L * L, beta, N_sweeps, P);
 
     bits.SetBaseFolder("../results/");
 
     // Build the 2D square lattice with periodic boundary conditions
-    bits.initNetwork2D_PBC();
-    nobits.initNetwork2D_PBC();
-    cout << "Network initialized (2D square lattice with PBC)\n";
+    bits.initNetworkFullyConnected();
+    //nobits.initNetwork2D_PBC();
+    cout << "Network initialized (Fully Connected)\n";
 
     // Generate patterns once, then copy them to nobits so both models
     // share the exact same pattern realization
     bits.initPatterns(ran);
     vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
     bits.SavePatterns("patterns/",initial_patterns);
-    nobits.initPatternsFromConfig(initial_patterns);
+    //nobits.initPatternsFromConfig(initial_patterns);
     cout << "Patterns initialized and shared between models\n";
 
     // Generate the initial spin configuration once and share it across both models
     bits.initSpins(ran);
     vector<int> initial_config = bits.getSpinsConfig();
-    nobits.initSpinsFromConfig(initial_config);
+    //nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized and shared\n";
 
     // Verify that both models start from the same spin state before evolving
-    print_neurons(initial_config, nobits.getSpinsConfig(),
-                  bits.getSpinsConfig(), L*L);
+    //print_neurons(initial_config, nobits.getSpinsConfig(),bits.getSpinsConfig(), L*L);
 
     // ── Evolution: HopfieldBits ──────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // fixed seed for RNG comparison
     clock_t start_bits = clock();
-    bits.evolve_save(ran, 1,"configurations/");
+    bits.evolve_save(ran, 1,"spins/");
     clock_t end_bits = clock();
     double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
     cout << "\nHopfieldBits done. Time: " << clock_bits << " s\n";

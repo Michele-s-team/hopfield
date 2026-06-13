@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -11,21 +13,23 @@ import re
 
 root_dir = Path("../results")
 
+
 # ============================================================
 # UTIL: PARSING
 # ============================================================
 
 def extract_r(name):
     m = re.search(r"_r(\d+)\.csv$", name)
-    return m.group(1) if m else None
+    return int(m.group(1)) if m else None
 
 
 def extract_N(name):
     m = re.search(r"N(\d+)", name)
     return int(m.group(1)) if m else None
 
+
 # ============================================================
-# OVERLAP
+# OVERLAP (bit-safe, consistent with decoding logic)
 # ============================================================
 
 def overlap_binary(config_row, pattern_row, N):
@@ -36,40 +40,48 @@ def overlap_binary(config_row, pattern_row, N):
     corr = 0
 
     for b in range(n_full):
-        s = int(config_row[f"block{b}"])
-        p = int(pattern_row[f"block{b}"])
-        corr += 64 - 2 * (s ^ p).bit_count()
+        s = int(str(config_row[f"block{b}"]))
+        p = int(str(pattern_row[f"block{b}"]))
+
+        xor = s ^ p
+        corr += 64 - 2 * xor.bit_count()
 
     if remainder:
-        s = int(config_row[f"block{n_full}"])
-        p = int(pattern_row[f"block{n_full}"])
+        s = int(str(config_row[f"block{n_full}"]))
+        p = int(str(pattern_row[f"block{n_full}"]))
+
         mask = (1 << remainder) - 1
-        corr += remainder - 2 * ((s ^ p) & mask).bit_count()
+        xor = (s ^ p) & mask
+
+        corr += remainder - 2 * xor.bit_count()
 
     return corr / N
 
+
 # ============================================================
-# MAX OVERLAP
+# MAX OVERLAP FOR FINAL CONFIG
 # ============================================================
 
 def compute_max_overlap(config_file, pattern_file, N):
 
-    config_df = pd.read_csv(config_file)
-    pattern_df = pd.read_csv(pattern_file)
+    config_df = pd.read_csv(config_file, dtype=str)
+    pattern_df = pd.read_csv(pattern_file, dtype=str)
 
-    config_row = config_df.iloc[-1]
+    final_row = config_df.iloc[-1]
 
     m_max = -1.0
 
     for _, pattern_row in pattern_df.iterrows():
-        m = abs(overlap_binary(config_row, pattern_row, N))
+
+        m = abs(overlap_binary(final_row, pattern_row, N))
         if m > m_max:
             m_max = m
 
     return m_max
 
+
 # ============================================================
-# BUILD INDEX
+# INDEX BUILDING
 # ============================================================
 
 def build_index(root_dir):
@@ -84,10 +96,11 @@ def build_index(root_dir):
         if not spins_dir.exists() or not patterns_dir.exists():
             continue
 
-        config_files = list(spins_dir.glob("*.csv"))
+        config_files = sorted(spins_dir.glob("*.csv"))
         pattern_files = list(patterns_dir.glob("*.csv"))
 
         pattern_map = {}
+
         for p in pattern_files:
             r = extract_r(p.name)
             if r is not None:
@@ -100,6 +113,7 @@ def build_index(root_dir):
 
     return index
 
+
 # ============================================================
 # DETECT N
 # ============================================================
@@ -109,11 +123,23 @@ N = extract_N(any_pattern.name)
 
 print("[INFO] Detected N =", N)
 
+
 # ============================================================
-# INDEX DATA
+# INDEX
 # ============================================================
 
 index = build_index(root_dir)
+
+
+# ============================================================
+# LIMIT NUMBER OF ALPHA FOLDERS (NEW)
+# ============================================================
+
+N_ALPHA = 12  # <-- choose how many alpha folders to keep
+
+sorted_items = sorted(index.items(), key=lambda x: float(x[0].name.split("_")[1]))
+sorted_items = sorted_items[:N_ALPHA]
+
 
 # ============================================================
 # MAIN LOOP
@@ -122,7 +148,7 @@ index = build_index(root_dir)
 alpha_values = []
 mean_overlaps = []
 
-for alpha_dir, data in sorted(index.items()):
+for alpha_dir, data in sorted_items:
 
     print("\n[PROCESS]", alpha_dir)
 

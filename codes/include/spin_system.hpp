@@ -31,6 +31,7 @@ public:
     void setSize(int); 
     void initNetwork2D_PBC();                  // Builds the periodic square lattice connectivity (4 neighbors per spin)
     void initNetwork2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
+    void initNetworkFullyConnected();          // Builds a fully connected network
     void initNetwork_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
     int randomBinary(gsl_rng*);                      // initializes randomly a spin +-1
     void initSpins(gsl_rng*);                      // Initializes all spins randomly to ±1 using the GSL RNG

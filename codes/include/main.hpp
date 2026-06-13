@@ -28,7 +28,8 @@ using namespace std;
 const unsigned long long int ullong_1 = 1;
 const unsigned long long int ullong_0 = 0;
 
-
+static constexpr int BITS_PER_BLOCK = 64;
+static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
 
 inline Bits Bits_one(~0ULL);
 inline Bits Bits_zero(0ULL);

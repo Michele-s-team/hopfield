@@ -24,6 +24,7 @@ private:
     void runSweeps(gsl_rng* ran, bool save, double freq);
 
 public:
+
     IsingBits(int N, double betaJ, int N_sweeps) 
         : IsingModel(N, betaJ, N_sweeps) {}
     
