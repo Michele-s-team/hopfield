@@ -135,7 +135,7 @@ index = build_index(root_dir)
 # LIMIT NUMBER OF ALPHA FOLDERS (NEW)
 # ============================================================
 
-N_ALPHA = 12  # <-- choose how many alpha folders to keep
+N_ALPHA = 15  # <-- choose how many alpha folders to keep
 
 sorted_items = sorted(index.items(), key=lambda x: float(x[0].name.split("_")[1]))
 sorted_items = sorted_items[:N_ALPHA]
