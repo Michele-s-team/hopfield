@@ -22,9 +22,6 @@ public:
    
 string m_base_folder;
 
-    static constexpr int BITS_PER_BLOCK = 64;
-    static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
-
     SimulationIO() = default;
     ~SimulationIO();
 

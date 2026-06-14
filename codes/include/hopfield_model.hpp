@@ -35,7 +35,7 @@ public:
     // Patterns initialization
     void initPatterns(gsl_rng* ran);
     void initPatternsFromConfig(vector<vector<vector<int>>> config);
-    vector<vector<vector<int>>> getPatternsConfig();
+    vector<vector<vector<int>>> getPatterns();
     
     // Couplings initialization (from patterns)
     void initCouplings();

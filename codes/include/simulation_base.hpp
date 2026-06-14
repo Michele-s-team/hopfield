@@ -61,6 +61,7 @@ public:
     int randomNumber(gsl_rng* ran, int max_neighbor_count, int factor = 1);
     // Simulation length (if you want to remove N_sweeps from models)
     int getNSweeps() const;
+    double getBeta() const;
     // Setters for Metropolis parameters
     void setNSweeps(int n);
     void setBeta(double new_beta);

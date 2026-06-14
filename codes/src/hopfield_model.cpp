@@ -72,13 +72,13 @@ void HopfieldModel::initCouplings() {
 // Initialize P random patterns (±1 random value for each neuron of the network) 
 // for the n_bits realizations
 void HopfieldModel::initPatterns(gsl_rng* ran) {
-    // patterns[p][i][r] : pattern p, neuron i, realization r
-    for (int p = 0; p < P; p++)
-        for (int i = 0; i < N; i++)
+    for (int p = 0; p < P; p++){
+        for (int i = 0; i < N; i++) {
+            uint64_t word = gsl_rng_get(ran);
             for (int r = 0; r < n_bits; r++)
-                patterns[p][i][r] = randomBinary(ran);
-
-    initCouplings();
+                patterns[p][i][r] = (word >> r) & 1;
+        }
+    }
 }
 
 // Overwrite the patterns tensor with an externally provided configuration.
@@ -89,7 +89,7 @@ void HopfieldModel::initPatternsFromConfig(vector<vector<vector<int>>> config) {
 }
 
 // Return a copy of the full pattern tensor
-vector<vector<vector<int>>> HopfieldModel::getPatternsConfig() {
+vector<vector<vector<int>>> HopfieldModel::getPatterns() {
     return patterns;
 }
 

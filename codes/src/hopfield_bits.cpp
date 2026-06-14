@@ -15,11 +15,6 @@
 #include "gsl_randist.h"
 
 
-int SimulationIO::num_blocks(int N){
-    return (N + BLOCK_MASK) / BITS_PER_BLOCK;
-}
-
-
 // =====================================================
 // STATE CONVERSIONS
 // =====================================================

@@ -69,15 +69,15 @@ void make_dir(const string& path) {
 int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L         = 20;           // lattice size (L×L spins)
+    const int L         = 50;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
-    const int N_sweeps  = 1 << 14;       // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 7;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
-    double step=0.005;
-    double alpha_min=0.005;
+    double step=0.01;
+    double alpha_min=0.01;
     double alpha_max=0.18;
 
     int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
@@ -101,7 +101,7 @@ int main() {
         make_dir(base_folder);
 
         cout << "\n==============================================\n";
-        cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k <<"/"<<n_steps << ")\n";
+        cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k+1 <<"/"<<n_steps+1 << ")\n";
         cout << "  Lattice:       " << L << " x " << L << " = " << L*L << " neurons\n";
         cout << "  Temperature:   " << 1.0/beta << "\n";
         cout << "  Sweeps:        " << N_sweeps << "\n";
@@ -120,10 +120,11 @@ int main() {
 
         // Generate and save the patterns
         bits.initPatterns(ran);
+        cout << "Patterns initialized\n";
 
-        vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
-        bits.SavePatterns("patterns/", initial_patterns);
-        cout << "Patterns initialized and saved\n";
+        vector<vector<vector<int>>> patterns = bits.getPatterns();
+        bits.SavePatterns("patterns/", patterns);
+        cout << "Patterns saved\n";
 
         // Generate the initial spin configuration
         bits.initSpins(ran);

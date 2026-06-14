@@ -72,12 +72,11 @@ def compute_max_overlap(config_file, pattern_file, N):
     m_max = -1.0
 
     for _, pattern_row in pattern_df.iterrows():
-
         m = abs(overlap_binary(final_row, pattern_row, N))
         if m > m_max:
             m_max = m
 
-    return m_max
+    return (1 - m_max) / 2  # <-- error rate
 
 
 # ============================================================
@@ -135,7 +134,7 @@ index = build_index(root_dir)
 # LIMIT NUMBER OF ALPHA FOLDERS (NEW)
 # ============================================================
 
-N_ALPHA = 15  # <-- choose how many alpha folders to keep
+N_ALPHA = 7  # <-- choose how many alpha folders to keep
 
 sorted_items = sorted(index.items(), key=lambda x: float(x[0].name.split("_")[1]))
 sorted_items = sorted_items[:N_ALPHA]
@@ -204,7 +203,7 @@ plt.plot(alpha_values, mean_overlaps, "o-")
 
 plt.xlim([0, 0.2])
 plt.xlabel(r"$\alpha$")
-plt.ylabel(r"$\langle \max_\mu m^\mu \rangle$")
+plt.ylabel(r"error rate")
 
 plt.grid(True)
 plt.tight_layout()

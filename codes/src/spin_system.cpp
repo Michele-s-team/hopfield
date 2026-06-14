@@ -136,22 +136,3 @@ double SpinSystem::GetAverageMagnetization() {
     for (double m : magnetizations) sum += m;
     return sum / n_bits;
 }
-
-// =====================================================
-// I/O
-// =====================================================
-
-// Appends the spin configuration of each realization to its own CSV file
-void SpinSystem::SaveSpins(const string& filename) {
-    for (int r = 0; r < n_bits; ++r) {
-        string fname = filename + "_r" + to_string(r) + ".csv";
-        ofstream f(fname, ios::app);
-
-        for (int i = 0; i < N; ++i) {
-            f << spins_set[r * N + i];
-            if (i < N - 1) f << ",";
-        }
-        f << "\n";
-        f.close();
-    }
-}

@@ -126,7 +126,7 @@ int main() {
     // Generate patterns once, then copy them to nobits so both models
     // share the exact same pattern realization
     bits.initPatterns(ran);
-    vector<vector<vector<int>>> initial_patterns = bits.getPatternsConfig();
+    vector<vector<vector<int>>> initial_patterns = bits.getPatterns();
     bits.SavePatterns("patterns/",initial_patterns);
     //nobits.initPatternsFromConfig(initial_patterns);
     cout << "Patterns initialized and shared between models\n";

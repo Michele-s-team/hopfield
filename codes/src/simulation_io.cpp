@@ -30,7 +30,7 @@ int SimulationIO::SpinToBit(int s){
 }
 
 
-inline int SimulationIO::num_blocks(int N){
+int SimulationIO::num_blocks(int N){
     return (N + BLOCK_MASK) / BITS_PER_BLOCK;
 }
 

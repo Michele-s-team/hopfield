@@ -135,6 +135,10 @@ void SimulationBase::setNSweeps(int n){
     m_metropolis.setNSweeps(n);
 }
 
+double SimulationBase::getBeta() const {
+    return m_metropolis.getBeta();
+}
+
 void SimulationBase::setBeta(double new_beta){
     m_metropolis.setBeta(new_beta);
 }
