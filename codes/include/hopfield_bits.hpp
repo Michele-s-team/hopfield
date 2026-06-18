@@ -25,6 +25,9 @@ class HopfieldBits : public HopfieldModel {
     vector<UnsignedInt> P_times_Neighbor_Count; // P*degree encoded for vectorized ops
     vector<vector<Bits>> Patterns;          // patterns encoded for vectorized ops
     vector<vector<Bits>> Couplings;         // couplings encoded for vectorized ops
+    vector<vector<UnsignedInt>> D_Coupling;        // sum_p (Patterns[p][i] ^ Patterns[p][j]), per replica
+    vector<vector<UnsignedInt>> PminusD_Coupling;   // P - D_Coupling
+
 
 public:
     using HopfieldModel::HopfieldModel;
@@ -42,6 +45,7 @@ private:
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
+    void PrecomputePatternOverlaps();
     void runSweeps(gsl_rng*, bool save, double);
 };
 

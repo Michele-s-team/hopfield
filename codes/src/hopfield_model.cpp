@@ -38,34 +38,6 @@ int HopfieldModel::neighbor_index(int spin, int target) const {
 }
 
 // =====================================================
-// COUPLINGS INITIALIZATION
-// =====================================================
-
-// Initializes the Couplings depending on the patterns (Hebb rule)
-void HopfieldModel::initCouplings() {
-    // Allocate couplings: N spins, each with neighbor list size, times n_bits replicas
-    for (int spin = 0; spin < N; ++spin)
-        couplings[spin].assign(neighbors[spin].size(), vector<int>(n_bits, 0));
-
-    // Hebb rule, each edge once (spin < nb), then mirror
-    for (int spin = 0; spin < N; ++spin) {
-        for (int i = 0; i < (int)neighbors[spin].size(); ++i) {
-            int nb = neighbors[spin][i];
-            if (nb <= spin) continue;  // skip already-filled edges
-            
-            auto& J = couplings[spin][i];
-            for (int r = 0; r < n_bits; ++r) {
-                J[r] = 0;
-                for (int p = 0; p < P; ++p)
-                    J[r] += patterns[p][spin][r] * patterns[p][nb][r];
-            }
-            // Mirror onto neighbor
-            couplings[nb][neighbor_index(nb, spin)] = J;
-        }
-    }
-}
-
-// =====================================================
 // PATTERNS INITIALIZATION
 // =====================================================
 
@@ -81,11 +53,86 @@ void HopfieldModel::initPatterns(gsl_rng* ran) {
     }
 }
 
+void HopfieldModel::initPatternOverlaps()
+{
+    pattern_overlaps.clear();
+    pattern_overlaps.resize(N);
+
+    for (int i = 0; i < N; ++i){
+        cout << "\r" << i << flush;
+   
+
+        pattern_overlaps[i].resize(neighbors[i].size());
+
+        for (int k = 0; k < (int)neighbors[i].size(); ++k){
+            int j = neighbors[i][k];
+
+            pattern_overlaps[i][k].resize(n_bits);
+
+            for (int r = 0; r < n_bits; ++r){
+                int Dij = 0;
+
+                for (int p = 0; p < P; ++p){
+                    if (patterns[p][i][r] != patterns[p][j][r])
+                        ++Dij;
+                }
+
+                pattern_overlaps[i][k][r] = Dij;
+            }
+        }
+    }
+    cout <<endl;
+}
+
+
+// =====================================================
+// COUPLINGS INITIALIZATION (NOT STRICLTY NEEDED)
+// =====================================================
+
+// Initializes the Couplings depending on the patterns (Hebb rule)
+void HopfieldModel::initCouplings()
+{
+    // Allocate
+    for (int spin = 0; spin < N; ++spin)
+    {
+        couplings[spin].assign(
+            neighbors[spin].size(),
+            std::vector<int>(n_bits, 0)
+        );
+    }
+
+    // Build Hebbian couplings from overlaps
+    for (int spin = 0; spin < N; ++spin)
+    {
+        for (int i = 0; i < (int)neighbors[spin].size(); ++i)
+        {
+            int nb = neighbors[spin][i];
+
+            if (nb <= spin)
+                continue;
+
+            auto& J = couplings[spin][i];
+
+            for (int r = 0; r < n_bits; ++r)
+            {
+                int Dij = pattern_overlaps[spin][i][r];
+
+                // Convert mismatch count to correlation
+                // valid for ±1 interpretation of bits
+                J[r] = P - 2 * Dij;
+            }
+
+            couplings[nb][neighbor_index(nb, spin)] = J;
+        }
+    }
+}
+
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.
 void HopfieldModel::initPatternsFromConfig(vector<vector<vector<int>>> config) {
     patterns = config;
-    initCouplings();
+    initPatternOverlaps();
+   // initCouplings();
 }
 
 // Return a copy of the full pattern tensor

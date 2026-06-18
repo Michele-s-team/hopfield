@@ -192,7 +192,7 @@ int main() {
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
         // --- Bitwise simulation ---
-        bits.setbetaJ(betaJ);
+        bits.setBeta(betaJ);
         //bits.initSpinsFromConfig(initial_config);
         //gsl_rng_set(ran, 123);
 

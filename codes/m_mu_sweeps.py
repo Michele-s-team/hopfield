@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     root_dir = Path("../results")
 
-    N_ALPHA = 2
+    N_ALPHA = 3
     alpha_dirs = sorted(root_dir.glob("alpha_*"))[:N_ALPHA]
 
     # ----------------------------------------------------------
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    alpha_dir = sorted(root_dir.glob("alpha_*"))[1]
+    alpha_dir = sorted(root_dir.glob("alpha_*"))[9]
     alpha = float(alpha_dir.name.split("_")[1])
     print(f"alpha = {alpha:.3f}")
 
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(9, 5))
 
-    dominant = np.argmax(np.abs(overlaps).mean(axis=0))
+    dominant = np.argmax(np.abs(overlaps[-1, :]))
 
     for mu in range(n_patterns):
         lw = 2.0 if mu == dominant else 0.8

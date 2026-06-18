@@ -555,56 +555,63 @@ void BitSet::operator -= (BitSet* subtrahend) {
 }
 
 
-//do the same as BitSet::operator -= but without resizing operations. This method requires this->GetSize() to be >= addend.GetSize()
-//inline 
-void BitSet::SubstractTo(BitSet* subtrahend, Bits* borrow) {
-    
+void BitSet::SubstractTo(BitSet* subtrahend, Bits* borrow)
+{
     unsigned int p;
-    Bits t;
-    
-    for(p=0, borrow->Clear();
-        p<subtrahend->GetSize();
-        p++){
-        //run over  bits of subtrahend
-        
-        //        (t.Get()) = (((b[p]).Get()) ^ (((subtrahend->b)[p]).Get()) ^ (borrow->Get()));
-        t.Set((b[p]) ^ ((subtrahend->b)[p]) ^ (*borrow));
-        
-        //        (borrow && (! minuend || subtrahend)) || (! minuend && subtrahend)
-        borrow->Set(((*borrow) & ((~(b[p])) | ((*subtrahend)[p]))) | ((~(b[p])) & ((*subtrahend)[p])) );
-        (b[p]).Set(t);
-        
+    Bits a, s, t;
+
+    borrow->Clear();
+
+    for(p = 0; p < subtrahend->GetSize(); ++p)
+    {
+        a = b[p];
+        s = (*subtrahend)[p];
+
+        // result bit
+        t.Set(a ^ s ^ (*borrow));
+
+        // borrow_out = (~a & (s | borrow_in)) | (s & borrow_in)
+        borrow->Set((~a & (s | (*borrow))) | (s & (*borrow)));
+
+        b[p].Set(t);
     }
 
-    for(p=subtrahend->GetSize(); p<GetSize(); p++){
-        //run over the extra bits of minuend
-        
-        t.Set((b[p]) ^ (*borrow));
-        borrow->Set((~(b[p])) & (*borrow));
-        (b[p].Set(t));
-        
+    for(; p < GetSize(); ++p)
+    {
+        a = b[p];
+
+        t.Set(a ^ (*borrow));
+
+        // subtraction of borrow from a
+        borrow->Set((~a) & (*borrow));
+
+        b[p].Set(t);
     }
-    
 }
 
-//substract bit-by-bit subtrahend (which here is either 1 or 0) to *this and store the result in *this and the borrow in *borrow. This method requires this->GetSize() to be >= addend.GetSize()
-//inline 
-void BitSet::SubstractTo(Bits* subtrahend, Bits* borrow) {
-    
-    Bits t;
+void BitSet::SubstractTo(Bits* subtrahend, Bits* borrow)
+{
     unsigned int p;
-    
-    borrow->Set((~(b[0])) & (*subtrahend));
-    (b[0]).Set((b[0]) ^ (*subtrahend));
+    Bits a, t;
 
-    for(p=1; p<GetSize(); p++){
-        //run over the extra bits of minuend
-        
-        t.Set((b[p]) ^ (*borrow));
-        borrow->Set((~(b[p])) & (*borrow));
-        (b[p]).Set(t);
-        
-    }     
+    a = b[0];
+
+    t.Set(a ^ (*subtrahend));
+
+    borrow->Set((~a) & (*subtrahend));
+
+    b[0].Set(t);
+
+    for(p = 1; p < GetSize(); ++p)
+    {
+        a = b[p];
+
+        t.Set(a ^ (*borrow));
+
+        borrow->Set((~a) & (*borrow));
+
+        b[p].Set(t);
+    }
 }
 
 

@@ -22,6 +22,7 @@ class HopfieldModel : public SimulationBase {
 protected:
     int P;                                    // number of patterns
     vector<vector<vector<int>>> patterns;     // patterns[p][i][r] for each replica and pattern
+    vector<vector<vector<int>>> pattern_overlaps;     
     vector<vector<vector<int>>> couplings;    // couplings [p][i][r] for each replica
         
 public:
@@ -34,6 +35,7 @@ public:
     
     // Patterns initialization
     void initPatterns(gsl_rng* ran);
+    void initPatternOverlaps();
     void initPatternsFromConfig(vector<vector<vector<int>>> config);
     vector<vector<vector<int>>> getPatterns();
     

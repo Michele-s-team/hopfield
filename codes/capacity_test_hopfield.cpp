@@ -125,6 +125,9 @@ int main() {
         vector<vector<vector<int>>> patterns = bits.getPatterns();
         bits.SavePatterns("patterns/", patterns);
         cout << "Patterns saved\n";
+        
+        bits.initPatternOverlaps();
+        cout << "Patters overlap initialized\n";
 
         // Generate the initial spin configuration
         bits.initSpins(ran);
