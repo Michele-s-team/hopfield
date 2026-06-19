@@ -38,7 +38,7 @@ void SpinGlassBits::fromCanonical(){
         Couplings.push_back(vector<Bits>());
         Couplings.back().reserve(couplings[i].size());
 
-        for (int j = 0; j < couplings[i].size(); ++j) {
+        for (int j = 0; j < (int)couplings[i].size(); ++j) {
             Bits coupling_tmp;                  // déclaré ici : réinitialisé à chaque j
             for (int r = 0; r < n_bits; ++r) {
                 int coupling = (couplings[i][j][r] + 1) / 2;
@@ -120,7 +120,7 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran, neighbor_count[0]);
+            rng = randomNumber(ran, neighbor_count[i]); //rng does not have to go higher than neighbor_count[i]
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA

@@ -109,7 +109,7 @@ int main() {
     gsl_rng_set(ran, 42);
 
 
-    for (int i = 0; i < sizes.size(); ++i) {
+    for (int i = 0; i < (int)sizes.size(); ++i) {
         int L = sizes[i];
         cout << "L=" << L << "  Step " << i+1 << "/" << sizes.size() << endl;
         IsingBits bits(L, 1.0 / T, N_sweeps);

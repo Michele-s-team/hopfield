@@ -68,7 +68,7 @@ const int N_neurons = 100;
 
 
 void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
-    for (size_t r = 0; r < neurons_set.size(); r++)
+    for (int r = 0; r < (int)neurons_set.size(); r++)
         for (int i = 0; i < N_neurons; i++){
             neurons_set[r][i] = 2 * gsl_rng_uniform_int(ran, 2) - 1;
         }

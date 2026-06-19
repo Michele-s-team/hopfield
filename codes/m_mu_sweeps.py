@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     root_dir = Path("../results")
 
-    N_ALPHA = 3
+    N_ALPHA = 2
     alpha_dirs = sorted(root_dir.glob("alpha_*"))[:N_ALPHA]
 
     # ----------------------------------------------------------
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    alpha_dir = sorted(root_dir.glob("alpha_*"))[9]
+    alpha_dir = sorted(root_dir.glob("alpha_*"))[0]
     alpha = float(alpha_dir.name.split("_")[1])
     print(f"alpha = {alpha:.3f}")
 

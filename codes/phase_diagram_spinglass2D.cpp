@@ -195,7 +195,7 @@ int main() {
     // Iterate over the temperature schedule; at each step both models are reset
     // to the same initial spin configuration and run with the same RNG seed,
     // so that any difference in magnetizations reflects algorithmic divergence only.
-    for (int i = 0; i < temperatures.size(); ++i) {
+    for (int i = 0; i < (int)temperatures.size(); ++i) {
 
         double T = temperatures[i];
         const double beta = 1.0 / T;

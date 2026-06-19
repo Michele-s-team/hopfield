@@ -71,7 +71,7 @@ int main() {
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 20;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
-    const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 5;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
@@ -92,11 +92,11 @@ int main() {
         ostringstream folder_name;
 
         folder_name << "../results/alpha_"
-                    << std::fixed << std::setprecision(3)
+                    << fixed << setprecision(3)
                     << alpha
                     << "/";
 
-        std::string base_folder = folder_name.str();
+        string base_folder = folder_name.str();
 
         make_dir(base_folder);
 

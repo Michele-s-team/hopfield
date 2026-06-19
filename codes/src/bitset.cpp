@@ -121,17 +121,17 @@ void BitSet::SetAll(unsigned long long int i){
 
 void BitSet::SetAll(unsigned long long int i){
     Bits m(i);
-    unsigned int n = bits(m.Get());  // calculé une seule fois
+    unsigned int n = bits(m.Get());  // computed ince
 
     if (GetSize() < n) {
         std::cerr << "BitSet too small\n";
         abort();
     }
 
-    for(int s=0; s<n; s++){          // n au lieu de bits(m.Get())
+    for(int s=0; s<(int)n; s++){          // n au lieu de bits(m.Get())
         (b[s]).SetAll(m.Get(s));
     }
-    for(int s=n; s<GetSize(); s++){  // idem
+    for(int s=n; s<(int)GetSize(); s++){  // idem
         (b[s]).SetAll(false);
     }
 }
@@ -814,7 +814,6 @@ void BitSet::operator ^= (Bits* m){
 
 /*multiply *this by *multiplicand and write the result in *result
 
- 
  result->GetSize() <= (this-GetSize()) + (multiplicand->GetSize(), and when I call this method I take result->GetSize() = (this-GetSize()) + (multiplicand->GetSize() to be safe. Thus when this method is called, result->GetSize() must be equal to (this-GetSize()) + (multiplicand->GetSize()
 
  the times are from  ./main.o -s 0 -S 6
@@ -843,6 +842,11 @@ void BitSet::Multiply(UnsignedInt* multiplicand, UnsignedInt* result){
     }   
 }
 
+void BitSet::MultiplyByInteger(unsigned long long int n, UnsignedInt* result) {
+    UnsignedInt multiplicand(n);
+    multiplicand.SetAll(n);  
+    Multiply(&multiplicand, result);
+}
 
 //this method requires *this to be even, it divides *this by 2 and writes the result in *this
 //inline

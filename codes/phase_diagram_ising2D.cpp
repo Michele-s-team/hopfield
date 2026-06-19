@@ -184,7 +184,7 @@ int main() {
 
     // ── Temperature sweep ──────────────────────
 
-    for (int i = 0; i < temperatures.size(); ++i) {
+    for (int i = 0; i < (int)temperatures.size(); ++i) {
         //bits.OpenSpinFiles("../results/magnetizations/magnetizations_bits");
 
         double T = temperatures[temperatures.size()-i-1];

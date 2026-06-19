@@ -8,29 +8,21 @@
 #include "hopfield_bits.hpp"
 #include "unsigned_int.hpp"
 #include <numeric>
+#include <algorithm>
 #include <filesystem>
 #include "lib.hpp"
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
 
+using namespace std;
+
 
 // =====================================================
 // STATE CONVERSIONS
 // =====================================================
 
-void HopfieldBits::fromCanonical(){
-    Bits_Spins_Set.clear();
-    Neighbor_Count.clear();
-    P_times_Neighbor_Count.clear();
-    Patterns.clear();
-    Couplings.clear();
-
-    Bits_Spins_Set.reserve(N);
-    Neighbor_Count.reserve(N);
-    P_times_Neighbor_Count.reserve(N);
-    Couplings.reserve(N);
-    Patterns.reserve(P);
+void HopfieldBits::fromCanonical() {
 
     // =====================================================
     // 1. Convert spins
@@ -39,99 +31,69 @@ void HopfieldBits::fromCanonical(){
     Bits_Spins_Set.reserve(N);
 
     Neighbor_Count.clear();
-    P_times_Neighbor_Count.clear();
     Neighbor_Count.reserve(N);
+
+    P_times_Neighbor_Count.clear();
     P_times_Neighbor_Count.reserve(N);
 
-    for (int i = 0; i < N; ++i)
-    {
-        cout << "\r" << i << flush;
-
+    for (int i = 0; i < N; ++i) {
         Bits spin_tmp;
 
-        for (int r = 0; r < n_bits; ++r)
-        {
+        for (int r = 0; r < n_bits; ++r) {
             int spin = (spins_set[r * N + i] + 1) / 2;
             spin_tmp.Set(r, spin);
         }
 
         Bits_Spins_Set.push_back(spin_tmp);
 
-        UnsignedInt neighbor_tmp(neighbor_count[i]);
-        UnsignedInt P_times_neighbor_tmp(P * neighbor_count[i]);
-
-        neighbor_tmp.SetAll((unsigned long long)neighbor_count[i]);
-        P_times_neighbor_tmp.SetAll((unsigned long long)(P * neighbor_count[i]));
-
-        Neighbor_Count.push_back(neighbor_tmp);
-        P_times_Neighbor_Count.push_back(P_times_neighbor_tmp);
+        Neighbor_Count.emplace_back((unsigned long long)neighbor_count[i]);
+        P_times_Neighbor_Count.emplace_back((unsigned long long)(P * neighbor_count[i]));
     }
 
     // =====================================================
-    // 2. Build D_Coupling and P - D_Coupling (bitwise)
+    // 2. Convert patterns
     // =====================================================
-    D_Coupling.clear();
-    PminusD_Coupling.clear();
+    Patterns.clear();
+    Patterns.resize(P);   // IMPORTANT: allocate outer vector
 
-    D_Coupling.resize(N);
-    PminusD_Coupling.resize(N);
+    for (int p = 0; p < P; ++p) {
+        Patterns[p].resize(N);
 
-    for (int i = 0; i < N; ++i)
-    {
-        int deg = neighbors[i].size();
+        for (int i = 0; i < N; ++i) {
+            Bits pat_tmp;
 
-        D_Coupling[i].resize(deg);
-        PminusD_Coupling[i].resize(deg);
-
-        for (int k = 0; k < deg; ++k)
-        {
-            int j = neighbors[i][k];
-
-            UnsignedInt Dij((unsigned long long)0);
-
-            for (int p = 0; p < P; ++p)
-            {
-                Bits diff = Patterns[p][i] ^ Patterns[p][j];
-                Dij += &diff;
+            for (int r = 0; r < n_bits; ++r) {
+                pat_tmp.Set(r, (patterns[p][i][r] + 1) / 2);
             }
 
-            UnsignedInt PD((unsigned long long)P);
-            PD.SubstractTo(&Dij, nullptr);
-
-            D_Coupling[i][k] = Dij;
-            PminusD_Coupling[i][k] = PD;
+            Patterns[p][i] = pat_tmp;
         }
-
+    }
 
     // =====================================================
-    // 3. Convert couplings (optional)
+    // 3. Convert couplings
     // =====================================================
-    /*
     Couplings.clear();
-    Couplings.reserve(N);
+    Couplings.resize(N);   // safer than only reserve
 
-    for (int i = 0; i < N; ++i)
-    {
-        Couplings.emplace_back();
-        Couplings.back().reserve(couplings[i].size());
+    for (int i = 0; i < N; ++i) {
 
-        for (int j = 0; j < (int)couplings[i].size(); ++j)
-        {
-            Bits coupling_tmp;
+        Couplings[i].clear();
+        Couplings[i].reserve(couplings[i].size());
 
-            for (int r = 0; r < n_bits; ++r)
-            {
-                int val = (couplings[i][j][r] + 1) / 2;
+        for (int j = 0; j < (int)couplings[i].size(); ++j) {
+
+            UnsignedInt coupling_tmp((unsigned long long)2 * P);
+
+            for (int r = 0; r < n_bits; ++r) {
+                int val = couplings[i][j][r] + P;
                 coupling_tmp.Set(r, val);
             }
 
-            Couplings.back().push_back(coupling_tmp);
+            Couplings[i].push_back(coupling_tmp);
         }
     }
-    */
-    }
 }
-
 // bit representation {0,1} -> canonical spins {-1,+1}
 void HopfieldBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
@@ -181,70 +143,87 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // METROPOLIS DYNAMICS
 // =====================================================
 
-// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
-// Saves magnetizations every save_stride sweeps if save=true.
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
-    // temporaries allocated once for all sweeps and all flips
-    Bits xnor_ij, mask, s_ij, not_s_ij;; //used in branch2
-    UnsignedInt sum((unsigned long long int)(2* neighbor_count[0] * P)); // max value of sum = 4* neighbor_count[i] * P and all spons have same number of neighbors 
-                                                                         //works only for regular networks, else have to specify max(neighbor_count[i])
-    UnsignedInt threshold((unsigned long long int)(2* neighbor_count[0] * P)); // no need for more space allocation
-    UnsignedInt contrib((unsigned long long int) P);
-    UnsignedInt other((unsigned long long int) P);
-    int rng;
-    int i;
+    Bits c_ij, mask;
 
-    const int total_sweeps = getNSweeps();
+    const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+    const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
 
-    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-         cout << "\r" << sweep << flush;
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
-        for (int step = 0; step < N; ++step) {
-            i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran, neighbor_count[i]*P, N);  //works only for regular networks, else have to specify neighbor_count[i]
-            Bits& Bits_Spin_i = Bits_Spins_Set[i];
+    UnsignedInt sum_g   ((unsigned long long int) 2 * max_deg * P); // max value of sum = 2* max(neighbor_count[i]) * P, 
+    UnsignedInt sum_c   ((unsigned long long int) 2 * max_deg * P); 
+    UnsignedInt sum_cg  ((unsigned long long int) 2 * max_deg * P); 
+    UnsignedInt RANDOM  ((unsigned long long int) max_deg * P);
+    UnsignedInt LHS     ((unsigned long long int) 5 * max_deg * P);
+    UnsignedInt RHS     ((unsigned long long int) 5 * max_deg * P);
+    UnsignedInt TwoP     ((unsigned long long int) 2 * P);
+    TwoP.SetAll(2*P);
 
-            // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
-            if (rng >= P * neighbor_count[i]) {  
-                Bits_Spin_i.ComplementTo();
+
+    for (int sweep = 0; sweep < total_sweeps; ++sweep){
+        for (int step = 0; step < N; ++step){
+            int i = gsl_rng_uniform_int(ran, N);
+            int deg_i = neighbor_count[i];
+
+            int random = randomNumber(ran, deg_i * P, N);
+
+            Bits& S_i = Bits_Spins_Set[i];
+
+            // unconditional flip
+            if (random >= P * deg_i) {
+                S_i.ComplementTo();
                 continue;
             }
 
-            // 2ND BRANCH: NEIGHBOR-DEPENDENT FLIP
-            sum.SetAll(0);
-            for (int k = 0; k < neighbors[i].size(); ++k) {
+            sum_g.SetAll(0);
+            sum_c.SetAll(0);
+            sum_cg.SetAll(0);
+            RANDOM.SetAll(random);
+            LHS.SetAll(0);
+            RHS.SetAll(0);
+
+
+            for (int k = 0; k < (int)neighbors[i].size(); ++k){
                 int j = neighbors[i][k];
-                s_ij     = Bits_Spin_i ^ Bits_Spins_Set[j];
-                not_s_ij = ~s_ij;
 
-                contrib = D_Coupling[i][k];
-                contrib &= &s_ij;          // keep lanes where spins differ
+                Bits& S_j = Bits_Spins_Set[j];
+                UnsignedInt& g_ij = Couplings[i][k];
 
-                other = PminusD_Coupling[i][k];
-                other &= &not_s_ij;        // keep lanes where spins agree
+                c_ij = ~(S_i ^ S_j);
 
-                contrib += &other;
-                sum += &contrib;
+                sum_g  += &g_ij;
+                sum_c  += &c_ij;
+
+                UnsignedInt tmp = g_ij;
+                tmp &= &c_ij;
+                sum_cg += &tmp;
             }
-            sum.MultiplyByTwoTo(); 
 
-            threshold.SetAll((unsigned long long int) rng);
-            threshold += &P_times_Neighbor_Count[i];
+            // RHS = p*N_i + 2 * sum(c_ij * g_ij)
+            RHS += &sum_cg;
+            RHS.MultiplyByTwoTo();
+            RHS+=&P_times_Neighbor_Count[i];
 
-            mask = (sum <= threshold);   
-            Bits_Spin_i ^= &mask;
+            // LHS = R + sum_g + 2P * sum_c + P * deg_i
+            LHS += &RANDOM;
+            LHS += &sum_g;
+
+            sum_c.Multiply(&TwoP, &sum_c);
+            LHS += &sum_c;
+            mask = (RHS <= LHS);
+            S_i ^= &mask;
         }
 
-        if (save && sweep > 0 && sweep < total_sweeps && (sweep % save_stride == 0))
+        if (save && sweep > 0 && (sweep % save_stride == 0))
             SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    " << flush;
     }
+
     cout << "\n";
 }
 
@@ -262,12 +241,12 @@ void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
     CloseSpinFiles();
     cout << "evolve called, closing: " << filename << endl;
     toCanonical();
-    toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
 void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
+    cout << "Bitwise conversion done"<<endl;
     OpenSpinFiles(filename);
     SaveSpinConfigurations(0);
     cout << "evolve_save called, opening: " << filename << endl;
