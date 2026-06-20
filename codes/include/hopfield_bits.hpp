@@ -37,14 +37,12 @@ public:
     void evolve_save(gsl_rng*, double freq, const string& filename);            // run simulation and save the configurations at the frequency freq (between 0 and 1)
     void GetMagnetizations(vector<double>&) override;                           // get the n_bits magnetizations using the UnsignedInt formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
-    void debugStep(int i, int r);
 
 private:
 
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
-    void PrecomputePatternOverlaps();
     void runSweeps(gsl_rng*, bool save, double);
 };
 
