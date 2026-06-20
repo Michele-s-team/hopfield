@@ -135,9 +135,27 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // =====================================================
 // METROPOLIS DYNAMICS
 // =====================================================
-
+//
+// Runs Monte Carlo sweeps on 64 parallel Hopfield network instances using a
+// bitwise Metropolis algorithm. All 64 replicas are updated simultaneously
+// via bit-sliced arithmetic on UnsignedInt objects.
+//
+// Flip condition (derived from Metropolis accept/reject):
+//
+//   LHS >= RHS
+//
+// where:
+//   LHS = random + sum_j g_ij + 2P * sum_j c_ij
+//   RHS = P * deg_i + 2 * sum_j c_ij * g_ij
+//
+// with:
+//   g_ij = P + G_ij  in [0, 2P],  G_ij = sum_mu xi_i^mu xi_j^mu  (precomputed)
+//   c_ij = [S_i == S_j]           (1 if same spin, 0 otherwise)
+//   random in [0, P * deg_i)      (scaled log-uniform random number)
+//
+// All UnsignedInt accumulators are preallocated before the sweep loop with
+// their maximum possible values to avoid any heap allocation in the hot path.
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
-
     Bits c_ij, mask;
 
     const int total_sweeps    = getNSweeps();
@@ -146,69 +164,55 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
     int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
-    UnsignedInt sum_g   ((unsigned long long int) 2 * max_deg * P);
-    UnsignedInt sum_c   ((unsigned long long int) max_deg);
-    UnsignedInt sum_c_times_2P ((unsigned long long int) 2 * max_deg * P);
-    UnsignedInt sum_cg  ((unsigned long long int) 2 * max_deg * P);
-    UnsignedInt RANDOM  ((unsigned long long int) max_deg * P);
-    UnsignedInt LHS     ((unsigned long long int) 5 * max_deg * P);
-    UnsignedInt RHS     ((unsigned long long int) 5 * max_deg * P);
-    UnsignedInt TwoP    ((unsigned long long int) 2 * P);
-
-    TwoP.SetAll(2 * P);
+    UnsignedInt sum_g          ((unsigned long long) 2 * max_deg * P);
+    UnsignedInt sum_c          ((unsigned long long) max_deg);
+    UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
+    UnsignedInt sum_c_times_2P ((unsigned long long) 2 * max_deg * P);
+    UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
+    UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
+    UnsignedInt tmp            ((unsigned long long) 2 * P);
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep){
         for (int step = 0; step < N; ++step){
 
-            int i = gsl_rng_uniform_int(ran, N);
-            int deg_i = neighbor_count[i];
-
+            int i      = gsl_rng_uniform_int(ran, N);
+            int deg_i  = neighbor_count[i];
             int random = randomNumber(ran, deg_i * P, N);
 
             Bits& S_i = Bits_Spins_Set[i];
 
-            // unconditional flip
             if (random >= P * deg_i) {
                 S_i.ComplementTo();
                 continue;
             }
 
-            sum_g.SetAll(0);
-            sum_c.SetAll(0);
+            sum_g .SetAll(0);
+            sum_c .SetAll(0);
             sum_cg.SetAll(0);
-            RANDOM.SetAll(random);
-            LHS.SetAll(0);
-            RHS.SetAll(0);
-            sum_c_times_2P.SetAll(0);
 
             for (int k = 0; k < deg_i; ++k){
-
                 int j = neighbors[i][k];
-
-                Bits& S_j = Bits_Spins_Set[j];
                 UnsignedInt& g_ij = Couplings[i][k];
 
-                c_ij = ~(S_i ^ S_j);
+                c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
                 sum_g += &g_ij;
                 sum_c += &c_ij;
 
-                UnsignedInt tmp = g_ij;
+                tmp  = g_ij;
                 tmp &= &c_ij;
-
                 sum_cg += &tmp;
             }
 
-            // RHS = P*deg_i + 2*sum(c_ij*g_ij)
-            RHS += &sum_cg;
+            // RHS = P*deg_i + 2*sum_cg
+            RHS  = sum_cg;
             RHS.MultiplyByTwoTo();
             RHS += &P_times_Neighbor_Count[i];
 
             // LHS = random + sum_g + 2P*sum_c
-            LHS += &RANDOM;
-            LHS += &sum_g;
-
-            sum_c.Multiply(&TwoP, &sum_c_times_2P);
+            LHS  = sum_g;
+            LHS.AddScalar(random);
+            sum_c.MultiplyByInteger(2 * P, &sum_c_times_2P);
             LHS += &sum_c_times_2P;
 
             mask = (RHS <= LHS);
@@ -219,14 +223,10 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: "
-                 << sweep + 1
-                 << " ("
-                 << (sweep + 1) * 100 / total_sweeps
-                 << "%)    "
+            cout << "\rSweep: " << sweep + 1
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
-
     cout << "\n";
 }
 

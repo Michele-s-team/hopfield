@@ -35,6 +35,8 @@ public:
     void Set(unsigned int, unsigned long long int);
     void SetFromVector(const vector<unsigned long long>*);
 
+    void AddScalar(unsigned long long int val);
+
     void operator = (BitSet);
     
     friend class Double;

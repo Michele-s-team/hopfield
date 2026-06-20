@@ -109,3 +109,9 @@ void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
     }
 }
 
+
+void UnsignedInt::AddScalar(unsigned long long int val) {
+    UnsignedInt tmp(val);
+    tmp.SetAll(val);
+    (*this) += &tmp;
+}
