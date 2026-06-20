@@ -22,10 +22,7 @@ int HopfieldNoBits::DeltaE(int spin, int r) {
     int sum = 0.0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];
-        int contrib = 0;
-        for (int p = 0; p < P; ++p)
-            contrib += patterns[p][spin][r] * patterns[p][j][r];
-        sum += contrib * spins_set[r * N + j];
+        sum += couplings[spin][k][r] * spins_set[r * N + j];
     }
     return spins_set[r * N + spin] * sum;
 }

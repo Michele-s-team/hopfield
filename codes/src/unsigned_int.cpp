@@ -85,6 +85,7 @@ void UnsignedInt::operator = (BitSet m){
     b = m.b;
     
 }
+
 // Initializes the UnsignedInt from a vector of 64-bit unsigned integers.
 // Each element of the vector corresponds to one column (system),
 // and is decomposed bit by bit into the rows of b:

@@ -96,7 +96,7 @@ int main() {
                     << alpha
                     << "/";
 
-        std::string base_folder = folder_name.str();
+        string base_folder = folder_name.str();
 
         make_dir(base_folder);
 

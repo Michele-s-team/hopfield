@@ -810,36 +810,54 @@ void BitSet::operator ^= (Bits* m){
     }
 }
 
-
-
-/*multiply *this by *multiplicand and write the result in *result
-
- result->GetSize() <= (this-GetSize()) + (multiplicand->GetSize(), and when I call this method I take result->GetSize() = (this-GetSize()) + (multiplicand->GetSize() to be safe. Thus when this method is called, result->GetSize() must be equal to (this-GetSize()) + (multiplicand->GetSize()
-
- the times are from  ./main.o -s 0 -S 6
+/*
+ * CONTRACT:
+ * - multiplicand has size m = multiplicand->GetSize()
+ * - this has size n = GetSize()
+ * - result MUST already be preallocated with size >= m + n
+ *
+ * This function does NOT resize result and assumes sufficient capacity.
+ * No bounds checking is performed for performance reasons.
+ *
+ * WARNING:
+ * Accesses result->b[p + s] assume valid indexing; caller is responsible
+ * for guaranteeing correct allocation size.
  */
-//inline
-void BitSet::Multiply(UnsignedInt* multiplicand, UnsignedInt* result){
-    
-    unsigned int s, p;
-    Bits carry, t, u;
-        
-    
-    for(s=0, result->SetAll(Bits_zero); s<multiplicand->GetSize(); s++){
-        //multiply by the s-th element of multiplicand: at each step of this loop *this is shifted by s places to the left and added to the result
-        
-        for(p=0, carry.Clear(); p<GetSize(); p++){
-            
-            u.Set(((*multiplicand)[s]) & (b[p]));
-            t.Set(((result->b)[p+s]) ^ u ^ carry);
-            
-            carry.Set((u & (((result->b)[p+s]) | carry)) | (((result->b)[p+s]) & carry));
-            ((result->b)[p+s]).Set(t);
-            
-        }
-        ((result->b)[p+s]).Set(carry);
+void BitSet::Multiply(UnsignedInt* multiplicand, UnsignedInt* result)
+{
+    const unsigned int m_size = multiplicand->GetSize();
+    const unsigned int n_size = GetSize();
 
-    }   
+    Bits carry, t, u;
+
+    // IMPORTANT:
+    // result must already be sized to at least (m_size + n_size)
+    result->SetAll(Bits_zero);  // done once only
+
+    for (unsigned int s = 0; s < m_size; ++s)
+    {
+        carry.Clear();
+
+        for (unsigned int p = 0; p < n_size; ++p)
+        {
+            u.Set(((*multiplicand)[s]) & (b[p]));
+
+            unsigned int idx = p + s;
+            if (idx >= result->GetSize())
+                continue; // or assert(false)
+
+            t.Set(((result->b)[idx]) ^ u ^ carry);
+
+            carry.Set((u & (((result->b)[idx]) | carry)) |
+                      (((result->b)[idx]) & carry));
+
+            ((result->b)[idx]).Set(t);
+        }
+
+        unsigned int idx = s + n_size;
+        if (idx < result->GetSize())
+            ((result->b)[idx]).Set(carry);
+    }
 }
 
 void BitSet::MultiplyByInteger(unsigned long long int n, UnsignedInt* result) {
