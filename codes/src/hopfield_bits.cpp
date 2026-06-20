@@ -157,7 +157,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
     TwoP.SetAll(2 * P);
 
-    bool debug = false;
+    bool first_debug = false;
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep){
         for (int step = 0; step < N; ++step){
@@ -223,7 +223,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             // =====================================================
             // FULL DEBUG
             // =====================================================
-            if(debug)
+            if(first_debug)
             {
                 cout << "\n====================================\n";
                 cout << "FULL DEBUG\n";
@@ -298,7 +298,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
                 for(int r = 0; r < min(8, n_bits); ++r)
                 {
-                    int local_field =
+                    int local_field = 0;
 
                     for(int k = 0; k < deg_i; ++k)
                     {
