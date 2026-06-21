@@ -47,7 +47,7 @@ void SpinGlassModel::initCouplings(gsl_rng* ran) {
             if (nb <= spin) continue;   // skip already-filled edges
 
             auto& J = couplings[spin][i];
-            generate(J.begin(), J.end(), [&]{ return randomBinary(ran); });
+            generate(J.begin(), J.end(), [&]{ return randomSpin(ran); });
             couplings[nb][neighbor_index(nb, spin)] = J; // mirror onto neighbor
         }
     }

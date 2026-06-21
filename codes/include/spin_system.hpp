@@ -33,7 +33,8 @@ public:
     void initNetwork2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
     void initNetworkFullyConnected();          // Builds a fully connected network
     void initNetwork_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
-    int randomBinary(gsl_rng*);                      // initializes randomly a spin +-1
+    int randomSpin(gsl_rng*);                      // initializes randomly a spin +-1
+    int randomBit(gsl_rng*);                       // initializes randomly a bit 0/1
     void initSpins(gsl_rng*);                      // Initializes all spins randomly to ±1 using the GSL RNG
     void initSpinsFromConfig(vector<int>&);        // Initializes couplings from a given configuration (deep copy)
     vector<int> getSpinsConfig();                  // Returns a copy of the full couplings configuration

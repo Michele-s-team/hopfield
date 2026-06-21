@@ -19,7 +19,7 @@ using namespace std;
 
 
 // =====================================================
-// STATE CONVERSIONS
+// STATE CONVERSIONS WHEN WORKING FROM CANONICAL FORMAT
 // =====================================================
 
 void HopfieldBits::fromCanonical() {
@@ -95,6 +95,128 @@ void HopfieldBits::toCanonical(){
 }
 
 // =====================================================
+// DIRECT BITWISE INITIALIZATION
+// =====================================================
+
+
+// Initialize spins directly in bit-sliced representation.
+// Replaces: initSpins() + fromCanonical() step 1.
+void HopfieldBits::initSpinsBits(gsl_rng* ran) {
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
+    Bits_Spins_Set.clear();
+    Bits_Spins_Set.resize(N);
+    Neighbor_Count.clear();
+    Neighbor_Count.reserve(N);
+    P_times_Neighbor_Count.clear();
+    P_times_Neighbor_Count.reserve(N);
+
+    for (int i = 0; i < N; ++i) {
+        for (int r = 0; r < n_bits; ++r)
+            Bits_Spins_Set[i].Set(r, randomBit(ran));
+
+        UnsignedInt nc_tmp((unsigned long long) max_deg);
+        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
+        Neighbor_Count.push_back(nc_tmp);
+
+        UnsignedInt pnk_tmp((unsigned long long)(P * max_deg));
+        pnk_tmp.SetAll((unsigned long long)(P * neighbor_count[i]));
+        P_times_Neighbor_Count.push_back(pnk_tmp);
+    }
+}
+
+
+// Initialize Patterns directly in bit-sliced representation.
+// Replaces: initPatterns() + fromCanonical() step 2.
+// patterns[p][i] is a Bits word: bit r = (xi^p_i^r + 1) / 2 in {0,1}
+void HopfieldBits::initPatternsBits(gsl_rng* ran) {
+    Patterns.clear();
+    Patterns.resize(P);
+    for (int p = 0; p < P; ++p) {
+        Patterns[p].resize(N);
+        for (int i = 0; i < N; ++i) {
+            for (int r = 0; r < n_bits; ++r)
+                Patterns[p][i].Set(r, (randomSpin(ran) + 1) / 2);
+        }
+    }
+}
+
+// Initialize Couplings directly in bit-sliced representation via Hebb rule,
+// without ever building the scalar couplings[][][] tensor.
+// g_ij^r = P + sum_mu xi_i^mu^r * xi_j^mu^r  in [0, 2P]
+// Replaces: initCouplings() + fromCanonical() step 3.
+void HopfieldBits::initCouplingsBits() {
+    Couplings.clear();
+    Couplings.resize(N);
+    for (int i = 0; i < N; ++i) {
+        Couplings[i].clear();
+        Couplings[i].reserve(neighbors[i].size());
+        for (int k = 0; k < (int)neighbors[i].size(); ++k)
+            Couplings[i].emplace_back((unsigned long long) 2 * P);
+    }
+
+    // Hebb rule: compute once for i < j, then mirror
+    for (int i = 0; i < N; ++i) {
+        for (int k = 0; k < (int)neighbors[i].size(); ++k) {
+            int j = neighbors[i][k];
+            if (j <= i) continue;
+
+            // Accumulate G_ij^r = sum_mu xi_i^mu^r * xi_j^mu^r
+            // xi_i^mu^r in {0,1} as Bits -> product = XNOR = ~(a^b)
+            // sum_mu (2*bit-1)(2*bit-1) = sum_mu (1 - 2*(a^b))
+            //                           = P - 2 * popcount(a^b) per replica
+            // g_ij^r = P + G_ij^r = 2P - 2*popcount(XOR)
+            // But here we accumulate directly in UnsignedInt bit-sliced:
+            // g_ij starts at P (SetAll), then += XNOR for each pattern
+
+            Couplings[i][k].SetAll((unsigned long long) P);
+
+            for (int mu = 0; mu < P; ++mu) {
+                Bits prod = ~(Patterns[mu][i] ^ Patterns[mu][j]);  // XNOR = [xi_i == xi_j]
+                // prod bit r = 1 if xi_i^mu^r == xi_j^mu^r -> contributes +1
+                // prod bit r = 0                            -> contributes -1
+                // net: G_ij += 2*prod - 1  per replica
+                // i.e. g_ij += prod (the -1+P offset is already in SetAll(P))
+                // Actually: xi*xi = (2b-1)(2b-1) = 1 - 2*(b XOR b') 
+                //           sum_mu xi*xi = P - 2*sum_mu XOR
+                // so g_ij = P + sum_mu xi*xi = 2P - 2*sum_mu XOR
+                // equivalently: g_ij = P + sum_mu (2*XNOR - 1)
+                //                    = P - P + 2*sum_mu XNOR = 2*sum_mu XNOR
+                // --> reset to 0 and accumulate XNOR twice
+                Couplings[i][k] += &prod;
+            }
+            // At this point sum = sum_mu XNOR in [0,P]
+            // g_ij = 2*sum_mu XNOR, so multiply by 2
+            // But we want g_ij = P + G_ij = P + sum_mu xi*xi
+            //                  = P + (P - 2*(P - sum_mu XNOR))
+            //                  = 2*sum_mu XNOR  ✓
+            Couplings[i][k].MultiplyByTwoTo();
+
+            // Mirror onto j
+            int k_mirror = neighbor_index(j, i);
+            Couplings[j][k_mirror] = Couplings[i][k];
+        }
+    }
+}
+
+// Overwrite the patterns tensor with an externally provided configuration.
+// Allows two model instances to share the exact same disorder realization.
+void HopfieldBits::initPatternsFromConfig(vector<vector<Bits>> Config) {
+    Patterns = Config;
+    initCouplingsBits();
+}
+
+// Return a copy of the full pattern tensor
+ vector<vector<Bits>> HopfieldBits::getPatterns() {
+    return Patterns;
+}
+
+// Return a copy of the full coupling tensor
+vector<vector<UnsignedInt>> HopfieldBits::getCouplingsConfig() {
+    return Couplings;
+}
+
+// =====================================================
 // OBSERVABLES
 // =====================================================
 
@@ -130,6 +252,15 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
             }
         }
     }
+}
+// Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[p][i][r] in {-1,+1}
+vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
+    vector<vector<vector<int>>> result(P, vector<vector<int>>(N, vector<int>(n_bits, 0)));
+    for (int p = 0; p < P; ++p)
+        for (int i = 0; i < N; ++i)
+            for (int r = 0; r < n_bits; ++r)
+                result[p][i][r] = -1 + 2 * Patterns[p][i].Get(r);
+    return result;
 }
 
 // =====================================================
@@ -258,4 +389,43 @@ void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename
     CloseSpinFiles();
     cout << "evolve_save called, closing: " << filename << endl;
     toCanonical();
+}
+
+
+// Run simulation and save at given frequency — fully bitwise initialization
+void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+    initPatternsBits(ran);
+    initCouplingsBits();
+    initSpinsBits(ran);
+    cout << "Bitwise initialization done" << endl;
+
+    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
+    SavePatterns("patterns/", patterns);
+    cout << "Patterns saved" << endl;
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    cout << "evolve_save_bits called, opening: " << filename << endl;
+    runSweeps(ran, /*save=*/true, freq);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_save_bits called, closing: " << filename << endl;
+}
+
+// Run simulation without saving — fully bitwise initialization
+void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
+    initPatternsBits(ran);
+    initCouplingsBits();
+    initSpinsBits(ran);
+
+    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
+    SavePatterns("patterns/", patterns);
+    cout << "Patterns saved" << endl;
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    runSweeps(ran, /*save=*/false, 0.0);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_bits called, closing: " << filename << endl;
 }

@@ -201,7 +201,7 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    alpha_dir = sorted(root_dir.glob("alpha_*"))[0]
+    alpha_dir = sorted(root_dir.glob("alpha_*"))[1]
     alpha = float(alpha_dir.name.split("_")[1])
     print(f"alpha = {alpha:.3f}")
 

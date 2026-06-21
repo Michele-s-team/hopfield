@@ -69,7 +69,7 @@ void make_dir(const string& path) {
 int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L         = 20;           // lattice size (L×L spins)
+    const int L         = 50;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
     const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
 
@@ -118,22 +118,10 @@ int main() {
         bits.initNetworkFullyConnected();
         cout << "Network initialized (Fully Connected)\n";
 
-        // Generate and save the patterns
-        bits.initPatterns(ran);
-        cout << "Patterns and Couplings initialized\n";
-
-        vector<vector<vector<int>>> patterns = bits.getPatterns();
-        bits.SavePatterns("patterns/", patterns);
-        cout << "Patterns saved\n";
-
-        // Generate the initial spin configuration
-        bits.initSpins(ran);
-        cout << "Spin configuration initialized\n";
-
         // ── Evolution: HopfieldBits ──────────────────────────────────────────
         gsl_rng_set(ran, 42);  // fixed seed for the dynamics
         clock_t start_bits = clock();
-        bits.evolve_save(ran, 0.1, "spins/");
+        bits.evolve_save_bits(ran, 0.1, "spins/");
         clock_t end_bits = clock();
         double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
         cout << "\nHopfieldBits done for alpha = " << alpha

@@ -47,7 +47,7 @@ void HopfieldModel::initPatterns(gsl_rng* ran) {
     for (int p = 0; p < P; p++){
         for (int i = 0; i < N; i++) {
             for (int r = 0; r < n_bits; r++)
-                patterns[p][i][r] = randomBinary(ran);
+                patterns[p][i][r] = randomSpin(ran);
         }
     }
     initCouplings();
