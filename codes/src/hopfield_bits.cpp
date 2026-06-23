@@ -206,16 +206,6 @@ void HopfieldBits::initPatternsFromConfig(vector<vector<Bits>> Config) {
     initCouplingsBits();
 }
 
-// Return a copy of the full pattern tensor
- vector<vector<Bits>> HopfieldBits::getPatterns() {
-    return Patterns;
-}
-
-// Return a copy of the full coupling tensor
-vector<vector<UnsignedInt>> HopfieldBits::getCouplingsConfig() {
-    return Couplings;
-}
-
 // =====================================================
 // OBSERVABLES
 // =====================================================
@@ -254,7 +244,7 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
     }
 }
 // Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[p][i][r] in {-1,+1}
-vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
+vector<vector<vector<int>>> HopfieldBits::getPatternsBits() {
     vector<vector<vector<int>>> result(P, vector<vector<int>>(N, vector<int>(n_bits, 0)));
     for (int p = 0; p < P; ++p)
         for (int i = 0; i < N; ++i)
@@ -263,6 +253,17 @@ vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
     return result;
 }
 
+// Convert Couplings (bit-sliced) back to canonical scalar tensor couplings[i][k][r] in [-P,+P]
+vector<vector<vector<int>>> HopfieldBits::getCouplingsConfigBits() {
+    vector<vector<vector<int>>> result(N);
+    for (int i = 0; i < N; ++i) {
+        result[i].resize(Couplings[i].size(), vector<int>(n_bits, 0));
+        for (int k = 0; k < (int)Couplings[i].size(); ++k)
+            for (int r = 0; r < n_bits; ++r)
+                result[i][k][r] = (int)Couplings[i][k].Get(r) - P;  // g_ij = P + G_ij -> G_ij
+    }
+    return result;
+}
 // =====================================================
 // METROPOLIS DYNAMICS
 // =====================================================
@@ -365,7 +366,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // PUBLIC API
 // =====================================================
 
-// Run simulation without saving (thermalization)
+// Run simulation strarting from the canonical values without saving (thermalization)
 void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
     fromCanonical();
     OpenSpinFiles(filename);
@@ -399,7 +400,7 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& fil
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
-    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
+    vector<vector<vector<int>>> patterns = getPatternsBits();
     SavePatterns("patterns/", patterns);
     cout << "Patterns saved" << endl;
 
@@ -418,7 +419,7 @@ void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
     initCouplingsBits();
     initSpinsBits(ran);
 
-    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
+    vector<vector<vector<int>>> patterns = getPatternsBits();
     SavePatterns("patterns/", patterns);
     cout << "Patterns saved" << endl;
 
