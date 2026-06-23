@@ -1,16 +1,14 @@
 \documentclass[a4paper,11pt]{article}
 
-% --- Codage et langue ---
-\usepackage[utf8]{inputenc} % Codage UTF-8
-\usepackage[english]{babel} % Langue du document
-
-% --- Typographie ---
-\usepackage{microtype}        % Optimisation des espacements
-\usepackage{xspace}           % Gestion intelligente des espaces après macros
-\usepackage{setspace}         % Contrôle de l'interligne si besoin
-
-% --- Mise en page ---
-\usepackage[margin=1.5cm]{geometry} % Marges
+% --- Encoding and language ---
+\usepackage[utf8]{inputenc} % UTF-8 encoding
+\usepackage[english]{babel} % Document language
+% --- Typography ---
+\usepackage{microtype}        % Spacing optimisation
+\usepackage{xspace}           % Smart space management after macros
+\usepackage{setspace}         % Line spacing control if needed
+% --- Page layout ---
+\usepackage{geometry} % Margins
 \geometry{
  a4paper,
  total={170mm,257mm},
@@ -19,66 +17,55 @@
  top=20mm,
  bottom=20mm
 }
-
-% --- Gestion des sections et titres ---
-\usepackage{titlesec} % Personnalisation des titres
+\setlength{\headheight}{14pt}
+% --- Section and title formatting ---
+\usepackage{titlesec} % Title customisation
 \titleformat{\section}[hang]{\normalfont\Large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}[hang]{\normalfont\large\bfseries}{\thesubsection}{1em}{}
 \titleformat{\subsubsection}[hang]{\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
-\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\} % Sous-sous-sous-sections
-
-% --- Mathématiques et symboles ---
-\usepackage{amsmath, amsfonts, amssymb, mathrsfs, stmaryrd} % Symboles et mathématiques
-\usepackage{siunitx} % Gestion des unités SI
-
-% --- Graphiques et figures ---
-\usepackage{graphicx, subcaption, float, wrapfig} % Gestion des images et sous-figures
-\usepackage[tikz]{bclogo} % Boîtes de logo
-\usepackage{sidecap} % Légendes latérales
-
-% --- Tableaux ---
-\usepackage{multirow, array, makecell} % Tableaux avancés
-
-% --- Paragraphes ---
-\usepackage{ragged2e} % Alignement du texte
-\setlength{\parindent}{0pt} % Pas d'indentation par défaut
-\newcommand{\myindent}{\hspace*{1.5em}} % Indentation manuelle
-
-% --- Gestion des listes ---
-\usepackage{enumitem} % Listes personnalisées
-
-% --- Références et hyperliens ---
-\usepackage{url, hyperref} % Gestion des URL et hyperliens
-
-% --- Glossaire ---
-%\usepackage{glossaries, glossaries-extra} % Gestion du glossaire
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\} % Depth-4 sections
+% --- Mathematics and symbols ---
+\usepackage{amsmath, amsfonts, amssymb, mathrsfs, stmaryrd} % Symbols and mathematics
+\usepackage{siunitx} % SI unit management
+% --- Graphics and figures ---
+\usepackage{graphicx, subcaption, float, wrapfig} % Image and subfigure management
+\usepackage[tikz]{bclogo} % Logo boxes
+\usepackage{sidecap} % Side captions
+% --- Tables ---
+\usepackage{multirow, array, makecell} % Advanced tables
+% --- Paragraphs ---
+\usepackage{ragged2e} % Text alignment
+\setlength{\parindent}{0pt} % No default indentation
+\newcommand{\myindent}{\hspace*{1.5em}} % Manual indentation
+% --- List management ---
+\usepackage{enumitem} % Custom lists
+% --- References and hyperlinks ---
+\usepackage{url, hyperref} % URL and hyperlink management
+% --- Glossary ---
+%\usepackage{glossaries, glossaries-extra} % Glossary management
 %\makeglossaries
 %\input{glossary}
-
-% --- En-têtes et pieds de page ---
-\usepackage{fancyhdr} % Personnalisation des en-têtes et pieds de page
+% --- Headers and footers ---
+\usepackage{fancyhdr} % Header and footer customisation
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand\headrulewidth{1pt}
 \fancyhead[R]{\nouppercase{\leftmark}} 
-\fancyhead[L]{Internship report}
+\fancyhead[L]{Master 2 Internship report}
 \fancyfoot[C]{\thepage}
-
-% --- Autres outils divers ---
-\usepackage{lettrine} % Lettres capitales
-\usepackage{pifont} % Symboles spéciaux
-\usepackage{pdfpages} % Inclusion de PDF
-\usepackage{eurosym} % Symbole Euro
-\usepackage{listings} % Inclusion de code source
-\usepackage{changepage} % Ajustement des marges
-\usepackage{ulem} % Texte barré et souligné
-\usepackage{frcursive} % Police cursive
-\usepackage{fvextra} %alternative a verbatim
-\usepackage{setspace} %espacement manuel entre lignes
-\usepackage{comment} %commentaire
-
-
-% --- Personnalisation supplémentaire ---
+% --- Miscellaneous tools ---
+\usepackage{lettrine} % Drop capitals
+\usepackage{pifont} % Special symbols
+\usepackage{pdfpages} % PDF inclusion
+\usepackage{eurosym} % Euro symbol
+\usepackage{listings} % Source code inclusion
+\usepackage{changepage} % Margin adjustment
+\usepackage[normalem]{ulem} % Strikethrough and underline
+\usepackage{frcursive} % Cursive font
+\usepackage{fvextra} % Alternative to verbatim
+\usepackage{setspace} % Manual line spacing
+\usepackage{comment} % Comments
+% --- Additional customisation ---
 \addto\captionsfrench{\renewcommand{\contentsname}{\center{Table des matières}}}
 \renewcommand{\thesection}{\arabic{section}}
 \newcommand{\clearemptydoublepage}{%
@@ -113,17 +100,20 @@
     {\huge \bfseries Master 2 Internship report}\\[0.4cm]
     {\huge Dynamical properties of the Hopfield model
 through bitwise arithmetic}\\
-    \rule{\textwidth}{1pt} \\[0.85cm]
+    \rule{\textwidth}{1pt} \\[0.5cm]
 
     \vspace{2em}
     {\LARGE Bastien Dumont}\\
     \vspace{2em}
-    {\Large Supervised by} {\fontsize{16}{17}\selectfont Michele Castellana}{\Large\ and }{\fontsize{16}{17}\selectfont David Lacoste}\\
+    {\Large Supervised by} {\fontsize{16}{17}\selectfont Michele Castellana}{\Large\ and }{\fontsize{16}{17}\selectfont David Lacoste}\\[0.35cm]
     {\fontsize{16}{17}\selectfont Institut Curie }{\Large and }{\fontsize{16}{17}\selectfont ESPCI}{\Large, Paris}\\
     \vspace{3em}
     {\Large March 23 - July 17, 2026} \\
     \vspace{3em}
-    {\LARGE Master de Physique fondamentale et applications, parcours physique} \\
+    {\LARGE Master de Physique fondamentale et applications, parcours Physique} \\
+    \vspace{3em}
+    {\Large Scholar year 2025 - 2026} \\
+    
 \end{center}
 \vfill
 \begin{center}
@@ -150,9 +140,9 @@ placeholder
 
 \end{titlepage}
 \Large{\tableofcontents} 
-\addtocounter{page}{4}
+\addtocounter{page}{3}
 \pagestyle{fancy}
-
+\normalsize
 
 \newpage
 \include{Intro}
@@ -165,6 +155,6 @@ placeholder
 \normalsize
 \bibliographystyle{unsrt}
 \sloppy
-\bibliography{internship_MBL}
+\bibliography{references}
 
 \end{document}
