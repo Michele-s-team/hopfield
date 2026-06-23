@@ -38,7 +38,7 @@ public:
 
     void evolve_save_bits(gsl_rng* ran, double freq, const string& filename);   
     void evolve_bits(gsl_rng* ran, const string& filename);
-
+    
     void GetMagnetizations(vector<double>&) override;                           // get the n_bits magnetizations using the UnsignedInt formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
 
@@ -47,8 +47,9 @@ public:
     void initCouplingsBits();
 
     void initPatternsFromConfig(vector<vector<Bits>> Config);
-    vector<vector<vector<int>>> getPatternsBits();
-    vector<vector<vector<int>>> getCouplingsConfigBits();
+    vector<vector<Bits>> getPatterns();
+    vector<vector<UnsignedInt>> getCouplingsConfig();
+    vector<vector<vector<int>>> getPatternsBitsToCanonical();
 
 
 private:
