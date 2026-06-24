@@ -1,0 +1,1 @@
+{"rule":"ENGLISH_WRONG_WORD_IN_CONTEXT","sentence":"^\\QThe network, explained in more details in subsection \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, is similar to the Ising and the Spinglass networks: it is composed of a set of a set of spins – called neurons in the case of the Hopfield network – \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q interacting with each others.\\E$"}

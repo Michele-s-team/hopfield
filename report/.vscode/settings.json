@@ -1,0 +1,255 @@
+{
+  // ─── LaTeX Workshop ───────────────────────────────────────────────────────
+
+  // Default compiler: pdflatex via latexmk
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex (latexmk)",
+      "tools": ["latexmk-pdflatex"]
+    },
+    {
+      "name": "pdflatex x2 + bibtex",
+      "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+    }
+  ],
+
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-pdflatex",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-pdflatex=pdflatex",
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": ["%DOCFILE%"]
+    }
+  ],
+
+  // Auto-compile on save
+  "latex-workshop.latex.autoBuild.run": "onSave",
+
+  // Auxiliary files to clean up after compilation
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux", "*.bbl", "*.blg", "*.idx", "*.ind",
+    "*.lof", "*.lot", "*.out", "*.toc", "*.acn",
+    "*.acr", "*.alg", "*.glg", "*.glo", "*.gls",
+    "*.fls", "*.log", "*.fdb_latexmk", "*.synctex.gz"
+  ],
+  // Only clean on failed build (preserves incremental compilation)
+  "latex-workshop.latex.autoClean.run": "onFailed",
+
+  // Built-in PDF viewer
+  "latex-workshop.view.pdf.viewer": "tab",
+
+  // SyncTeX: click PDF -> jump to source, and vice versa
+  "latex-workshop.synctex.afterBuild.enabled": true,
+
+  // IntelliSense and completion
+  "latex-workshop.intellisense.package.enabled": true,
+  "latex-workshop.intellisense.citation.label.type": "bibtex key",
+
+  // Error/warning display
+  "latex-workshop.message.error.show": true,
+  "latex-workshop.message.warning.show": false,
+
+  // ─── LTeX (spell & grammar checking) ─────────────────────────────────────
+
+  "ltex.language": "en-US",
+
+  // Disable overly aggressive rules
+  "ltex.disabledRules": {
+    "en-US": ["WHITESPACE_RULE", "COMMA_PARENTHESIS_WHITESPACE"]
+  },
+
+  // Personal dictionary
+  "ltex.dictionary": {
+    "en-US": []
+  },
+
+  // Only check .tex files (not .bib, .cls, etc.)
+  "ltex.enabled": ["latex"],
+
+  // ─── Editor ───────────────────────────────────────────────────────────────
+
+  "editor.wordWrap": "on",
+  "editor.rulers": [80],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.minimap.enabled": false,
+  "editor.formatOnSave": false,        // off for LaTeX (avoids unexpected reformatting)
+
+  // Font with ligatures (comment out if Fira Code is not installed)
+  "editor.fontFamily": "'Fira Code', 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 14,
+
+  // ─── Files ────────────────────────────────────────────────────────────────
+
+  "files.autoSave": "onFocusChange",
+  "files.encoding": "utf8",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Hide auxiliary LaTeX files from the explorer (still present on disk)
+  "files.exclude": {
+    "**/*.aux": true,
+    "**/*.log": true,
+    "**/*.fls": true,
+    "**/*.fdb_latexmk": true,
+    "**/*.synctex.gz": true,
+    "**/*.bbl": true,
+    "**/*.blg": true,
+    "**/*.out": true
+  },
+
+  // ─── Integrated terminal ──────────────────────────────────────────────────
+
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.fontSize": 13
+}{
+  // ─── LaTeX Workshop ───────────────────────────────────────────────────────
+
+  // Default compiler: pdflatex via latexmk
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex (latexmk)",
+      "tools": ["latexmk-pdflatex"]
+    },
+    {
+      "name": "pdflatex x2 + bibtex",
+      "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+    }
+  ],
+
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-pdflatex",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-pdflatex=pdflatex",
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": ["%DOCFILE%"]
+    }
+  ],
+
+  // Auto-compile on save
+  "latex-workshop.latex.autoBuild.run": "onSave",
+
+  // Auxiliary files to clean up after compilation
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux", "*.bbl", "*.blg", "*.idx", "*.ind",
+    "*.lof", "*.lot", "*.out", "*.toc", "*.acn",
+    "*.acr", "*.alg", "*.glg", "*.glo", "*.gls",
+    "*.fls", "*.log", "*.fdb_latexmk", "*.synctex.gz"
+  ],
+  // Only clean on failed build (preserves incremental compilation)
+  "latex-workshop.latex.autoClean.run": "onFailed",
+
+  // Built-in PDF viewer
+  "latex-workshop.view.pdf.viewer": "tab",
+
+  // SyncTeX: click PDF -> jump to source, and vice versa
+  "latex-workshop.synctex.afterBuild.enabled": true,
+
+  // IntelliSense and completion
+  "latex-workshop.intellisense.package.enabled": true,
+  "latex-workshop.intellisense.citation.label.type": "bibtex key",
+
+  // Error/warning display
+  "latex-workshop.message.error.show": true,
+  "latex-workshop.message.warning.show": false,
+
+  // ─── LTeX (spell & grammar checking) ─────────────────────────────────────
+
+  "ltex.language": "en-US",
+
+  // Disable overly aggressive rules
+  "ltex.disabledRules": {
+    "en-US": ["WHITESPACE_RULE", "COMMA_PARENTHESIS_WHITESPACE"]
+  },
+
+  // Personal dictionary
+  "ltex.dictionary": {
+    "en-US": []
+  },
+
+  // Only check .tex files (not .bib, .cls, etc.)
+  "ltex.enabled": ["latex"],
+
+  // ─── Editor ───────────────────────────────────────────────────────────────
+
+  "editor.wordWrap": "on",
+  "editor.rulers": [80],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.minimap.enabled": false,
+  "editor.formatOnSave": false,        // off for LaTeX (avoids unexpected reformatting)
+
+  // Font with ligatures (comment out if Fira Code is not installed)
+  "editor.fontFamily": "'Fira Code', 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 14,
+
+  // ─── Files ────────────────────────────────────────────────────────────────
+
+  "files.autoSave": "onFocusChange",
+  "files.encoding": "utf8",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Hide auxiliary LaTeX files from the explorer (still present on disk)
+  "files.exclude": {
+    "**/*.aux": true,
+    "**/*.log": true,
+    "**/*.fls": true,
+    "**/*.fdb_latexmk": true,
+    "**/*.synctex.gz": true,
+    "**/*.bbl": true,
+    "**/*.blg": true,
+    "**/*.out": true
+  },
+
+  // ─── Integrated terminal ──────────────────────────────────────────────────
+
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.fontSize": 13
+}
