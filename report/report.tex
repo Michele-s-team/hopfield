@@ -55,6 +55,7 @@
 \fancyhead[L]{Master 2 Internship report}
 \fancyfoot[C]{\thepage}
 % --- Miscellaneous tools ---
+\usepackage[ruled,vlined]{algorithm2e}
 \usepackage{lettrine} % Drop capitals
 \usepackage{pifont} % Special symbols
 \usepackage{pdfpages} % PDF inclusion
@@ -67,6 +68,13 @@
 \usepackage{setspace} % Manual line spacing
 \usepackage{comment} % Comments
 \usepackage{cite} %cite
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\graphicspath{{pictures/}}
+\usepackage{import}
+\newcommand{\noteBastien}[1]{\textcolor{blue}{#1}}
+\newcommand{\noteMichele}[1]{\textcolor{red}{#1}}
+\newcommand{\noteDavid}[1]{\textcolor{green}{#1}}
 % --- Additional customisation ---
 \addto\captionsfrench{\renewcommand{\contentsname}{\center{Table des matières}}}
 \renewcommand{\thesection}{\arabic{section}}
