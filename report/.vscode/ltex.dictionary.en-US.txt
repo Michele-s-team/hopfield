@@ -16,3 +16,7 @@ Hopfield
 Ising
 Spinglass
 Amari
+fondamentale
+parcours
+BitSet
+UnsignedInt

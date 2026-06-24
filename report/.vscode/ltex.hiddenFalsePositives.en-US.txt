@@ -1,1 +1,11 @@
 {"rule":"ENGLISH_WRONG_WORD_IN_CONTEXT","sentence":"^\\QThe network, explained in more details in subsection \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, is similar to the Ising and the Spinglass networks: it is composed of a set of a set of spins – called neurons in the case of the Hopfield network – \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q interacting with each others.\\E$"}
+{"rule":"DASH_RULE","sentence":"^\\QScholar year 2025 - 2026.\\E$"}
+{"rule":"DASH_RULE","sentence":"^\\QMarch 23 - July 17, 2026.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand .16.17.\\E$"}
+{"rule":"ENGLISH_WRONG_WORD_IN_CONTEXT_NEURONS_NEUTRONS","sentence":"^\\QThe model, described in more details in subsection \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-|Atrapa-|Dummy\\+|Dummy's\\+)[0-9]+\\Q, is similar to the Ising and the Spin Glass networks: it is composed of a set of spins – called neurons in the case of the Hopfield network –\\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-|Atrapa-|Dummy\\+|Dummy's\\+)[0-9]+\\Q interacting with one another.\\E$"}
+{"rule":"NUMBERS_IN_WORDS","sentence":"^\\QRepeat Step 2 for \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-|Atrapa-|Dummy\\+|Dummy's\\+)[0-9]+\\Qsweeps sweeps.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qplaceholder.\\E$"}
+{"rule":"A_NNS","sentence":"^\\QA Bits \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-|Atrapa-|Dummy\\+|Dummy's\\+)[0-9]+\\Q encoding 64 parallel replicas.\\E$"}
+{"rule":"ENGLISH_WRONG_WORD_IN_CONTEXT_NEURONS_NEUTRONS","sentence":"^\\QWhat makes this model different from the other two is the way the interactions between neurons are defined: as for the Ising and Spin Glass models they remain static over time but depend on the set of patterns to be stored in the network, making the latter attractors – minima of energy – of the model.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qplaceholder\\E$"}
+{"rule":"A_NNS","sentence":"^\\QEach row is a Bits associated with a power of 2.\\E$"}
