@@ -176,6 +176,14 @@ In the same way as for \Bits, the \UnsignedInt data structure enables us to add,
 This implementation method has proven efficient when dealing with discreet values models such as the Ising \cite{HFreund_1988} or the Spin Glass \cite{palassini1999} models, but it has not yet been employed to study the Hopfield network.
 
 \subsection{Second Optimization: Shared random numbers}
+\myindent The bitwise implementation is a structural optimization of the representation of data. On top of this structural optimization can be added a physical one that is that all replica of the system can share the same sequence of random numbers. In this way, the evolutions the many replicas of the system are completely parallelized. This optimization turns out to be central, as the generation of the random number is often times the bottleneck of the simulation, as it typically requires non-trivial operations such as multiplications and is called in the hot loop of the algorithm. A a schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}
+
+\begin{figure}[H]
+\centering
+
+\includegraphics[height=5cm]{pictures/random_number.pdf}
+\end{figure}
+
 \subsection{Note on the independence of the realizations}
 \subsection{Structure of the code}
 
