@@ -8,12 +8,12 @@
 #include "spinglass_bits.hpp"
 #include "unsigned_int.hpp"
 #include <numeric>
+#include <algorithm>
 #include <filesystem>
 #include "lib.hpp"
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
-
 
 // =====================================================
 // STATE CONVERSIONS
@@ -60,6 +60,69 @@ void SpinGlassBits::toCanonical(){
         for (int i = 0; i < N; ++i)
             spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
+
+// =====================================================
+// DIRECT BITWISE INITIALIZATION
+// =====================================================
+
+
+// Initialize spins directly in bit-sliced representation.
+// Replaces: initSpins() + fromCanonical() step 1.
+void SpinGlassBits::initSpinsBits(gsl_rng* ran) {
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
+    Bits_Spins_Set.clear();
+    Bits_Spins_Set.resize(N);
+    Neighbor_Count.clear();
+    Neighbor_Count.reserve(N);
+
+    for (int i = 0; i < N; ++i) {
+        for (int r = 0; r < n_bits; ++r)
+            Bits_Spins_Set[i].Set(r, randomBit(ran));
+
+        UnsignedInt nc_tmp((unsigned long long) max_deg);
+        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
+        Neighbor_Count.push_back(nc_tmp);
+    }
+}
+
+// Initialize Couplings directly in bit-sliced representation
+void SpinGlassBits::initCouplingsBits(gsl_rng* ran) {
+    Couplings.clear();
+    Couplings.resize(N);
+    for (int i = 0; i < N; ++i) {
+        Couplings[i].clear();
+        Couplings[i].resize(neighbors[i].size());
+    }
+
+    // Generate once for i < j, then mirror (J_ij = J_ji)
+    for (int i = 0; i < N; ++i) {
+        for (int k = 0; k < (int)neighbors[i].size(); ++k) {
+            int j = neighbors[i][k];
+            if (j <= i) continue;
+
+            Bits coupling_tmp;
+            for (int r = 0; r < n_bits; ++r)
+                coupling_tmp.Set(r, randomBit(ran));
+
+            Couplings[i][k] = coupling_tmp;
+
+            int k_mirror = neighbor_index(j, i);
+            Couplings[j][k_mirror] = coupling_tmp;
+        }
+    }
+}
+
+// Overwrite the patterns tensor with an externally provided configuration.
+// Allows two model instances to share the exact same disorder realization.
+void SpinGlassBits::initCouplingsFromConfig(vector<vector<Bits>> Config) {
+    Couplings = Config;
+}
+// Return a copy of the full coupling tensor
+vector<vector<Bits>> SpinGlassBits::getCouplingsConfig() {
+    return Couplings;
+}
+
 
 // =====================================================
 // OBSERVABLES
@@ -177,4 +240,33 @@ void SpinGlassBits::evolve_save(gsl_rng* ran, double freq, const string& filenam
     CloseSpinFiles();
     cout << "evolve_save called, closing: " << filename << endl;
     toCanonical();
+}
+
+
+// Run simulation and save at given frequency — fully bitwise initialization
+void SpinGlassBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+    initCouplingsBits(ran);
+    initSpinsBits(ran);
+    cout << "Bitwise initialization done" << endl;
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    cout << "evolve_save_bits called, opening: " << filename << endl;
+    runSweeps(ran, /*save=*/true, freq);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_save_bits called, closing: " << filename << endl;
+}
+
+// Run simulation without saving — fully bitwise initialization
+void SpinGlassBits::evolve_bits(gsl_rng* ran, const string& filename){
+    initCouplingsBits(ran);
+    initSpinsBits(ran);
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    runSweeps(ran, /*save=*/false, 0.0);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_bits called, closing: " << filename << endl;
 }

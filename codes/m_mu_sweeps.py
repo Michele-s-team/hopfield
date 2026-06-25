@@ -18,145 +18,68 @@ def extract_r(name):
     return int(m.group(1)) if m else None
 
 
-def extract_N(name):
-    m = re.search(r"N(\d+)", name)
-    return int(m.group(1)) if m else None
-
-
-def num_blocks(N):
-    return (N + 63) // 64
-
-
 def fix_sweeps(sweeps):
-    """Remplace le sweep 0 par sweeps[1]/2 pour permettre xscale log."""
     sweeps_plot = sweeps.copy().astype(float)
     if sweeps_plot[0] == 0 and len(sweeps_plot) > 1:
-        sweeps_plot[0] = sweeps_plot[1] / 2
+        sweeps_plot[0] = sweeps_plot[1] / 2.0  # moitié du gap suivant
     return sweeps_plot
 
 
 # ============================================================
-# OVERLAP
+# LOAD OVERLAPS FROM PRECOMPUTED CSV
 # ============================================================
 
-def overlap_binary(row_cfg, row_pat, N):
-    n_full = N // 64
-    remainder = N % 64
-
-    corr = 0
-
-    for b in range(n_full):
-        s = int(str(row_cfg[f"block{b}"]))
-        p = int(str(row_pat[f"block{b}"]))
-        xor = s ^ p
-        corr += 64 - 2 * xor.bit_count()
-
-    if remainder:
-        s = int(str(row_cfg[f"block{n_full}"]))
-        p = int(str(row_pat[f"block{n_full}"]))
-        mask = (1 << remainder) - 1
-        xor = (s ^ p) & mask
-        corr += remainder - 2 * xor.bit_count()
-
-    return corr / N
+def load_overlaps(overlap_file):
+    """
+    Lit un fichier overlaps_r{r}.csv.
+    Retourne (sweeps: 1D int array, overlaps: 2D float array (n_sweeps, n_patterns)).
+    """
+    df = pd.read_csv(overlap_file)
+    sweeps = df["sweep"].to_numpy(dtype=int)
+    m_cols = [c for c in df.columns if c.startswith("m_")]
+    overlaps = df[m_cols].to_numpy(dtype=float)
+    return sweeps, overlaps
 
 
 # ============================================================
-# PROCESS ONE REALIZATION
+# PROCESS ONE ALPHA  (depuis overlaps précalculés)
 # ============================================================
 
-def compute_curve(config_file, pattern_file, N):
+def process_alpha(alpha_dir):
+    """
+    Pour chaque réalisation r disponible dans alpha_dir/overlaps/,
+    calcule max_mu |m^mu| à chaque sweep.
+    Retourne (sweeps, mean_curve, std_curve).
+    """
+    overlaps_dir = alpha_dir / "overlaps"
+    if not overlaps_dir.exists():
+        print(f"  [WARN] pas de dossier overlaps dans {alpha_dir.name}")
+        return None, None, None
 
-    config_df = pd.read_csv(config_file, dtype=str).dropna()
-    pattern_df = pd.read_csv(pattern_file, dtype=str).dropna()
-
-    n_sweeps = len(config_df)
-    curve = np.zeros(n_sweeps)
-
-    for i in range(n_sweeps):
-        row_cfg = config_df.iloc[i]
-
-        m_max = -1.0
-
-        for _, row_pat in pattern_df.iterrows():
-            m = abs(overlap_binary(row_cfg, row_pat, N))
-            if m > m_max:
-                m_max = m
-
-        curve[i] = m_max
-
-    return curve
-
-
-def compute_all_overlaps(config_file, pattern_file, N):
-    """Retourne un array (n_sweeps, n_patterns) des overlaps m^mu."""
-    config_df = pd.read_csv(config_file, dtype=str).dropna()
-    pattern_df = pd.read_csv(pattern_file, dtype=str).dropna()
-
-    n_sweeps = len(config_df)
-    n_patterns = len(pattern_df)
-    overlaps = np.zeros((n_sweeps, n_patterns))
-
-    for i, row_cfg in config_df.iterrows():
-        for mu, row_pat in pattern_df.iterrows():
-            overlaps[i, mu] = overlap_binary(row_cfg, row_pat, N)
-
-    return overlaps
-
-
-# ============================================================
-# PROCESS ONE ALPHA
-# ============================================================
-
-def process_alpha(alpha_dir, N=None):
-
-    spins_dir = alpha_dir / "spins"
-    patterns_dir = alpha_dir / "patterns"
-
-    config_files = sorted(spins_dir.glob("*.csv"))
-
-    pattern_map = {}
-    for p in patterns_dir.glob("*.csv"):
-        r = extract_r(p.name)
-        if r is not None:
-            pattern_map[r] = p
-
-    if N is None:
-        any_file = next(iter(patterns_dir.glob("*.csv")))
-        N = extract_N(any_file.name)
+    overlap_files = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    if not overlap_files:
+        return None, None, None
 
     curves = []
     sweeps = None
 
-    for j, cfile in enumerate(config_files, start=1):
+    for j, ofile in enumerate(overlap_files, start=1):
+        print(f"    realization {j}/{len(overlap_files)}", end="\r", flush=True)
 
-        print(
-            f"    realization {j}/{len(config_files)}",
-            end="\r",
-            flush=True
-        )
-
-        r = extract_r(cfile.name)
-        if r is None or r not in pattern_map:
-            continue
-
-        pfile = pattern_map[r]
-
-        curve = compute_curve(cfile, pfile, N)
+        sw, ov = load_overlaps(ofile)
+        curve = np.max(np.abs(ov), axis=1)   # max_mu |m^mu| pour chaque sweep
         curves.append(curve)
 
         if sweeps is None:
-            df = pd.read_csv(cfile, dtype=str).dropna()
-            sweeps = df["sweep"].to_numpy()
+            sweeps = sw
 
-    if not curves:
-        return None, None, None
+    print()
 
     min_len = min(len(c) for c in curves)
     curves = np.array([c[:min_len] for c in curves])
 
     mean_curve = curves.mean(axis=0)
-    std_curve = curves.std(axis=0) / np.sqrt(len(curves))
+    std_curve  = curves.std(axis=0) / np.sqrt(len(curves))
 
     return sweeps[:min_len], mean_curve, std_curve
 
@@ -180,7 +103,7 @@ if __name__ == "__main__":
     # ALPHA_SELECTION = [2, 3]
     # ALPHA_SELECTION = [1, 4, 7]
 
-    ALPHA_SELECTION = [1,2,3,4,5,6,7,8]
+    ALPHA_SELECTION = [1, 2, 3, 4]
 
     alpha_dirs = [
         ALL_ALPHA_DIRS[i - 1]
@@ -198,14 +121,12 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(8, 5))
 
+    sweeps_plot_last = None
+
     for i, alpha_dir in enumerate(alpha_dirs, start=1):
 
         alpha = float(alpha_dir.name.split("_")[1])
-
-        print(
-            f"[{i}/{len(alpha_dirs)}] "
-            f"processing {alpha_dir.name}"
-        )
+        print(f"[{i}/{len(alpha_dirs)}] processing {alpha_dir.name}")
 
         sweeps, mean_curve, std_curve = process_alpha(alpha_dir)
 
@@ -213,77 +134,72 @@ if __name__ == "__main__":
             continue
 
         sweeps_plot = fix_sweeps(sweeps)
+        sweeps_plot_last = sweeps_plot
 
         plt.plot(sweeps_plot, mean_curve, label=f"{alpha:.3f}")
         plt.fill_between(
             sweeps_plot,
             mean_curve - std_curve,
             mean_curve + std_curve,
-            alpha=0.2
+            alpha=0.2,
         )
 
     plt.xlabel("sweep")
     plt.ylabel(r"$\langle \max_\mu |m^\mu| \rangle$")
     plt.xscale("log")
-    plt.xlim([sweeps_plot[0]*0.95,sweeps_plot[-1]*1.05])
+    if sweeps_plot_last is not None:
+        plt.xlim([sweeps_plot_last[0] * 0.95, sweeps_plot_last[-1] * 1.05])
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
     plt.show()
 
+    # ----------------------------------------------------------
+    # Plots 2 & 3 : zoom sur un alpha particulier
+    # ----------------------------------------------------------
 
-    n_alpha=0
-    alpha_dir = sorted(root_dir.glob("alpha_*"))[n_alpha]
+    n_alpha = 3   # index dans ALL_ALPHA_DIRS (0-based)
+    alpha_dir = ALL_ALPHA_DIRS[n_alpha]
 
     if not alpha_dirs:
         raise RuntimeError("No alpha folder selected.")
 
     alpha = float(alpha_dir.name.split("_")[1])
-    print(f"alpha = {alpha:.3f}")
+    print(f"\nalpha = {alpha:.3f}")
 
-    spins_dir = alpha_dir / "spins"
-    patterns_dir = alpha_dir / "patterns"
+    overlaps_dir = alpha_dir / "overlaps"
 
     # ----------------------------------------------------------
     # Plot 2 : tous les m^mu pour une réalisation donnée
     # ----------------------------------------------------------
 
-    r_target = 16
+    r_target = 41
 
-    config_file = next(
-        f for f in sorted(spins_dir.glob("*.csv")) if extract_r(f.name) == r_target
-    )
-    pattern_file = next(
-        p for p in patterns_dir.glob("*.csv") if extract_r(p.name) == r_target
-    )
+    ofile = overlaps_dir / f"overlaps_r{r_target}.csv"
+    sweeps, overlaps = load_overlaps(ofile)
 
-    N = extract_N(pattern_file.name)
-    print(f"N = {N}, realization r = {r_target}")
-
-    overlaps = compute_all_overlaps(config_file, pattern_file, N)
-
-    config_df = pd.read_csv(config_file, dtype=str).dropna()
-    sweeps = config_df["sweep"].to_numpy(dtype=float)
     sweeps_plot = fix_sweeps(sweeps)
+    n_patterns  = overlaps.shape[1]
+    dominant    = np.argmax(np.abs(overlaps[-1, :]))
 
-    n_patterns = overlaps.shape[1]
+    # infer N from pattern filename (pour le titre)
+    pattern_files = list((alpha_dir / "patterns").glob(f"*_r{r_target}.csv"))
+    N_label = re.search(r"N(\d+)", pattern_files[0].name).group(1) if pattern_files else "?"
 
     plt.figure(figsize=(9, 5))
 
-    dominant = np.argmax(np.abs(overlaps[-1, :]))
-
     for mu in range(n_patterns):
-        lw = 2.0 if mu == dominant else 0.8
-        zo = 3 if mu == dominant else 1
+        lw  = 2.0 if mu == dominant else 0.8
+        zo  = 3   if mu == dominant else 1
         lbl = rf"$m^{{{mu}}}$" + (" ★" if mu == dominant else "")
         plt.plot(sweeps_plot, overlaps[:, mu], lw=lw, zorder=zo, label=lbl)
 
     plt.axhline(0, color="k", lw=0.5, ls="--")
     plt.xlabel("sweep")
     plt.ylabel(r"$m^\mu$")
-    plt.title(rf"$\alpha = {alpha:.3f}$, $N = {N}$, réalisation $r = {r_target}$")
+    plt.title(rf"$\alpha = {alpha:.3f}$, $N = {N_label}$, réalisation $r = {r_target}$")
     plt.xscale("log")
-    plt.xlim([sweeps_plot[0]*0.95,sweeps_plot[-1]*1.05])
+    plt.xlim([sweeps_plot[0] * 0.95, sweeps_plot[-1] * 1.05])
     plt.grid(True, alpha=0.4)
     plt.legend(ncol=4, fontsize=7)
     plt.tight_layout()
@@ -291,38 +207,23 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------------
     # Plot 3 : évolution de m^mu* pour toutes les réalisations
-    #          (mu* = pattern dominant à la fin de chaque réalisation)
     # ----------------------------------------------------------
-
-    N = extract_N(pattern_file.name)
-
-    pattern_map = {}
-    for p in patterns_dir.glob("*.csv"):
-        r = extract_r(p.name)
-        if r is not None:
-            pattern_map[r] = p
 
     plt.figure(figsize=(9, 5))
 
-    config_files = sorted(spins_dir.glob("*.csv"))
-    n_real = len(config_files)
-    colors = [hsv_to_rgb([i / n_real, 0.55, 0.75]) for i in range(n_real)]
+    ofiles   = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    n_real   = len(ofiles)
+    colors   = [hsv_to_rgb([i / n_real, 0.55, 0.75]) for i in range(n_real)]
 
     lines = []
 
-    for idx, cfile in enumerate(config_files):
-        r = extract_r(cfile.name)
-        if r is None or r not in pattern_map:
-            continue
-
-        overlaps = compute_all_overlaps(cfile, pattern_map[r], N)
-        mu_star = np.argmax(np.abs(overlaps[-1]))
-
-        config_df = pd.read_csv(cfile, dtype=str).dropna()
-        sweeps = config_df["sweep"].to_numpy(dtype=float)
+    for idx, ofile in enumerate(ofiles):
+        r = extract_r(ofile.name)
+        sweeps, ov = load_overlaps(ofile)
+        mu_star     = np.argmax(np.abs(ov[-1]))
         sweeps_plot = fix_sweeps(sweeps)
 
-        line, = plt.plot(sweeps_plot, overlaps[:, mu_star],
+        line, = plt.plot(sweeps_plot, ov[:, mu_star],
                          lw=0.8, alpha=0.6, color=colors[idx])
         lines.append((line, r))
 
@@ -338,8 +239,8 @@ if __name__ == "__main__":
     plt.xlabel("sweep")
     plt.xscale("log")
     plt.ylabel(r"$m^{\mu^*}$")
-    plt.title(rf"$\alpha = {alpha:.3f}$, $N = {N}$ — toutes les réalisations")
+    plt.title(rf"$\alpha = {alpha:.3f}$, $N = {N_label}$ — toutes les réalisations")
     plt.grid(True, alpha=0.4)
-    plt.xlim([sweeps_plot[0]*0.95,sweeps_plot[-1]*1.05])
+    plt.xlim([sweeps_plot[0] * 0.95, sweeps_plot[-1] * 1.05])
     plt.tight_layout()
     plt.show()
