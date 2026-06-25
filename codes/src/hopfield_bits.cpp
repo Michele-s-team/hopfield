@@ -280,6 +280,8 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt tmp            ((unsigned long long) 2 * P);
+    UnsignedInt twoP           ((unsigned long long) 2 * P);
+    twoP.SetAll((unsigned long long) 2 * P);
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep){
         for (int step = 0; step < N; ++step){
@@ -321,7 +323,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
             // LHS = random + sum_g + 2P*sum_c
             LHS  = sum_g;
             LHS.AddScalar(random);
-            sum_c.MultiplyByInteger(2 * P, &sum_c_times_2P);
+            sum_c.Multiply(&twoP, &sum_c_times_2P);
             LHS += &sum_c_times_2P;
 
             mask = (RHS <= LHS);

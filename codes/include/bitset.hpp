@@ -55,7 +55,8 @@ public:
     void Print(ostream&);
 
     //bitwise sum and substraction
-    void AddTo(BitSet*, Bits*), AddTo(Bits*, Bits*), SubstractTo(BitSet*, Bits*), SubstractTo(Bits*, Bits*), Multiply(UnsignedInt*, UnsignedInt*), MultiplyByInteger(unsigned long long int n, UnsignedInt* result), MultiplyByTwoTo(void), DivideByTwoTo(void), AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
+    void AddTo(BitSet*, Bits*), AddTo(Bits*, Bits*), SubstractTo(BitSet*, Bits*), SubstractTo(Bits*, Bits*), Multiply(UnsignedInt*, UnsignedInt*), MultiplyByInteger(unsigned long long int n, UnsignedInt* result);
+    void MultiplyByTwoTo(void), DivideByTwoTo(void), AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
     BitSet operator + (BitSet*), operator - (BitSet*), operator << (Bits*), Add(BitSet*, Bits*), Substract(BitSet*, Bits*);
     void operator += (BitSet*), operator -= (BitSet*), operator *= (BitSet*), operator ^= (Bits*);
     Bits& operator [] (const unsigned int&);
