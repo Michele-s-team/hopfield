@@ -77,7 +77,7 @@ int main() {
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
     double step=0.01;
-    double alpha_min=0.01;
+    double alpha_min=0.02;
     double alpha_max=0.18;
 
     int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
