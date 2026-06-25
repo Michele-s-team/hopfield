@@ -69,14 +69,14 @@ void make_dir(const string& path) {
 int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L         = 50;           // lattice size (L×L spins)
+    const int L         = 32;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
     const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
-    double step=0.01;
+    double step=0.005;
     double alpha_min=0.01;
     double alpha_max=0.18;
 

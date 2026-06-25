@@ -136,7 +136,7 @@ void HopfieldBits::initPatternsBits(gsl_rng* ran) {
         Patterns[p].resize(N);
         for (int i = 0; i < N; ++i) {
             for (int r = 0; r < n_bits; ++r)
-                Patterns[p][i].Set(r, (randomSpin(ran) + 1) / 2);
+                Patterns[p][i].Set(r, randomBit(ran));
         }
     }
 }
@@ -161,40 +161,18 @@ void HopfieldBits::initCouplingsBits() {
             int j = neighbors[i][k];
             if (j <= i) continue;
 
-            // Accumulate G_ij^r = sum_mu xi_i^mu^r * xi_j^mu^r
-            // xi_i^mu^r in {0,1} as Bits -> product = XNOR = ~(a^b)
-            // sum_mu (2*bit-1)(2*bit-1) = sum_mu (1 - 2*(a^b))
-            //                           = P - 2 * popcount(a^b) per replica
-            // g_ij^r = P + G_ij^r = 2P - 2*popcount(XOR)
-            // But here we accumulate directly in UnsignedInt bit-sliced:
-            // g_ij starts at P (SetAll), then += XNOR for each pattern
-
-            Couplings[i][k].SetAll((unsigned long long) P);
+            Couplings[i][k].SetAll((unsigned long long) 0);
 
             for (int mu = 0; mu < P; ++mu) {
-                Bits prod = ~(Patterns[mu][i] ^ Patterns[mu][j]);  // XNOR = [xi_i == xi_j]
-                // prod bit r = 1 if xi_i^mu^r == xi_j^mu^r -> contributes +1
-                // prod bit r = 0                            -> contributes -1
-                // net: G_ij += 2*prod - 1  per replica
-                // i.e. g_ij += prod (the -1+P offset is already in SetAll(P))
-                // Actually: xi*xi = (2b-1)(2b-1) = 1 - 2*(b XOR b') 
-                //           sum_mu xi*xi = P - 2*sum_mu XOR
-                // so g_ij = P + sum_mu xi*xi = 2P - 2*sum_mu XOR
-                // equivalently: g_ij = P + sum_mu (2*XNOR - 1)
-                //                    = P - P + 2*sum_mu XNOR = 2*sum_mu XNOR
-                // --> reset to 0 and accumulate XNOR twice
+                Bits prod = ~(Patterns[mu][i] ^ Patterns[mu][j]);
                 Couplings[i][k] += &prod;
             }
-            // At this point sum = sum_mu XNOR in [0,P]
-            // g_ij = 2*sum_mu XNOR, so multiply by 2
-            // But we want g_ij = P + G_ij = P + sum_mu xi*xi
-            //                  = P + (P - 2*(P - sum_mu XNOR))
-            //                  = 2*sum_mu XNOR  ✓
             Couplings[i][k].MultiplyByTwoTo();
 
             // Mirror onto j
             int k_mirror = neighbor_index(j, i);
             Couplings[j][k_mirror] = Couplings[i][k];
+            
         }
     }
 }

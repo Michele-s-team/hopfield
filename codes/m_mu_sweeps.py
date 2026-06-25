@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     root_dir = Path("../results")
 
-    N_ALPHA = 2
+    N_ALPHA = 1
     alpha_dirs = sorted(root_dir.glob("alpha_*"))[:N_ALPHA]
 
     # ----------------------------------------------------------
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     plt.show()
 
     alpha_dir = sorted(root_dir.glob("alpha_*"))[1]
-    alpha = float(alpha_dir.name.split("_")[1])
+    alpha = float(alpha_dir.name.split("_")[0])
     print(f"alpha = {alpha:.3f}")
 
     spins_dir = alpha_dir / "spins"
