@@ -29,8 +29,8 @@ from collections import defaultdict
 
 
 # ── Parameters ────────────────────────────────────────
-csv_folder = "../results/magnetizations"
-cache_file = "../results/m2_cache.csv"
+csv_folder = "../../results/magnetizations"
+cache_file = "../../results/m2_cache.csv"
 T_target   = 2.2
 T_tol      = 0.01
 CHUNK      = 100_000

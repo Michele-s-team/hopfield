@@ -90,7 +90,7 @@ def process_alpha(alpha_dir):
 
 if __name__ == "__main__":
 
-    root_dir = Path("../results")
+    root_dir = Path("../../results")
 
     # ============================================================
     # CHOIX DES DOSSIERS ALPHA
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # ALPHA_SELECTION = [2, 3]
     # ALPHA_SELECTION = [1, 4, 7]
 
-    ALPHA_SELECTION = [1, 2, 3, 4]
+    ALPHA_SELECTION = [1, 2, 3, 4, 5]
 
     alpha_dirs = [
         ALL_ALPHA_DIRS[i - 1]

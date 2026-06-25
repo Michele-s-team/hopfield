@@ -20,7 +20,7 @@ import re
 # CONFIGURATION
 # ============================================================
 
-root_dir = Path("../results")
+root_dir = Path("../../results")
 
 # -- Sélection des alphas ------------------------------------
 # Liste les dossiers disponibles et affiche leur index au lancement.
@@ -30,7 +30,7 @@ root_dir = Path("../results")
 #   ALPHA_SELECTION = [1]         # premier alpha uniquement
 #   ALPHA_SELECTION = [1, 3, 5]   # alphas d'index 1, 3 et 5
 
-ALPHA_SELECTION = [1, 2, 3, 4]
+ALPHA_SELECTION = [1, 2, 3, 4, 5]
 
 SKIP_EXISTING = True   # False → écrase les fichiers déjà calculés
 

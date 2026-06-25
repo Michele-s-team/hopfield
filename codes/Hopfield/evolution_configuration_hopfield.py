@@ -49,7 +49,7 @@ def compute_overlap(spins_a, spins_b):
 
 if __name__ == "__main__":
 
-    root_dir    = Path("../results/alpha_0.080")
+    root_dir    = Path("../../results/alpha_0.080")
     realization = 17
 
     spins_dir    = root_dir / "spins"
