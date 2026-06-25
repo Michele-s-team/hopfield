@@ -77,7 +77,8 @@ Object & Notation \\
 \hline
 Scalar spin & $s_i \in \{-1,+1\}$ \\
 Scalar bit & $b_i \in \{0,1\}$ \\
-64-bit word (\Bits) & $S_i \in \{0,1\}^{64}$ \\
+64 replicas of spin i & $S_i \in \{-1,1\}^{64}$ \\
+64-bit word (\Bits) & $B_i \in \{0,1\}^{64}$ \\
 Replica $k$ of spin $i$ & $s_i^{(k)} \in \{-1,+1\}$ \\
 Replica $k$ of bit $i$ & $b_i^{(k)} \in \{0,1\}$ \\
 \hline
@@ -108,7 +109,7 @@ Now that we know how to conveniently handle binary variables such as spins, we n
 }
 
 % Left label
-\node[left] at ({-0.25},{-1.5*\rowsep+0.5*\boxsize}) {$Z=$};
+\node[left] at ({-0.05},{-1.5*\rowsep+0.5*\boxsize}) {$Z=$};
 
 % Row k=0
 \foreach \i/\clabel in {0/0,1/1,2/2}{
@@ -176,16 +177,19 @@ In the same way as for \Bits, the \UnsignedInt data structure enables us to add,
 This implementation method has proven efficient when dealing with discreet values models such as the Ising \cite{HFreund_1988} or the Spin Glass \cite{palassini1999} models, but it has not yet been employed to study the Hopfield network.
 
 \subsection{Second Optimization: Shared random numbers}
-\myindent The bitwise implementation is a structural optimization of the representation of data. On top of this structural optimization can be added a physical one that is that all replica of the system can share the same sequence of random numbers. In this way, the evolutions the many replicas of the system are completely parallelized. This optimization turns out to be central, as the generation of the random number is often times the bottleneck of the simulation, as it typically requires non-trivial operations such as multiplications and is called in the hot loop of the algorithm. A a schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}
+\myindent The bitwise implementation is a structural optimization of the data representation. On top of this structural optimization can be added a physical one which consists in having all replicas share the same sequence of random numbers, fully parallelizing their evolution. This turns out to be central: random number generation is often the simulation bottleneck, as it involves costly operations such as multiplications and is called at every step of the hot loop. A schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}. Using the same random number among all evolutions raises the questions of the independence of the realizations, this will be the subject of the next subsection.
 
 \begin{figure}[H]
 \centering
 
 \includegraphics[height=5cm]{pictures/random_number.pdf}
+\caption{All 64 replicas of the system share the same random number at each step.\noteBastien{TO BE CHANGED (BOTTOW ROW)}}
+\label{fig:shared_rng}
 \end{figure}
 
 \subsection{Note on the independence of the realizations}
 \subsection{Structure of the code}
+The simulation of the dynamics has been entirely coded in \texttt{C++}, using an object-oriented approach to the problem.
 
 \begin{figure}[ht]
 \centering

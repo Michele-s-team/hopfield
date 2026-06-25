@@ -9,3 +9,4 @@
 {"rule":"ENGLISH_WRONG_WORD_IN_CONTEXT_NEURONS_NEUTRONS","sentence":"^\\QWhat makes this model different from the other two is the way the interactions between neurons are defined: as for the Ising and Spin Glass models they remain static over time but depend on the set of patterns to be stored in the network, making the latter attractors – minima of energy – of the model.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qplaceholder\\E$"}
 {"rule":"A_NNS","sentence":"^\\QEach row is a Bits associated with a power of 2.\\E$"}
+{"rule":"THE_PUNCT","sentence":"^\\QThis is done using a , which is a collection of .\\E$"}

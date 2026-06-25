@@ -1,5 +1,71 @@
 \section{The Ising model}
+We first implement the method on the Ising model, which is the simplest one.
 \subsection{The model}
+The Hamiltonian of the Ising network is given by
+\begin{equation*}
+  H_\text{Ising}=-J\sum_{<i,j>}S_iS_j -h \sum_i S_i,
+\end{equation*}
+which, in absence of external field $h$ becomes,
+\begin{equation}
+  H_{\text{Ising }, h=0}=-J\sum_{<i,j>}S_iS_j.
+  \label{eq:ising}
+\end{equation}
+When flipping the spin $S_k$, the associated energy shift is
+\begin{equation}
+\begin{aligned}
+  \Delta E_k &= H_\text{Ising}\left[-S_k\right]-H_\text{Ising}\left[S_k\right] \\
+  &= 2J S_k \sum_{i \in \partial k} S_i.
+\end{aligned}
+\label{eq:DeltaE_ising}
+\end{equation}
+where $i \in \partial k$ denotes the summation over the neighbors of $k$. If $\Delta E_k \leq 0$ the flip is accepted. Else, it is accepted if
+\begin{equation}
+\begin{aligned}
+  r&\leq e^{-\beta \Delta E_k}\\
+  \implies \frac{-1}{\beta}\log r &\geq \Delta E_k\\
+  \implies \frac{-1}{2\beta J}\log r &\geq S_k  \sum_{i \in \partial k}S_i.\\
+\end{aligned}
+\label{eq:flip_ising}
+\end{equation}
+With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J}$ and mean $(2\beta J)^{-1}$.
+The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
+\begin{equation}
+  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}S_i.\\
+  \label{eq:flip_ising_int}
+\end{equation}
+We now need to write the sum on spins in a \Bits formalism in order to properly parallelize the evolutions.
 \subsection{Bitwise Implementation}
+Remembering that $S_i$ is actually an array containing $64$ replicas of the same spin, we write $S_i = -1 + 2B_i$, with $B_i$ a \Bits. The sum hence becomes:
+\begin{equation}
+\begin{aligned}
+  \sum_{i \in \partial k}S_k S_i&=\sum_{i \in \partial k} (-1+2B_k)(-1+2B_i)\\
+                          &=\sum_{i \in \partial k} 1-2 (B_k+B_i) +4 B_k.B_i,\\
+\end{aligned}
+\end{equation}
+where $n_k$ is the number of neighbors of the spin $k$. We show in Table~\ref{tab:XNOR} that the term in the sum can be re-written using the XNOR ($\odot$) logical operator.
+\begin{table}[h]
+\centering
+\begin{tabular}{cc||c|c|c}
+\hline
+$b_k$ & $b_i$ & $1- 2 (b_k+b_i) +4 b_k.b_i$ &  ${b_k \odot b_i}$ & $2{b_k \odot b_i} -1 $ \\
+\hline
+0 & 0 & $ \phantom{-}1$ & 1 & $\phantom{-}1$ \\
+0 & 1 & $-1$ & 0  & $-1$ \\
+1 & 0 & $-1$ & 0 &  $-1$ \\
+1 & 1 & $\phantom{-}1$ & 1 & $\phantom{-}1$\\
+\hline
+\end{tabular}
+\caption{The summed term can be simplified using a XNOR operator.}
+\label{tab:XNOR}
+\end{table}
+Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odot$ denotes the bitwise XNOR operation applied to the corresponding bits of each \Bits. The sum thus becomes:
+\begin{equation}
+  \sum_{i \in \partial k}S_k S_i=2\sum_{i \in \partial k} C_{ki} - n_k,
+\end{equation}
+with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ the number of neighbor of the spin $k$. The bitwise flip condition is then:
+\begin{equation}
+  \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
+  \label{eq:flip_ising_bitwise}
+\end{equation}
 \subsection{Phase diagram}
 \subsection{Performance test}
