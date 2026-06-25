@@ -8,6 +8,7 @@
 #include "ising_bits.hpp"
 #include "unsigned_int.hpp"
 #include <numeric>
+#include <algorithm>
 #include <filesystem>
 #include "lib.hpp"
 #include "main.hpp"
@@ -46,6 +47,32 @@ void IsingBits::toCanonical(){
         for (int i = 0; i < N; ++i)
             spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
+
+// =====================================================
+// DIRECT BITWISE INITIALIZATION
+// =====================================================
+
+
+// Initialize spins directly in bit-sliced representation.
+// Replaces: initSpins() + fromCanonical() step 1.
+void IsingBits::initSpinsBits(gsl_rng* ran) {
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
+    Bits_Spins_Set.clear();
+    Bits_Spins_Set.resize(N);
+    Neighbor_Count.clear();
+    Neighbor_Count.reserve(N);
+
+    for (int i = 0; i < N; ++i) {
+        for (int r = 0; r < n_bits; ++r)
+            Bits_Spins_Set[i].Set(r, randomBit(ran));
+
+        UnsignedInt nc_tmp((unsigned long long) max_deg);
+        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
+        Neighbor_Count.push_back(nc_tmp);
+    }
+}
+
 
 // =====================================================
 // OBSERVABLES
@@ -159,4 +186,30 @@ void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& folder){
     runSweeps(ran, /*save=*/true, freq);
     CloseSpinFiles();       // Use base class method
     toCanonical();
+}
+
+// Run simulation and save at given frequency — fully bitwise initialization
+void IsingBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+    initSpinsBits(ran);
+    cout << "Bitwise initialization done" << endl;
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    cout << "evolve_save_bits called, opening: " << filename << endl;
+    runSweeps(ran, /*save=*/true, freq);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_save_bits called, closing: " << filename << endl;
+}
+
+// Run simulation without saving — fully bitwise initialization
+void IsingBits::evolve_bits(gsl_rng* ran, const string& filename){
+    initSpinsBits(ran);
+
+    OpenSpinFiles(filename);
+    SaveSpinConfigurations(0);
+    runSweeps(ran, /*save=*/false, 0.0);
+    SaveSpinConfigurations(getNSweeps());
+    CloseSpinFiles();
+    cout << "evolve_bits called, closing: " << filename << endl;
 }

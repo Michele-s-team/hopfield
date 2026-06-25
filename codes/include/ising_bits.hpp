@@ -32,8 +32,14 @@ public:
     
     void GetMagnetizations(std::vector<double>& magnetizations) override;    // get the n_bits magnetizations using the Bits formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
+
+    void initSpinsBits(gsl_rng* ran);
+
     void evolve(gsl_rng* ran);
     void evolve_save(gsl_rng* ran, double freq, const std::string& folder);
+
+    void evolve_bits(gsl_rng* ran, const string& filename);
+    void evolve_save_bits(gsl_rng* ran, double freq, const string& filename);
 };
 
 #endif
