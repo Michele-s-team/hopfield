@@ -72,25 +72,41 @@ void SimulationIO::OpenMagnetizationFiles(const string& folder, int N, double be
     }
 }
 
-void SimulationIO::OpenSpinFiles(const string& folder, int N, double beta){
+void SimulationIO::OpenSpinFiles(
+    const std::string& folder,
+    int N,
+    double beta)
+{
+    namespace fs = std::filesystem;
 
-    namespace fs = filesystem;
-    fs::create_directories(folder);
+    fs::path base(folder);
+
+    // rename last folder, not add a subfolder
+    fs::path full_folder =
+        base.parent_path() /
+        (base.filename().string() +
+         "_N" + std::to_string(N) +
+         "_beta" + format_beta(beta));
+
+    fs::create_directories(full_folder);
 
     const int n_blocks = num_blocks(N);
 
     m_spin_files.resize(n_bits);
-    
-    for (int r = 0; r < n_bits; ++r){
-        string path =
-            folder +
-            "spins_N" + to_string(N) +
-            "_beta" + format_beta(beta) +
-            "_r" + to_string(r) +
-            ".csv";
-        m_spin_files[r].open(path, ios::app);
 
-        if (m_spin_files[r].tellp() == 0){
+    for (int r = 0; r < n_bits; ++r)
+    {
+        fs::path path =
+            full_folder /
+            ("spins_r" + std::to_string(r) + ".csv");
+
+        m_spin_files[r].open(path, std::ios::out | std::ios::app);
+
+        if (!m_spin_files[r].is_open())
+            continue;
+
+        if (m_spin_files[r].tellp() == 0)
+        {
             m_spin_files[r] << "sweep";
             for (int b = 0; b < n_blocks; ++b)
                 m_spin_files[r] << ",block" << b;
@@ -139,22 +155,33 @@ void SimulationIO::SaveSpinConfigurations(int sweep, const vector<vector<uint64_
     }
 }
 
-void SimulationIO::SavePatterns(const string& folder, int N, const vector<vector<vector<int>>>& patterns){
+void SimulationIO::SavePatterns(
+    const std::string& folder,
+    int N,
+    const std::vector<std::vector<std::vector<int>>>& patterns)
+{
+    namespace fs = std::filesystem;
 
-    namespace fs = filesystem;
-    fs::create_directories(folder);
-    const int P = patterns.size(); // nombre de patterns
+    fs::path base(folder);
+
+    // modify ONLY the last folder name
+    fs::path full_folder =
+        base.parent_path() /
+        (base.filename().string() + "_N" + std::to_string(N));
+
+    fs::create_directories(full_folder);
+
+    const int P = patterns.size();
     const int n_blocks = num_blocks(N);
-    vector<int> binary(N);
+    std::vector<int> binary(N);
 
-    for (int r = 0; r < n_bits; ++r){
-        string path =
-            folder + 
-            "patterns_N" + to_string(N) +
-            "_r" + to_string(r) +
-            ".csv";
+    for (int r = 0; r < n_bits; ++r)
+    {
+        fs::path path =
+            full_folder /
+            ("patterns_r" + std::to_string(r) + ".csv");
 
-        ofstream file(path);
+        std::ofstream file(path);
         if (!file)
             continue;
 
@@ -163,19 +190,21 @@ void SimulationIO::SavePatterns(const string& folder, int N, const vector<vector
             file << ",block" << b;
         file << "\n";
 
-        for (int p = 0; p < P; ++p){
+        for (int p = 0; p < P; ++p)
+        {
             file << p;
 
-            // extraction du pattern p, replica r, sur tous les sites i
             for (int i = 0; i < N; ++i)
                 binary[i] = SpinToBit(patterns[p][i][r]);
 
-            for (int b = 0; b < n_blocks; ++b){
+            for (int b = 0; b < n_blocks; ++b)
+            {
                 int start = b * BITS_PER_BLOCK;
-                int end   = min(N, start + BITS_PER_BLOCK);
+                int end   = std::min(N, start + BITS_PER_BLOCK);
                 uint64_t config = PackBlock(binary.data(), start, end);
                 file << "," << config;
             }
+
             file << "\n";
         }
     }

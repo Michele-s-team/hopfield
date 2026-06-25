@@ -17,6 +17,10 @@ def extract_r(name):
     m = re.search(r"_r(\d+)\.csv$", name)
     return int(m.group(1)) if m else None
 
+def extract_N(name: str):
+    m = re.search(r"N(\d+)", name)
+    return int(m.group(1)) if m else None
+
 
 def fix_sweeps(sweeps):
     sweeps_plot = sweeps.copy().astype(float)
@@ -103,13 +107,14 @@ if __name__ == "__main__":
     # ALPHA_SELECTION = [2, 3]
     # ALPHA_SELECTION = [1, 4, 7]
 
-    ALPHA_SELECTION = [1, 2, 3, 4, 5]
+    ALPHA_SELECTION = [1, 2, 3, 4, 5, 6, 7]
 
     alpha_dirs = [
         ALL_ALPHA_DIRS[i - 1]
         for i in ALPHA_SELECTION
         if 1 <= i <= len(ALL_ALPHA_DIRS)
     ]
+   
 
     print("\nSelected alpha folders:")
     for d in alpha_dirs:
@@ -120,18 +125,18 @@ if __name__ == "__main__":
     # ----------------------------------------------------------
 
     plt.figure(figsize=(8, 5))
-
     sweeps_plot_last = None
+    results = {}
 
     for i, alpha_dir in enumerate(alpha_dirs, start=1):
-
         alpha = float(alpha_dir.name.split("_")[1])
         print(f"[{i}/{len(alpha_dirs)}] processing {alpha_dir.name}")
 
         sweeps, mean_curve, std_curve = process_alpha(alpha_dir)
-
         if sweeps is None:
             continue
+
+        results[alpha] = (sweeps, mean_curve, std_curve)
 
         sweeps_plot = fix_sweeps(sweeps)
         sweeps_plot_last = sweeps_plot
@@ -154,11 +159,46 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
+    dfs = []
+    for alpha, (sweeps, mean_curve, std_curve) in results.items():
+        dfs.append(pd.DataFrame({
+            "sweep":             sweeps,
+            f"mean_{alpha:.3f}": mean_curve,
+            f"sem_{alpha:.3f}":  std_curve,
+        }).set_index("sweep"))
+
+    df_export = pd.concat(dfs, axis=1).reset_index()
+
+    
+    # infer N and beta from first available overlap file
+    # ============================================================
+    # EXPORT FILE NAME METADATA
+    # ============================================================
+
+    first_alpha = alpha_dirs[0]
+
+    pattern_files = list((first_alpha / "patterns").glob("*_r*.csv"))
+
+    if not pattern_files:
+        raise RuntimeError("No pattern files found to infer N/beta")
+
+    N_match = re.search(r"N(\d+)", pattern_files[0].name)
+    N_label = N_match.group(1) if N_match else "?"
+
+    beta_match = re.search(r"beta([0-9.]+)", first_alpha.name)
+    beta_label = beta_match.group(1) if beta_match else "?"
+
+    df_export.to_csv(
+        f"../../results/max_overlap_vs_sweeps_N{N_label}_beta{beta_label}.csv",
+        index=False
+    )
+    print("Exported plot1_max_overlap.csv")
+
     # ----------------------------------------------------------
     # Plots 2 & 3 : zoom sur un alpha particulier
     # ----------------------------------------------------------
 
-    n_alpha = 3   # index dans ALL_ALPHA_DIRS (0-based)
+    n_alpha = 6   # index dans ALL_ALPHA_DIRS (0-based)
     alpha_dir = ALL_ALPHA_DIRS[n_alpha]
 
     if not alpha_dirs:

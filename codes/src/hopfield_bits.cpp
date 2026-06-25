@@ -380,7 +380,7 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& fil
     cout << "Bitwise initialization done" << endl;
 
     vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
-    SavePatterns("patterns/", patterns);
+    SavePatterns("patterns", patterns);
     cout << "Patterns saved" << endl;
 
     OpenSpinFiles(filename);
