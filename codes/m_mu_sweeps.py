@@ -128,7 +128,13 @@ def process_alpha(alpha_dir, N=None):
     curves = []
     sweeps = None
 
-    for cfile in config_files:
+    for j, cfile in enumerate(config_files, start=1):
+
+        print(
+            f"    realization {j}/{len(config_files)}",
+            end="\r",
+            flush=True
+        )
 
         r = extract_r(cfile.name)
         if r is None or r not in pattern_map:
@@ -163,8 +169,28 @@ if __name__ == "__main__":
 
     root_dir = Path("../results")
 
-    N_ALPHA = 1
-    alpha_dirs = sorted(root_dir.glob("alpha_*"))[:N_ALPHA]
+    # ============================================================
+    # CHOIX DES DOSSIERS ALPHA
+    # ============================================================
+
+    ALL_ALPHA_DIRS = sorted(root_dir.glob("alpha_*"))
+
+    # exemples :
+    # ALPHA_SELECTION = [1]
+    # ALPHA_SELECTION = [2, 3]
+    # ALPHA_SELECTION = [1, 4, 7]
+
+    ALPHA_SELECTION = [1,2,3,4,5,6,7,8]
+
+    alpha_dirs = [
+        ALL_ALPHA_DIRS[i - 1]
+        for i in ALPHA_SELECTION
+        if 1 <= i <= len(ALL_ALPHA_DIRS)
+    ]
+
+    print("\nSelected alpha folders:")
+    for d in alpha_dirs:
+        print(" ", d.name)
 
     # ----------------------------------------------------------
     # Plot 1 : max_mu |m^mu| moyenné sur les réalisations
@@ -172,10 +198,14 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(8, 5))
 
-    for alpha_dir in alpha_dirs:
+    for i, alpha_dir in enumerate(alpha_dirs, start=1):
 
         alpha = float(alpha_dir.name.split("_")[1])
-        print(alpha)
+
+        print(
+            f"[{i}/{len(alpha_dirs)}] "
+            f"processing {alpha_dir.name}"
+        )
 
         sweeps, mean_curve, std_curve = process_alpha(alpha_dir)
 
@@ -201,8 +231,14 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    alpha_dir = sorted(root_dir.glob("alpha_*"))[1]
-    alpha = float(alpha_dir.name.split("_")[0])
+
+    n_alpha=0
+    alpha_dir = sorted(root_dir.glob("alpha_*"))[n_alpha]
+
+    if not alpha_dirs:
+        raise RuntimeError("No alpha folder selected.")
+
+    alpha = float(alpha_dir.name.split("_")[1])
     print(f"alpha = {alpha:.3f}")
 
     spins_dir = alpha_dir / "spins"

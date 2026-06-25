@@ -6,111 +6,83 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-
 # ============================================================
-# ROOT
+# CONFIG
 # ============================================================
 
 root_dir = Path("../results")
 
+# choisir quels "lots alpha" analyser (ex: lots 2 et 3)
+SELECT_LOTS = {2, 3}
+
+# limiter le nombre de dossiers alpha (optionnel)
+N_ALPHA = None  # ex: 17 ou None pour tout garder
+
 
 # ============================================================
-# UTIL: PARSING
+# PARSING
 # ============================================================
 
-def extract_r(name):
+def get_r(name):
     m = re.search(r"_r(\d+)\.csv$", name)
     return int(m.group(1)) if m else None
 
 
-def extract_N(name):
+def get_N(name):
     m = re.search(r"N(\d+)", name)
     return int(m.group(1)) if m else None
 
 
 # ============================================================
-# OVERLAP (bit-safe, consistent with decoding logic)
+# OVERLAP
 # ============================================================
 
-def overlap_binary(config_row, pattern_row, N):
-
-    n_full = N // 64
-    remainder = N % 64
-
+def overlap(config, pattern, N):
+    n64 = N // 64
+    rem = N % 64
     corr = 0
 
-    for b in range(n_full):
-        s = int(str(config_row[f"block{b}"]))
-        p = int(str(pattern_row[f"block{b}"]))
-
+    for b in range(n64):
+        s = int(config[f"block{b}"])
+        p = int(pattern[f"block{b}"])
         xor = s ^ p
         corr += 64 - 2 * xor.bit_count()
 
-    if remainder:
-        s = int(str(config_row[f"block{n_full}"]))
-        p = int(str(pattern_row[f"block{n_full}"]))
-
-        mask = (1 << remainder) - 1
+    if rem:
+        s = int(config[f"block{n64}"])
+        p = int(pattern[f"block{n64}"])
+        mask = (1 << rem) - 1
         xor = (s ^ p) & mask
-
-        corr += remainder - 2 * xor.bit_count()
+        corr += rem - 2 * xor.bit_count()
 
     return corr / N
 
 
 # ============================================================
-# MAX OVERLAP FOR FINAL CONFIG
+# INDEX
 # ============================================================
 
-def compute_max_overlap(config_file, pattern_file, N):
+index = {}
 
-    config_df = pd.read_csv(config_file, dtype=str)
-    pattern_df = pd.read_csv(pattern_file, dtype=str)
+for alpha_dir in root_dir.glob("alpha_*"):
 
-    final_row = config_df.iloc[-1]
+    # extraction lot id si présent (ex: alpha_0.120_2)
+    parts = alpha_dir.name.split("_")
+    try:
+        lot_id = int(parts[-1])
+    except:
+        continue
 
-    m_max = -1.0
+    if SELECT_LOTS and lot_id not in SELECT_LOTS:
+        continue
 
-    for _, pattern_row in pattern_df.iterrows():
-        m = abs(overlap_binary(final_row, pattern_row, N))
-        if m > m_max:
-            m_max = m
+    spins = sorted((alpha_dir / "spins").glob("*.csv"))
+    patterns = {
+        get_r(p.name): p
+        for p in (alpha_dir / "patterns").glob("*.csv")
+    }
 
-    return (1 - m_max) / 2  # <-- error rate
-
-
-# ============================================================
-# INDEX BUILDING
-# ============================================================
-
-def build_index(root_dir):
-
-    index = {}
-
-    for alpha_dir in root_dir.glob("alpha_*"):
-
-        spins_dir = alpha_dir / "spins"
-        patterns_dir = alpha_dir / "patterns"
-
-        if not spins_dir.exists() or not patterns_dir.exists():
-            continue
-
-        config_files = sorted(spins_dir.glob("*.csv"))
-        pattern_files = list(patterns_dir.glob("*.csv"))
-
-        pattern_map = {}
-
-        for p in pattern_files:
-            r = extract_r(p.name)
-            if r is not None:
-                pattern_map[r] = p
-
-        index[alpha_dir] = {
-            "configs": config_files,
-            "patterns": pattern_map
-        }
-
-    return index
+    index[alpha_dir] = (spins, patterns)
 
 
 # ============================================================
@@ -118,80 +90,72 @@ def build_index(root_dir):
 # ============================================================
 
 any_pattern = next(root_dir.rglob("patterns_N*.csv"))
-N = extract_N(any_pattern.name)
+N = get_N(any_pattern.name)
 
-print("[INFO] Detected N =", N)
-
-
-# ============================================================
-# INDEX
-# ============================================================
-
-index = build_index(root_dir)
+print("[INFO] N =", N)
 
 
 # ============================================================
-# LIMIT NUMBER OF ALPHA FOLDERS (NEW)
+# LIMIT ALPHAS
 # ============================================================
 
-N_ALPHA = 17  # <-- choose how many alpha folders to keep
+items = sorted(index.items(), key=lambda x: float(x[0].name.split("_")[1]))
 
-sorted_items = sorted(index.items(), key=lambda x: float(x[0].name.split("_")[1]))
-sorted_items = sorted_items[:N_ALPHA]
+if N_ALPHA:
+    items = items[:N_ALPHA]
 
 
 # ============================================================
 # MAIN LOOP
 # ============================================================
 
-alpha_values = []
-mean_overlaps = []
+alphas = []
+errors = []
 
-for alpha_dir, data in sorted_items:
+for i, (alpha_dir, (configs, patterns)) in enumerate(items, 1):
 
-    print("\n[PROCESS]", alpha_dir)
+    print(f"\n[{i}/{len(items)}] {alpha_dir.name}")
 
-    configs = data["configs"]
-    patterns = data["patterns"]
+    vals = []
 
-    overlaps = []
+    for cfg_file in configs:
 
-    for cfile in configs:
-
-        r = extract_r(cfile.name)
-        if r is None:
-            continue
-
+        r = get_r(cfg_file.name)
         if r not in patterns:
             continue
 
-        pfile = patterns[r]
+        cfg = pd.read_csv(cfg_file, dtype=str).iloc[-1]
+        pat = pd.read_csv(patterns[r], dtype=str)
 
-        m = compute_max_overlap(cfile, pfile, N)
-        overlaps.append(m)
+        best = max(
+            abs(overlap(cfg, row, N))
+            for _, row in pat.iterrows()
+        )
 
-    if not overlaps:
-        print("[WARN] no overlaps for", alpha_dir)
+        vals.append((1 - best) / 2)
+
+    if not vals:
+        print("  [WARN] empty")
         continue
 
     alpha = float(alpha_dir.name.split("_")[1])
 
-    alpha_values.append(alpha)
-    mean_overlaps.append(np.mean(overlaps))
+    alphas.append(alpha)
+    errors.append(np.mean(vals))
 
-    print(f"alpha={alpha:.3f} mean={mean_overlaps[-1]:.4f}")
+    print(f"  alpha={alpha:.3f} error={errors[-1]:.4f}")
 
 
 # ============================================================
-# OUTPUT
+# SORT
 # ============================================================
 
-alpha_values = np.array(alpha_values)
-mean_overlaps = np.array(mean_overlaps)
+alphas = np.array(alphas)
+errors = np.array(errors)
 
-order = np.argsort(alpha_values)
-alpha_values = alpha_values[order]
-mean_overlaps = mean_overlaps[order]
+idx = np.argsort(alphas)
+alphas = alphas[idx]
+errors = errors[idx]
 
 
 # ============================================================
@@ -199,12 +163,11 @@ mean_overlaps = mean_overlaps[order]
 # ============================================================
 
 plt.figure(figsize=(8, 5))
-plt.plot(alpha_values, mean_overlaps, "o-")
+plt.plot(alphas, errors, "o-")
 
 plt.xlim([0, 0.2])
 plt.xlabel(r"$\alpha$")
-plt.ylabel(r"error rate")
-
-plt.grid(True)
+plt.ylabel("error rate")
+plt.grid()
 plt.tight_layout()
 plt.show()

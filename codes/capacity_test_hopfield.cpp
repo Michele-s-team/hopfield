@@ -71,12 +71,12 @@ int main() {
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 32;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
-    const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 15;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
-    double step=0.005;
+    double step=0.01;
     double alpha_min=0.01;
     double alpha_max=0.18;
 
@@ -121,7 +121,7 @@ int main() {
         // ── Evolution: HopfieldBits ──────────────────────────────────────────
         gsl_rng_set(ran, 42);  // fixed seed for the dynamics
         clock_t start_bits = clock();
-        bits.evolve_save_bits(ran, 0.1, "spins/");
+        bits.evolve_save_bits(ran, 0.005, "spins/");
         clock_t end_bits = clock();
         double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
         cout << "\nHopfieldBits done for alpha = " << alpha
