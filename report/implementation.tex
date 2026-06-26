@@ -31,7 +31,7 @@ This algorithm however becomes computationally demanding when one attempts to sa
 % left boxes
 \foreach \i/\label in {0/0, 1/1, 2/2} {
     \draw (\i*\step, 0) rectangle (\i*\step+\boxw, 0.6);
-    \node[font=\small] at (\i*\step+0.3, 0.3) {$b_{\label}$};
+    \node[font=\small] at (\i*\step+0.3, 0.3) {$b^{\label}$};
 }
 % ...
 \node at (3*\step+0.33, 0.3) {$\cdots$};
@@ -41,7 +41,7 @@ This algorithm however becomes computationally demanding when one attempts to sa
     \draw (4*\step + \i*\step, 0)
         rectangle (4*\step + \i*\step+\boxw, 0.6);
     \node[font=\small] at (4*\step + \i*\step+0.3, 0.3)
-        {$b_{\label}$};
+        {$b^{\label}$};
 }
 
 % left label
@@ -114,14 +114,14 @@ Now that we know how to conveniently handle binary variables such as spins, we n
 % Row k=0
 \foreach \i/\clabel in {0/0,1/1,2/2}{
     \node[bitbox] at ({\i*\step+0.5*\boxsize},{0.5*\boxsize})
-        {$b_{\clabel}^{0}$};
+        {$b_{0}^{\clabel}$};
 }
 
 \node at ({3*\step+0.38},{0.5*\boxsize}) {$\cdots$};
 
 \foreach \i/\clabel in {0/62,1/63}{
     \node[bitbox] at ({(4+\i)*\step+0.5*\boxsize},{0.5*\boxsize})
-        {$b_{\clabel}^{0}$};
+        {$b_{0}^{\clabel}$};
 }
 
 \node[right] at ({6*\step+0.15},{0.5*\boxsize}) {$2^0$};
@@ -129,14 +129,14 @@ Now that we know how to conveniently handle binary variables such as spins, we n
 % Row k=1
 \foreach \i/\clabel in {0/0,1/1,2/2}{
     \node[bitbox] at ({\i*\step+0.5*\boxsize},{-\rowsep+0.5*\boxsize})
-        {$b_{\clabel}^{1}$};
+        {$b_{1}^{\clabel}$};
 }
 
 \node at ({3*\step+0.38},{-\rowsep+0.5*\boxsize}) {$\cdots$};
 
 \foreach \i/\clabel in {0/62,1/63}{
     \node[bitbox] at ({(4+\i)*\step+0.5*\boxsize},{-\rowsep+0.5*\boxsize})
-        {$b_{\clabel}^{1}$};
+        {$b_{1}^{\clabel}$};
 }
 
 \node[right] at ({6*\step+0.15},{-\rowsep+0.5*\boxsize}) {$2^1$};
@@ -148,14 +148,14 @@ Now that we know how to conveniently handle binary variables such as spins, we n
 % Row k=l
 \foreach \i/\clabel in {0/0,1/1,2/2}{
     \node[bitbox] at ({\i*\step+0.5*\boxsize},{-3*\rowsep+0.5*\boxsize})
-        {$b_{\clabel}^{l}$};
+        {$b_{l}^{\clabel}$};
 }
 
 \node at ({3*\step+0.38},{-3*\rowsep+0.5*\boxsize}) {$\cdots$};
 
 \foreach \i/\clabel in {0/62,1/63}{
     \node[bitbox] at ({(4+\i)*\step+0.5*\boxsize},{-3*\rowsep+0.5*\boxsize})
-        {$b_{\clabel}^{l}$};
+        {$b_{l}^{ \clabel}$};
 }
 
 \node[right] at ({6*\step+0.15},{-3*\rowsep+0.5*\boxsize}) {$2^{l}$};
@@ -201,18 +201,18 @@ The simulation of the dynamics has been entirely coded in \texttt{C++}, using an
 % left boxes
 \foreach \i/\label in {0/0, 1/1, 2/2} {
     \draw (\i*\step, 0) rectangle (\i*\step+\boxw, 0.6);
-    \node[font=\small] at (\i*\step+0.3, 0.3) {$b_{\label}^1$};
+    \node[font=\small] at (\i*\step+0.3, 0.3) {$b_1^\label$};
 }
 
 % ...
 \node at (3*\step+0.33, 0.3) {$\cdots$};
 
 % right boxes
-\foreach \i/\label in {0/62, 1/63} {
+\foreach \i/\clabel in {0/62, 1/63} {
     \draw (4*\step + \i*\step, 0)
         rectangle (4*\step + \i*\step+\boxw, 0.6);
     \node[font=\small] at (4*\step + \i*\step+0.3, 0.3)
-        {$b_{\label}^1$};
+        {$b_1^{\clabel}$};
 }
 % left label
 \node at (-0.6, 0.3) {$S_1=$};

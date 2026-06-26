@@ -79,8 +79,8 @@ Knowing that, we can write the pseudocode for the evolution of the Ising network
 \DontPrintSemicolon
 \caption{Ising Metropolis sweep (bitwise)}
 
-\KwIn{RNG state, lattice spins $\{S_i\}$, couplings $J$, inverse temperature $\beta$}
-\KwOut{Updated spin configurations across all replicas}
+\KwIn{Lattice spins $\{S_i\}$, couplings $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
 
 \BlankLine
 $\Bits\ \mathtt{xnor},\ \mathtt{mask}$
@@ -99,7 +99,7 @@ $\UnsignedInt\ T_k,\ \mathtt{threshold}$
             $\mathtt{threshold} \leftarrow \mathbf{0}$
 
             \For{$i \in \partial k$}{
-                $\mathtt{xnor}\ \leftarrow S_k \odot S_i$
+                $\mathtt{xnor}\ \leftarrow B_k \odot B_i$
                 \tcp*{bitwise XNOR across replicas}
 
                 $T_k \mathrel{+}= \mathtt{xnor}$
@@ -113,7 +113,7 @@ $\UnsignedInt\ T_k,\ \mathtt{threshold}$
             $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
             \tcp*{per-replica flip condition}
 
-        $S_k \leftarrow S_k \oplus \mathtt{mask}$ \tcp*{bitwise spin flip: only replicas}
+        $B_k \leftarrow B_k \oplus \mathtt{mask}$ \tcp*{bitwise spin flip: only replicas}
         \tcp*[r]{for which $\mathtt{mask}^{(\ell)}=1$ are flipped}
         }
     }

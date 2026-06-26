@@ -50,16 +50,16 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.78104195)%
+  \begin{picture}(1,0.77827828)%
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{spins_Bits.pdf}}%
-    \put(0.08884036,0.47437301){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_1$ \end{tabular}}}}%
-    \put(0.46910244,0.47437301){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_2$ \end{tabular}}}}%
-    \put(0.84936454,0.47437301){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_3$ \end{tabular}}}}%
-    \put(0.08884036,0.09280271){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_4$ \end{tabular}}}}%
-    \put(0.46910244,0.09280271){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_5$ \end{tabular}}}}%
-    \put(0.84936454,0.09280271){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_6$ \end{tabular}}}}%
+    \put(0.08884036,0.47437297){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_1$ \end{tabular}}}}%
+    \put(0.46910244,0.47437297){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_2$ \end{tabular}}}}%
+    \put(0.84936454,0.47437297){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_3$ \end{tabular}}}}%
+    \put(0.08884036,0.09280267){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_4$ \end{tabular}}}}%
+    \put(0.46910244,0.09280267){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_5$ \end{tabular}}}}%
+    \put(0.84936454,0.09280267){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_6$ \end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{spins_Bits.pdf}}%
   \end{picture}%
 \endgroup%
