@@ -23,9 +23,11 @@ using namespace std;
 
 #include "main.hpp"
 #include "int.hpp"
+#include "simulation_base.hpp"
 #include "ising_model.hpp"
 #include "ising_nobits.hpp"
 #include "ising_bits.hpp"
+#include <sys/stat.h> // for mkdir
 
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
 
@@ -113,6 +115,11 @@ void print_neurons(const vector<int>& neurons_before,
         cout << "WARNING: differences detected between classic and bitwise results\n";
 }
 
+void make_dir(const string& path) {
+    mkdir(path.c_str(), 0755);
+}
+
+
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
@@ -120,10 +127,11 @@ int main() {
 
     // ── Parameters ────────────────────────────
     const int    L        = 100;
-    const int    N_sweeps = pow(2, 18);
+    int    N_sweeps = 1 << 16;
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;    
+    
     const double T_min    = 0.1;
     const double step_1   = 0.1;
     const double T_1      = 1.5;
@@ -148,7 +156,7 @@ int main() {
         for (int n = n_start; n <= n_end; ++n)
             temperatures.push_back(a + n*h);
     };
-    /*
+
     add_segment(T_min, T_1, step_1, true);
     add_segment(T_1,  T_2, step_2, false);
     add_segment(T_2,  T_3, step_3, false);
@@ -156,9 +164,8 @@ int main() {
     add_segment(T_4,  T_5, step_5, false);
     add_segment(T_5,  T_6, step_6, false);
     add_segment(T_6,  T_max, step_7, false); 
-    */
+    
 
-    temperatures.push_back(1.5);
     cout << "[main] Parameters: N_spins=" << L*L
          << "  N_sweeps=" << N_sweeps
          << "\nTemperatures: " <<endl;
@@ -167,85 +174,60 @@ int main() {
     cout <<" \n";
 
     // ── Model initialization ───────────────────
-
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    IsingBits   bits  (L, 1.0 / 1.5, N_sweeps);
-    //IsingNoBits nobits(L, 1.0 / T_min, N_sweeps);
-
+    IsingBits bits(L * L, 1, N_sweeps); //placeholder initialization of betaJ
     bits.initNetwork2D_PBC();
-    //nobits.initNetwork2D_PBC();
     cout << "Network initialized\n" << endl;
 
     gsl_rng_set(ran, 123);
     bits.initSpins(ran);
-    //vector<int> initial_config = bits.getSpinsConfig();
-    //nobits.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
+    bits.initSpinsBits(ran);
+    cout << "Bitwise initialization done" << endl;
+
     // ── Temperature sweep ──────────────────────
-
     for (int i = 0; i < (int)temperatures.size(); ++i) {
-        //bits.OpenSpinFiles("../results/magnetizations/magnetizations_bits");
+        double T       = temperatures[temperatures.size() - i - 1];
+        double betaJ   = 1.0 / T;
 
-        double T = temperatures[temperatures.size()-i-1];
-        const double betaJ = 1.0 / T;
+        bits.setBeta(betaJ);
+
+        if (i==0){
+            N_sweeps = 1 << 16;
+            bits.setNSweeps(N_sweeps);
+        }
+        else{
+            N_sweeps = 1 << 15;
+            bits.setNSweeps(N_sweeps);
+        }
+
         cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
-        // --- Bitwise simulation ---
-        bits.setBeta(betaJ);
-        //bits.initSpinsFromConfig(initial_config);
-        //gsl_rng_set(ran, 123);
-
-        auto t_start_bits = chrono::high_resolution_clock::now();
-        //bits.evolve(ran);
-        bits.evolve_save(ran,0.1, "../results/magnetizations/T=1.5/magnetizations_bits");  //evolve for all N_sweeps without saving intermediate data; to save, use ‘evolve_save’ and specify the save frequency
-        auto t_end_bits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_bits = t_end_bits - t_start_bits;
-
-        bits.SaveMagnetizations(N_sweeps); //saves the last values of magnetizations
-        cout << "  > Bits: " << dt_bits.count() / 1000.0 << " s" << endl;
-        //bits.CloseSpinFiles();
-
-
-
+        // Build folder name
+        ostringstream folder_name;
+        folder_name << "../results/Ising/T_"
+                    << fixed << setprecision(3) << T;
+        string base_folder = folder_name.str();
+        make_dir(base_folder);
         
+        bits.SetBaseFolder(base_folder.c_str());
 
-        /*
-        // --- Classic simulation (uncomment to compare) ---
-        nobits.setBJ(betaJ);
-        nobits.initSpinsFromConfig(initial_config);
-        gsl_rng_set(ran, 123);
+        // Run simulation and save at given frequency — fully bitwise initialization
+        bits.runSweeps(ran, /*save=*/false, 0, /*shift=*/0);
+        cout <<" first half of the simulation done"<<endl;
+        bits.setNSweeps(N_sweeps);
 
-        auto t_stard_nobits = chrono::high_resolution_clock::now();
-        nobits.evolve(ran);
-        auto t_end_nobits = chrono::high_resolution_clock::now();
-        chrono::duration<double, milli> dt_nobits = t_end_nobits - t_stard_nobits;
+        string path = "/spins_N" + std::to_string(L*L)
+                        + "_beta" + SimulationBase::format_beta(betaJ);
 
-        cout << "  > NoBits: " << dt_nobits.count() / 1000.0 << " s" << endl;
-        cout << "  > Speedup: " << dt_nobits.count() / dt_bits.count() << "x" << endl;
-        cout << "------------------------------------------" << endl;
-
-        // --- Magnetization comparison ---
-        vector<double> mag_bits(n_bits), mag_nobits(n_bits);
-        bits.GetMagnetizations(mag_bits);
-        nobits.GetMagnetizations(mag_nobits);
-
-        bool equal = true;
-        for (int r = 0; r < n_bits; r++) {
-            if (mag_bits[r] != mag_nobits[r]) {
-                equal = false;
-                cout << "Difference at r=" << r
-                     << ": bits=" << mag_bits[r]
-                     << " nobits=" << mag_nobits[r] << endl;
-            }
-        }
-        if (equal) cout << "OK: magnetizations are identical." << endl;
-
-        */
-
-
+        bits.OpenSpinFiles(path.c_str());
+        bits.runSweeps(ran, /*save=*/true, 0.005,/*shift=*/N_sweeps);
+        cout <<" second half of the simulation done"<<endl;
+        bits.SaveSpinConfigurations(N_sweeps);
+        bits.CloseSpinFiles();
     }
-    
+
     gsl_rng_free(ran);
     return 0;
 }

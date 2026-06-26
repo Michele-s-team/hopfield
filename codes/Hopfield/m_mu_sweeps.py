@@ -185,7 +185,7 @@ if __name__ == "__main__":
     # Plots 2 & 3 : zoom sur un alpha particulier
     # ----------------------------------------------------------
 
-    n_alpha = 17   # index 0-based dans ALL_ALPHA_DIRS
+    n_alpha = 2   # index 0-based dans ALL_ALPHA_DIRS
     alpha_dir   = ALL_ALPHA_DIRS[n_alpha]
     overlaps_dir = alpha_dir / overlaps_dir_name
 
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     # Plot 2 : tous les m^mu pour une réalisation donnée
     # ----------------------------------------------------------
 
-    r_target = 41
+    r_target = 16
 
     ofile = overlaps_dir / f"overlaps_N{N}_beta{beta}_r{r_target}.csv"
     sweeps, overlaps = load_overlaps(ofile)

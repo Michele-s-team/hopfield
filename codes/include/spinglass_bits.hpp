@@ -36,9 +36,11 @@ public:
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 
     void initSpinsBits(gsl_rng* ran);
-    void initCouplingsBits(gsl_rng* ran);
+    void initSpinsFromConfigBits(vector<Bits> Config);
 
+    void initCouplingsBits(gsl_rng* ran);
     void initCouplingsFromConfig(vector<vector<Bits>> Config);
+    
     vector<vector<Bits>> getCouplingsConfig();
 
 private:

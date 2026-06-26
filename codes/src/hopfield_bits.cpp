@@ -179,18 +179,22 @@ void HopfieldBits::initCouplingsBits() {
 
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.
-void HopfieldBits::initPatternsFromConfig(vector<vector<Bits>> Config) {
+void HopfieldBits::initPatternsFromConfigBits(vector<vector<Bits>> Config) {
     Patterns = Config;
     initCouplingsBits();
 }
 
+void HopfieldBits::initSpinsFromConfigBits(vector<Bits> Config) {
+    Bits_Spins_Set = Config;
+}
+
 // Return a copy of the full pattern tensor
- vector<vector<Bits>> HopfieldBits::getPatterns() {
+ vector<vector<Bits>> HopfieldBits::getPatternsBits() {
     return Patterns;
 }
 
 // Return a copy of the full coupling tensor
-vector<vector<UnsignedInt>> HopfieldBits::getCouplingsConfig() {
+vector<vector<UnsignedInt>> HopfieldBits::getCouplingsConfigBits() {
     return Couplings;
 }
 

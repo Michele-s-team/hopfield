@@ -46,9 +46,10 @@ public:
     void initPatternsBits(gsl_rng* ran);
     void initCouplingsBits();
 
-    void initPatternsFromConfig(vector<vector<Bits>> Config);
-    vector<vector<Bits>> getPatterns();
-    vector<vector<UnsignedInt>> getCouplingsConfig();
+    void initSpinsFromConfigBits(vector<Bits> Config);
+    void initPatternsFromConfigBits(vector<vector<Bits>> Config);
+    vector<vector<Bits>> getPatternsBits();
+    vector<vector<UnsignedInt>> getCouplingsConfigBits();
     vector<vector<vector<int>>> getPatternsBitsToCanonical();
 
 

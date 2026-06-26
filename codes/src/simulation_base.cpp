@@ -57,7 +57,7 @@ void SimulationBase::CloseMagnetizationFiles(){
     m_io.CloseMagnetizationFiles();
 }
 
-static inline string format_beta(double beta){
+string SimulationBase::format_beta(double beta){
     ostringstream oss;
     oss << fixed << setprecision(6) << beta;
     return oss.str();

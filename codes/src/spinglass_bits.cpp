@@ -86,6 +86,11 @@ void SpinGlassBits::initSpinsBits(gsl_rng* ran) {
     }
 }
 
+void SpinGlassBits::initSpinsFromConfigBits(vector<Bits> Config) {
+    Bits_Spins_Set = Config;
+}
+
+
 // Initialize Couplings directly in bit-sliced representation
 void SpinGlassBits::initCouplingsBits(gsl_rng* ran) {
     Couplings.clear();
@@ -169,10 +174,12 @@ void SpinGlassBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
 void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
-    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2)); // no need for more space allocation
+    UnsignedInt sum((unsigned long long int)(max_deg * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
+    UnsignedInt threshold((unsigned long long int)(max_deg * 2)); // no need for more space allocation
     int rng;
     int i;
 

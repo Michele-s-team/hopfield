@@ -18,10 +18,6 @@ class IsingBits : public IsingModel {
 private:
     std::vector<Bits> Bits_Spins_Set;
     std::vector<UnsignedInt> Neighbor_Count;
-    
-    void fromCanonical();
-    void toCanonical();
-    void runSweeps(gsl_rng* ran, bool save, double freq);
 
 public:
 
@@ -34,6 +30,11 @@ public:
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 
     void initSpinsBits(gsl_rng* ran);
+    void initSpinsFromConfigBits(vector<Bits> Config);
+
+    void fromCanonical();
+    void toCanonical();
+    void runSweeps(gsl_rng* ran, bool save, double freq, int shift);
 
     void evolve(gsl_rng* ran);
     void evolve_save(gsl_rng* ran, double freq, const std::string& folder);

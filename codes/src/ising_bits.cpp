@@ -73,6 +73,11 @@ void IsingBits::initSpinsBits(gsl_rng* ran) {
     }
 }
 
+void IsingBits::initSpinsFromConfigBits(vector<Bits> Config) {
+    Bits_Spins_Set = Config;
+}
+
+
 
 // =====================================================
 // OBSERVABLES
@@ -117,11 +122,12 @@ void IsingBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // =====================================================
 
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
-void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
+void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask;
-    UnsignedInt sum((unsigned long long int)(neighbor_count[0] * 2));
-    UnsignedInt threshold((unsigned long long int)(neighbor_count[0] * 2));
+    UnsignedInt sum((unsigned long long int)(max_deg * 2));
+    UnsignedInt threshold((unsigned long long int)(max_deg * 2));
     int rng;
     int spin;
 
@@ -158,7 +164,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq){
         }
 
         if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
+            SaveSpinConfigurations(shift + sweep);
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
