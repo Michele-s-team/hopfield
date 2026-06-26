@@ -395,7 +395,6 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& fil
     CloseSpinFiles();
     cout << "evolve_save_bits called, closing: " << filename << endl;
 }
-
 // Run simulation without saving — fully bitwise initialization
 void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
     initPatternsBits(ran);
