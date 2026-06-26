@@ -83,7 +83,7 @@ Knowing that, we can write the pseudocode for the evolution of the Ising network
 \KwOut{Updated spin configurations across all replicas}
 
 \BlankLine
-$\Bits\ \mathtt{mask}$
+$\Bits\ \mathtt{xnor},\ \mathtt{mask}$
 
 $\UnsignedInt\ T_k,\ \mathtt{threshold}$
 
@@ -99,7 +99,7 @@ $\UnsignedInt\ T_k,\ \mathtt{threshold}$
             $\mathtt{threshold} \leftarrow \mathbf{0}$
 
             \For{$i \in \partial k$}{
-                $\Bits\ \mathtt{xnor} \leftarrow S_k \odot S_i$
+                $\mathtt{xnor}\ \leftarrow S_k \odot S_i$
                 \tcp*{bitwise XNOR across replicas}
 
                 $T_k \mathrel{+}= \mathtt{xnor}$
