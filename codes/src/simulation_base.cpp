@@ -8,6 +8,9 @@
 #include "simulation_base.hpp"
 #include "main.hpp"
 
+#include <sstream>
+#include <iomanip>
+
 
 // =====================================================
 // CONSTRUCTION
@@ -52,6 +55,12 @@ void SimulationBase::OpenMagnetizationFiles(const string& subfolder){
 
 void SimulationBase::CloseMagnetizationFiles(){
     m_io.CloseMagnetizationFiles();
+}
+
+static inline string format_beta(double beta){
+    ostringstream oss;
+    oss << fixed << setprecision(6) << beta;
+    return oss.str();
 }
 
 // =====================================================
@@ -117,7 +126,7 @@ void SimulationBase::SaveSpinConfigurations(int sweep){
 
 void SimulationBase::SavePatterns(const string& subfolder,
                                    const vector<vector<vector<int>>>& patterns){
-    m_io.SavePatterns(m_base_folder + subfolder, N, patterns);
+    m_io.SavePatterns(m_base_folder + subfolder, patterns, N);
 }
 
 // =====================================================

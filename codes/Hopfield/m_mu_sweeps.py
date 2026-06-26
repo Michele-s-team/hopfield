@@ -25,7 +25,7 @@ def extract_N(name: str):
 def fix_sweeps(sweeps):
     sweeps_plot = sweeps.copy().astype(float)
     if sweeps_plot[0] == 0 and len(sweeps_plot) > 1:
-        sweeps_plot[0] = sweeps_plot[1] / 2.0  # moitié du gap suivant
+        sweeps_plot[0] = sweeps_plot[1] / 2.0
     return sweeps_plot
 
 
@@ -34,10 +34,6 @@ def fix_sweeps(sweeps):
 # ============================================================
 
 def load_overlaps(overlap_file):
-    """
-    Lit un fichier overlaps_r{r}.csv.
-    Retourne (sweeps: 1D int array, overlaps: 2D float array (n_sweeps, n_patterns)).
-    """
     df = pd.read_csv(overlap_file)
     sweeps = df["sweep"].to_numpy(dtype=int)
     m_cols = [c for c in df.columns if c.startswith("m_")]
@@ -46,21 +42,23 @@ def load_overlaps(overlap_file):
 
 
 # ============================================================
-# PROCESS ONE ALPHA  (depuis overlaps précalculés)
+# PROCESS ONE ALPHA
 # ============================================================
 
-def process_alpha(alpha_dir):
-    """
-    Pour chaque réalisation r disponible dans alpha_dir/overlaps/,
-    calcule max_mu |m^mu| à chaque sweep.
-    Retourne (sweeps, mean_curve, std_curve).
-    """
-    overlaps_dir = alpha_dir / "overlaps"
+def process_alpha(alpha_dir, overlaps_dir_name):
+    m = re.search(r"overlaps_N(\d+)_beta([0-9.]+)", overlaps_dir_name)
+    N    = int(m.group(1))
+    beta = float(m.group(2))
+
+    overlaps_dir = alpha_dir / overlaps_dir_name
+    print(f"  [DEBUG] looking for {overlaps_dir}")
+    print(f"  [DEBUG] exists: {overlaps_dir.exists()}")
     if not overlaps_dir.exists():
         print(f"  [WARN] pas de dossier overlaps dans {alpha_dir.name}")
         return None, None, None
 
-    overlap_files = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    overlap_files = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta{beta}_r*.csv"))
+    print(f"  [DEBUG] files found: {len(overlap_files)}")
     if not overlap_files:
         return None, None, None
 
@@ -69,11 +67,9 @@ def process_alpha(alpha_dir):
 
     for j, ofile in enumerate(overlap_files, start=1):
         print(f"    realization {j}/{len(overlap_files)}", end="\r", flush=True)
-
         sw, ov = load_overlaps(ofile)
-        curve = np.max(np.abs(ov), axis=1)   # max_mu |m^mu| pour chaque sweep
+        curve = np.max(np.abs(ov), axis=1)
         curves.append(curve)
-
         if sweeps is None:
             sweeps = sw
 
@@ -95,30 +91,37 @@ def process_alpha(alpha_dir):
 if __name__ == "__main__":
 
     root_dir = Path("../../results")
-
-    # ============================================================
-    # CHOIX DES DOSSIERS ALPHA
-    # ============================================================
+    print(root_dir.resolve())
 
     ALL_ALPHA_DIRS = sorted(root_dir.glob("alpha_*"))
 
-    # exemples :
-    # ALPHA_SELECTION = [1]
-    # ALPHA_SELECTION = [2, 3]
-    # ALPHA_SELECTION = [1, 4, 7]
-
-    ALPHA_SELECTION = [1, 2, 3, 4, 5, 6, 7]
+    ALPHA_SELECTION = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
     alpha_dirs = [
         ALL_ALPHA_DIRS[i - 1]
         for i in ALPHA_SELECTION
         if 1 <= i <= len(ALL_ALPHA_DIRS)
     ]
-   
 
     print("\nSelected alpha folders:")
     for d in alpha_dirs:
         print(" ", d.name)
+
+    # détecter le nom exact du dossier overlaps depuis le premier alpha
+    first_alpha = alpha_dirs[0]
+    overlap_dirs = sorted(first_alpha.glob("overlaps_N*_beta*"))
+    if not overlap_dirs:
+        raise RuntimeError("No overlaps_N*_beta* folder found")
+
+    overlaps_dir_name = overlap_dirs[0].name   # nom exact, ex: overlaps_N1024_beta5.000000
+
+    m = re.search(r"overlaps_N(\d+)_beta([0-9.]+)", overlaps_dir_name)
+    N_label    = m.group(1)
+    beta_label = m.group(2)
+    N    = int(N_label)
+    beta = float(beta_label)
+
+    print(f"\nDetected: N={N}, beta={beta}, overlaps folder='{overlaps_dir_name}'")
 
     # ----------------------------------------------------------
     # Plot 1 : max_mu |m^mu| moyenné sur les réalisations
@@ -132,8 +135,9 @@ if __name__ == "__main__":
         alpha = float(alpha_dir.name.split("_")[1])
         print(f"[{i}/{len(alpha_dirs)}] processing {alpha_dir.name}")
 
-        sweeps, mean_curve, std_curve = process_alpha(alpha_dir)
+        sweeps, mean_curve, std_curve = process_alpha(alpha_dir, overlaps_dir_name)
         if sweeps is None:
+            print(f"  [WARN] no data for {alpha_dir.name}")
             continue
 
         results[alpha] = (sweeps, mean_curve, std_curve)
@@ -159,6 +163,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
+    if not results:
+        raise RuntimeError("No results to export — check overlaps folder names.")
+
     dfs = []
     for alpha, (sweeps, mean_curve, std_curve) in results.items():
         dfs.append(pd.DataFrame({
@@ -168,46 +175,22 @@ if __name__ == "__main__":
         }).set_index("sweep"))
 
     df_export = pd.concat(dfs, axis=1).reset_index()
-
-    
-    # infer N and beta from first available overlap file
-    # ============================================================
-    # EXPORT FILE NAME METADATA
-    # ============================================================
-
-    first_alpha = alpha_dirs[0]
-
-    pattern_files = list((first_alpha / "patterns").glob("*_r*.csv"))
-
-    if not pattern_files:
-        raise RuntimeError("No pattern files found to infer N/beta")
-
-    N_match = re.search(r"N(\d+)", pattern_files[0].name)
-    N_label = N_match.group(1) if N_match else "?"
-
-    beta_match = re.search(r"beta([0-9.]+)", first_alpha.name)
-    beta_label = beta_match.group(1) if beta_match else "?"
-
     df_export.to_csv(
         f"../../results/max_overlap_vs_sweeps_N{N_label}_beta{beta_label}.csv",
         index=False
     )
-    print("Exported plot1_max_overlap.csv")
+    print(f"Exported max_overlap_vs_sweeps_N{N_label}_beta{beta_label}.csv")
 
     # ----------------------------------------------------------
     # Plots 2 & 3 : zoom sur un alpha particulier
     # ----------------------------------------------------------
 
-    n_alpha = 6   # index dans ALL_ALPHA_DIRS (0-based)
-    alpha_dir = ALL_ALPHA_DIRS[n_alpha]
-
-    if not alpha_dirs:
-        raise RuntimeError("No alpha folder selected.")
+    n_alpha = 17   # index 0-based dans ALL_ALPHA_DIRS
+    alpha_dir   = ALL_ALPHA_DIRS[n_alpha]
+    overlaps_dir = alpha_dir / overlaps_dir_name
 
     alpha = float(alpha_dir.name.split("_")[1])
     print(f"\nalpha = {alpha:.3f}")
-
-    overlaps_dir = alpha_dir / "overlaps"
 
     # ----------------------------------------------------------
     # Plot 2 : tous les m^mu pour une réalisation donnée
@@ -215,16 +198,12 @@ if __name__ == "__main__":
 
     r_target = 41
 
-    ofile = overlaps_dir / f"overlaps_r{r_target}.csv"
+    ofile = overlaps_dir / f"overlaps_N{N}_beta{beta}_r{r_target}.csv"
     sweeps, overlaps = load_overlaps(ofile)
 
     sweeps_plot = fix_sweeps(sweeps)
     n_patterns  = overlaps.shape[1]
     dominant    = np.argmax(np.abs(overlaps[-1, :]))
-
-    # infer N from pattern filename (pour le titre)
-    pattern_files = list((alpha_dir / "patterns").glob(f"*_r{r_target}.csv"))
-    N_label = re.search(r"N(\d+)", pattern_files[0].name).group(1) if pattern_files else "?"
 
     plt.figure(figsize=(9, 5))
 
@@ -251,7 +230,7 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(9, 5))
 
-    ofiles   = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    ofiles   = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta{beta}_r*.csv"))
     n_real   = len(ofiles)
     colors   = [hsv_to_rgb([i / n_real, 0.55, 0.75]) for i in range(n_real)]
 

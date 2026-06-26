@@ -35,7 +35,7 @@ string m_base_folder;
 
     void SaveMagnetizations(const int sweep, const vector<double>& magnetizations);
     void SaveSpinConfigurations(int sweep, const vector<vector<uint64_t>>& configs);
-    void SavePatterns(const string& folder, int N, const vector<vector<vector<int>>>& patterns);
+    void SavePatterns(const string& folder,const vector<vector<vector<int>>>& patterns, int N);
 
 private:
     static inline int num_blocks(int N);

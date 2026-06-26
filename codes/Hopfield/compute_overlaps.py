@@ -30,7 +30,7 @@ root_dir = Path("../../results")
 #   ALPHA_SELECTION = [1]         # premier alpha uniquement
 #   ALPHA_SELECTION = [1, 3, 5]   # alphas d'index 1, 3 et 5
 
-ALPHA_SELECTION = [1, 2, 3, 4, 5, 6, 7 ,8 ]
+ALPHA_SELECTION = [1, 2, 3, 4, 5, 6, 7 ,8, 9 ,10 ,11, 12, 13, 14 ,15, 16, 17, 18 ]
 
 SKIP_EXISTING = True   # False → écrase les fichiers déjà calculés
 
@@ -49,6 +49,12 @@ def extract_N(name: str):
 def extract_beta(name: str):
     m = re.search(r"beta(\d+)", name)
     return int(m.group(1)) if m else None
+
+def extract_N_beta_from_dir(name: str):
+    m = re.search(r"spins_N(\d+)_beta([\d.]+)", name)
+    if m:
+        return int(m.group(1)), float(m.group(2))
+    return None, None
 
 # ============================================================
 # BIT-SAFE OVERLAP
@@ -78,7 +84,6 @@ def overlap_binary(config_row, pattern_row, N: int) -> float:
 # ============================================================
 # RESOLVE ALPHA SELECTION
 # ============================================================
-
 ALL_ALPHA_DIRS = sorted(
     root_dir.glob("alpha_*"),
     key=lambda p: float(p.name.split("_")[1])
@@ -107,102 +112,75 @@ for d in selected:
 
 for alpha_dir in selected:
 
-    spins_dir    = alpha_dir / "spins"
-    patterns_dir = alpha_dir / "patterns"
-
-    if not spins_dir.exists() or not patterns_dir.exists():
-        print(f"\n[SKIP] {alpha_dir.name}: missing spins/ or patterns/")
+    spins_dirs = sorted(alpha_dir.glob("spins_N*_beta*"))
+    if not spins_dirs:
+        print(f"\n[SKIP] {alpha_dir.name}: no spins_N*_beta* folder found")
         continue
 
-    alpha   = float(alpha_dir.name.split("_")[1])
-    out_dir = alpha_dir / f"overlaps_N{N}_beta{beta}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n[ALPHA] {alpha:.4f} -> overlaps_N{N}_beta{beta}")
+    for spins_dir in spins_dirs:
 
-    pattern_map = {}
-    for pf in patterns_dir.glob("*.csv"):
-        r = extract_r(pf.name)
-        if r is not None:
-            pattern_map[r] = pf
-
-    for spin_file in sorted(spins_dir.glob("*.csv")):
-
-        r = extract_r(spin_file.name)
-        if r is None or r not in pattern_map:
-            continue
-
-        pattern_file = pattern_map[r]
-
-        N = extract_N(pattern_file.name)
-        beta = extract_beta(pattern_file.name)
-
+        N, beta = extract_N_beta_from_dir(spins_dir.name)
         if N is None:
-            raise ValueError(
-                f"Cannot extract N from {pattern_file.name}"
-            )
-
-        if beta is None:
-            raise ValueError(
-                f"Cannot extract beta from {pattern_file.name}"
-            )
-
-        out_file = (
-            out_dir /
-            f"overlaps_N{N}_beta{beta}_r{r}.csv"
-        )
-
-        if SKIP_EXISTING and out_file.exists():
-            print(
-                f"  r={r} (N={N}, beta={beta}) "
-                "... skipped (already exists)"
-            )
+            print(f"  [SKIP] cannot parse N/beta from {spins_dir.name}")
             continue
 
-        print(
-            f"  r={r} (N={N}, beta={beta})",
-            end=" ... ",
-            flush=True
-        )
+        patterns_dir = alpha_dir / f"patterns_N{N}"
+        if not patterns_dir.exists():
+            print(f"\n[SKIP] {alpha_dir.name}: missing patterns_N{N}/")
+            continue
 
-        spins_df = pd.read_csv(spin_file, dtype=str)
-        pattern_df = pd.read_csv(pattern_file, dtype=str)
+        pattern_map = {}
+        for pf in patterns_dir.glob("*.csv"):
+            r = extract_r(pf.name)
+            if r is not None:
+                pattern_map[r] = pf
 
-        sweep_col = spins_df.columns[0]
-        sweep_ids = spins_df[sweep_col].astype(int).values
-        block_cols = [c for c in spins_df.columns if c != sweep_col]
+        alpha   = float(alpha_dir.name.split("_")[1])
+        out_dir = alpha_dir / f"overlaps_N{N}_beta{beta}"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        print(f"\n[ALPHA] {alpha:.4f} N={N} beta={beta} -> {out_dir.name}")
 
-        n_sweeps = len(spins_df)
-        n_patterns = len(pattern_df)
+        for spin_file in sorted(spins_dir.glob("*.csv")):
 
-        M = np.empty((n_sweeps, n_patterns), dtype=float)
+            r = extract_r(spin_file.name)
+            if r is None or r not in pattern_map:
+                continue
 
-        for i, (_, spin_row) in enumerate(
-            spins_df[block_cols].iterrows()
-        ):
-            for j, (_, pat_row) in enumerate(
-                pattern_df.iterrows()
-            ):
-                M[i, j] = overlap_binary(
-                    spin_row,
-                    pat_row,
-                    N
-                )
+            pattern_file = pattern_map[r]
 
-        cols = ["sweep"] + [
-            f"m_{i}" for i in range(n_patterns)
-        ]
+            out_file = out_dir / f"overlaps_N{N}_beta{beta}_r{r}.csv"
 
-        df = pd.DataFrame(
-            np.column_stack([sweep_ids, M]),
-            columns=cols
-        )
+            if SKIP_EXISTING and out_file.exists():
+                print(f"  r={r} (N={N}, beta={beta}) ... skipped (already exists)")
+                continue
 
-        df["sweep"] = df["sweep"].astype(int)
+            print(f"  r={r} (N={N}, beta={beta})", end=" ... ", flush=True)
 
-        df.to_csv(out_file, index=False)
+            spins_df   = pd.read_csv(spin_file, dtype=str)
+            pattern_df = pd.read_csv(pattern_file, dtype=str)
 
-        print(
-            f"saved ({n_sweeps} sweeps x {n_patterns} patterns)"
-        )
+            sweep_col  = spins_df.columns[0]
+            sweep_ids  = spins_df[sweep_col].astype(int).values
+            block_cols = [c for c in spins_df.columns if c != sweep_col]
+
+            n_sweeps   = len(spins_df)
+            n_patterns = len(pattern_df)
+
+            M = np.empty((n_sweeps, n_patterns), dtype=float)
+
+            for i, (_, spin_row) in enumerate(spins_df[block_cols].iterrows()):
+                for j, (_, pat_row) in enumerate(pattern_df.iterrows()):
+                    M[i, j] = overlap_binary(spin_row, pat_row, N)
+
+            cols = ["sweep"] + [f"m_{i}" for i in range(n_patterns)]
+
+            df = pd.DataFrame(
+                np.column_stack([sweep_ids, M]),
+                columns=cols
+            )
+            df["sweep"] = df["sweep"].astype(int)
+            df.to_csv(out_file, index=False)
+
+            print(f"saved ({n_sweeps} sweeps x {n_patterns} patterns)")
 
 print("\n[DONE]")

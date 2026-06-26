@@ -91,14 +91,22 @@ int main() {
         // Build folder name using alpha value directly
         ostringstream folder_name;
 
+        // ── Model initialization ────────────────────────────────────────────
+
+        HopfieldBits bits(L * L, beta, N_sweeps, P);
+
         folder_name << "../results/alpha_"
                     << std::fixed << std::setprecision(3)
                     << alpha
-                    << "/";
-
-        string base_folder = folder_name.str();
+                    << "/N"
+                    << L*L 
+                    << "beta"
+                    << SimulationBase::format_beta(beta);
+          string base_folder = folder_name.str();
 
         make_dir(base_folder);
+
+        bits.SetBaseFolder(base_folder.c_str());
 
         cout << "\n==============================================\n";
         cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k+1 <<"/"<<n_steps+1 << ")\n";
@@ -106,13 +114,7 @@ int main() {
         cout << "  Temperature:   " << 1.0/beta << "\n";
         cout << "  Sweeps:        " << N_sweeps << "\n";
         cout << "  Base folder:   " << base_folder << "\n";
-        cout << "==============================================\n\n";
-
-        // ── Model initialization ────────────────────────────────────────────
-
-        HopfieldBits bits(L * L, beta, N_sweeps, P);
-
-        bits.SetBaseFolder(base_folder.c_str());
+        cout << "==============================================\n\n";      
 
         // Build the 2D square lattice with periodic boundary conditions
         bits.initNetworkFullyConnected();

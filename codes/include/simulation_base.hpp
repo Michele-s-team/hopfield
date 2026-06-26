@@ -52,6 +52,8 @@ public:
 
     void SavePatterns(const string& folder,
                        const vector<vector<vector<int>>>& patterns);
+    
+    static string format_beta(double beta);
 
     // =========================
     // Engine access (IMPORTANT)
