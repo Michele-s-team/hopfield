@@ -125,108 +125,96 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 int main() {
 
-    // ── Parameters ────────────────────────────
-    const int    L        = 100;
-    int    N_sweeps = 1 << 16;
-    
+    int N_sweeps = 1 << 16;
+
+
     // ── Temperature Range ───────────────────
 
     vector<double> temperatures;    
     
-    const double T_min    = 0.1;
-    const double step_1   = 0.1;
-    const double T_1      = 1.5;
-    const double step_2   = 0.05;
-    const double T_2      = 2.0;
-    const double step_3   = 0.02;
-    const double T_3      = 2.2;
-    const double step_4   = 0.005;
-    const double T_4      = 2.3;
-    const double step_5   = 0.02;
-    const double T_5      = 2.5;
-    const double step_6   = 0.05;
-    const double T_6      = 3.0;
-    const double step_7   = 0.1;
-    const double T_max    = 4.0;
+    const double Tc    = 2.269;
+    const double T_min = 0.1;
+    const double T_max = 4.0;
+    const int    n_T   = 50;
 
-
-    auto add_segment = [&](double a, double b, double h, bool include_start){
-        int n_start = include_start ? 0 : 1;
-        int n_end = (int)((b - a)/h + 0.5);
-
-        for (int n = n_start; n <= n_end; ++n)
-            temperatures.push_back(a + n*h);
-    };
-
-    add_segment(T_min, T_1, step_1, true);
-    add_segment(T_1,  T_2, step_2, false);
-    add_segment(T_2,  T_3, step_3, false);
-    add_segment(T_3,  T_4, step_4, false);
-    add_segment(T_4,  T_5, step_5, false);
-    add_segment(T_5,  T_6, step_6, false);
-    add_segment(T_6,  T_max, step_7, false); 
-    
-
-    cout << "[main] Parameters: N_spins=" << L*L
-         << "  N_sweeps=" << N_sweeps
-         << "\nTemperatures: " <<endl;
+    for (int i = 0; i < n_T; ++i) {
+        double u = (double)i / (n_T - 1);           // uniforme [0,1]
+        double T_uniform = T_min + u * (T_max - T_min);
+        // attirer vers Tc via une transformation
+        double pull = 0.4 * std::sin(M_PI * u);     // déplacement maximal au centre
+        double T = T_uniform - pull * (T_uniform - Tc);
+        temperatures.push_back(T);
+    }
 
     for (double T : temperatures) cout <<T <<"  ";
     cout <<" \n";
 
-    // ── Model initialization ───────────────────
-    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    IsingBits bits(L * L, 1, N_sweeps); //placeholder initialization of betaJ
-    bits.initNetwork2D_PBC();
-    cout << "Network initialized\n" << endl;
+   gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
-    gsl_rng_set(ran, 123);
-    bits.initSpins(ran);
-    cout << "Spin configurations initialized\n" << endl;
+    // ── Lattice sizes ──────────────────────────────
+    vector<int> N_vals = {80*80, 100*100, 150*150, 200*200};
 
-    bits.initSpinsBits(ran);
-    cout << "Bitwise initialization done" << endl;
+    for (int N_spins : N_vals) {
 
-    // ── Temperature sweep ──────────────────────
-    for (int i = 0; i < (int)temperatures.size(); ++i) {
-        double T       = temperatures[temperatures.size() - i - 1];
-        double betaJ   = 1.0 / T;
+        clock_t start = clock();
 
-        bits.setBeta(betaJ);
+        cout << "\n##############################################\n";
+        cout << "N = " << N_spins << "\n";
+        cout << "##############################################\n";
 
-        if (i==0){
-            N_sweeps = 1 << 16;
+        IsingBits bits(N_spins, 1, N_sweeps);
+        bits.initNetwork2D_PBC();
+        cout << "Network initialized\n" << endl;
+
+        gsl_rng_set(ran, 123);
+        bits.initSpinsBits(ran);
+        cout << "Bitwise initialization done" << endl;
+
+        // ── Temperature sweep ──────────────────────
+        for (int i = 0; i < (int)temperatures.size(); ++i) {
+            double T     = temperatures[temperatures.size() - i - 1];
+            double betaJ = 1.0 / T;
+
+            bits.setBeta(betaJ);
+
+            if (i == 0) {
+                N_sweeps = 1 << 16;
+                bits.setNSweeps(N_sweeps);
+            } else {
+                N_sweeps = 1 << 15;
+                bits.setNSweeps(N_sweeps);
+            }
+
+            cout << "N=" << N_spins << "  T=" << T
+                 << "  Step " << i+1 << "/" << temperatures.size() << endl;
+
+            // Build folder name
+            ostringstream folder_name;
+            folder_name << "../results/Ising/N" << N_spins
+                        << "/T_" << fixed << setprecision(3) << T;
+            string base_folder = folder_name.str();
+            make_dir("../results/Ising/N" + to_string(N_spins));
+            make_dir(base_folder);
+            bits.SetBaseFolder(base_folder.c_str());
+
+            // First half: equilibration
+            bits.runSweeps(ran, /*save=*/false, 0, /*shift=*/0);
+            cout << " first half of the simulation done" << endl;
             bits.setNSweeps(N_sweeps);
-        }
-        else{
-            N_sweeps = 1 << 15;
-            bits.setNSweeps(N_sweeps);
-        }
 
-        cout << "T=" << T << "  Step " << i+1 << "/" << temperatures.size() << endl;
-
-        // Build folder name
-        ostringstream folder_name;
-        folder_name << "../results/Ising/T_"
-                    << fixed << setprecision(3) << T;
-        string base_folder = folder_name.str();
-        make_dir(base_folder);
-        
-        bits.SetBaseFolder(base_folder.c_str());
-
-        // Run simulation and save at given frequency — fully bitwise initialization
-        bits.runSweeps(ran, /*save=*/false, 0, /*shift=*/0);
-        cout <<" first half of the simulation done"<<endl;
-        bits.setNSweeps(N_sweeps);
-
-        string path = "/spins_N" + std::to_string(L*L)
+            // Second half: save
+            string path = "/spins_N" + to_string(N_spins)
                         + "_beta" + SimulationBase::format_beta(betaJ);
+            bits.OpenSpinFiles(path.c_str());
+            bits.runSweeps(ran, /*save=*/true, 0.005, /*shift=*/N_sweeps);
+            cout << " second half of the simulation done" << endl;
+            bits.SaveSpinConfigurations(N_sweeps);
+            bits.CloseSpinFiles();
+        }
+        clock_t end = clock();
 
-        bits.OpenSpinFiles(path.c_str());
-        bits.runSweeps(ran, /*save=*/true, 0.005,/*shift=*/N_sweeps);
-        cout <<" second half of the simulation done"<<endl;
-        bits.SaveSpinConfigurations(N_sweeps);
-        bits.CloseSpinFiles();
+        double clock_bits = double(end - start) / CLOCKS_PER_SEC;
+        cout << "\nN = " << N_spins << " done," << clock_bits << " s\n";
     }
 
     gsl_rng_free(ran);
