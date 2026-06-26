@@ -7,10 +7,10 @@ The Hamiltonian of the Ising network is given by
 \end{equation*}
 which, in absence of external field $h$ becomes,
 \begin{equation}
-  H_{\text{Ising }, h=0}=-J\sum_{<i,j>}S_iS_j.
+  H_{\text{Ising, } h=0}=-J\sum_{<i,j>}S_iS_j.
   \label{eq:ising}
 \end{equation}
-When flipping the spin $S_k$, the associated energy shift is
+When flipping the spin $S_k$ ($S_k \to - S_k$), the associated energy shift is
 \begin{equation}
 \begin{aligned}
   \Delta E_k &= H_\text{Ising}\left[-S_k\right]-H_\text{Ising}\left[S_k\right] \\
@@ -67,5 +67,57 @@ with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ the number of neighbor of the spin $k$.
   \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
   \label{eq:flip_ising_bitwise}
 \end{equation}
+In addition, according to the definition of $\Delta E_k$ \eqref{eq:DeltaE_ising}, we have $-2Jn_k \leq \Delta E_k \leq 2Jn_k$. Plugging this into Eq~\eqref{eq:flip_ising} yields the flip escape condition:
+\begin{equation}
+  \lfloor \rho \rfloor \geq n_k.
+  \label{eq:flip_ising_bitwise}
+\end{equation}
+When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
+Knowing that, we can write the pseudocode for the evolution of the Ising network under the Metropolis algorithm:
+
+\begin{algorithm}
+\DontPrintSemicolon
+\caption{Ising Metropolis sweep (bitwise)}
+
+\KwIn{RNG state, lattice spins $\{S_i\}$, couplings $J$, inverse temperature $\beta$}
+\KwOut{Updated spin configurations across all replicas}
+
+\BlankLine
+$\Bits\ \mathtt{mask}$
+
+$\UnsignedInt\ T_k,\ \mathtt{threshold}$
+
+\For{$\text{sweep}=1$ \KwTo $N_{\text{sweeps}}$}{
+    \For{$\text{step}=1$ \KwTo $N$}{
+        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$
+
+        \eIf{$\lfloor \rho \rfloor \ge n_k$}{
+            $S_k \leftarrow -S_k$ \tcp*{escape condition: unconditional flip across all replicas}
+        }{
+            $T_k \leftarrow \mathbf{0}$
+
+            $\mathtt{threshold} \leftarrow \mathbf{0}$
+
+            \For{$i \in \partial k$}{
+                $\Bits\ \mathtt{xnor} \leftarrow S_k \odot S_i$
+                \tcp*{bitwise XNOR across replicas}
+
+                $T_k \mathrel{+}= \mathtt{xnor}$
+                \tcp*{increment agreement count per replica}
+            }
+
+            $T_k \leftarrow 2T_k$
+
+            $\mathtt{threshold} \leftarrow \lfloor \rho \rfloor +n_k$
+
+            $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
+            \tcp*{per-replica flip condition}
+
+        $S_k \leftarrow S_k \oplus \mathtt{mask}$ \tcp*{bitwise spin flip: only replicas}
+        \tcp*[r]{for which $\mathtt{mask}^{(\ell)}=1$ are flipped}
+        }
+    }
+}
+\end{algorithm}
 \subsection{Phase diagram}
 \subsection{Performance test}
