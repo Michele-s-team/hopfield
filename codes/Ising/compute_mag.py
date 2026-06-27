@@ -2,37 +2,38 @@ import numpy as np
 import glob
 import os
 import re
-import pathlib
 import pandas as pd
 
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-base_dir   = "../results/Ising"
-output_dir = "../results/Ising/magnetization_matrix"
 
+base_dir = "../results/Ising"
+output_dir = "../results/Ising/moments"
 os.makedirs(output_dir, exist_ok=True)
-
 
 # ─────────────────────────────────────────────
 # MAGNETIZATION
 # ─────────────────────────────────────────────
 
 def magnetization_from_blocks(blocks, N):
-    n_full    = N // 64
+    n_full = N // 64
     remainder = N % 64
-    arr       = blocks.values.astype(object)  # garde les grands entiers
-    n_sweeps  = arr.shape[0]
-    mags      = np.zeros(n_sweeps, dtype=np.float64)
+    arr = blocks.values.astype(object)
+    n_sweeps = arr.shape[0]
+
+    mags = np.zeros(n_sweeps, dtype=np.float64)
 
     for i in range(n_sweeps):
         total = sum(int(arr[i, b]).bit_count() for b in range(n_full))
         if remainder:
-            x     = int(arr[i, n_full])
+            x = int(arr[i, n_full])
             total += (x & ((1 << remainder) - 1)).bit_count()
+
         mags[i] = (2 * total - N) / N
 
     return mags
+
 
 # ─────────────────────────────────────────────
 # LOAD
@@ -40,116 +41,109 @@ def magnetization_from_blocks(blocks, N):
 
 def load_blocks(path):
     df = pd.read_csv(path, dtype=str)
-    sweeps = df.iloc[:, 0].astype(int).to_numpy()
-    blocks = df.iloc[:, 1:]
-    return sweeps, blocks
+    return df.iloc[:, 0].astype(int).to_numpy(), df.iloc[:, 1:]
+
 
 # ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
 
-T_dirs = sorted(glob.glob(os.path.join(base_dir, "T_*")), reverse=True)
+N_dirs = sorted(glob.glob(os.path.join(base_dir, "N*")), 
+                key=lambda x: int(re.search(r"N(\d+)$", os.path.basename(x)).group(1)))
 
-for T_dir in T_dirs:
+for N_dir in N_dirs:
 
-    match = re.search(r"T_([0-9.]+)", os.path.basename(T_dir))
-    if not match:
-        continue
-    T = match.group(1)
+    N = int(re.search(r"N(\d+)$", os.path.basename(N_dir)).group(1))
 
-    print("\n==============================")
-    print(f"Processing T = {T}")
+    print("\n" + "=" * 40)
+    print(f"N = {N}")
 
-    # infer N from spins_N*_beta* subdir name
-    spins_subdirs = list(pathlib.Path(T_dir).glob("spins_N*_beta*"))
-    if not spins_subdirs:
-        print("  ERROR: no spins_N*_beta* subdir found")
-        continue
-    m_N = re.search(r"spins_N(\d+)_beta", spins_subdirs[0].name)
-    if not m_N:
-        print("  ERROR: cannot extract N from subdir name")
-        continue
-    N = int(m_N.group(1))
-    print(f"  N = {N}")
+    out_N_dir = os.path.join(output_dir, f"N{N}")
+    os.makedirs(out_N_dir, exist_ok=True)
 
-    spin_files = []
-    for root, _, files in os.walk(T_dir):
-        for f in files:
-            if f.startswith("spins_r") and f.endswith(".csv"):
-                spin_files.append(os.path.join(root, f))
-    spin_files = sorted(spin_files)
+    T_dirs = sorted(glob.glob(os.path.join(N_dir, "T_*")), reverse=True)
 
-    print(f"  found files: {len(spin_files)}")
-    if len(spin_files) == 0:
-        continue
+    for T_dir in T_dirs:
 
-    out_file = os.path.join(output_dir, f"T_{T}.csv")
-    if os.path.exists(out_file):
-        print(f"  skipped (already exists): {out_file}")
-        continue
+        T = re.search(r"T_([0-9.]+)", os.path.basename(T_dir)).group(1)
 
-    all_m      = []
-    r_list     = []
-    sweeps_ref = None
-    bad_r      = []
-
-    for f in spin_files:
-
-        m_r = re.search(r"r(\d+)", os.path.basename(f))
+        # Vérifier si le fichier de sortie existe déjà
+        out_file = os.path.join(out_N_dir, f"N{N}_T{T}.csv")
         
-        if not m_r:
-            print(f"[SKIP] no r found in {f}")
+        if os.path.exists(out_file):
+            print(f"\nT = {T} - File already exists, ignored")
             continue
-        r = int(m_r.group(1))
-        print(f"  r={r:<5}", end="\r", flush=True)
+        
+        print(f"\nProcessing T = {T}...")
 
-        sweeps, blocks = load_blocks(f)
-        if sweeps is None or blocks is None:
-            print(f"[ERROR] load failed | r={r}")
-            bad_r.append(r)
-            continue
+        spin_files = sorted(
+            os.path.join(root, f)
+            for root, _, files in os.walk(T_dir)
+            for f in files
+            if f.startswith("spins_r") and f.endswith(".csv")
+        )
 
-        if blocks.shape[1] != (N // 64 + (1 if N % 64 else 0)):
-            print(f"[ERROR] block size mismatch | r={r} | shape={blocks.shape}")
-            bad_r.append(r)
-            continue
+        data = []
+        m1_list, m2_list, m4_list = [], [], []
 
-        try:
+        # ─────────────────────────────
+        # per realization
+        # ─────────────────────────────
+
+        for f in spin_files:
+
+            m_r = re.search(r"r(\d+)", os.path.basename(f))
+            r = int(m_r.group(1)) if m_r else -1
+
+            _, blocks = load_blocks(f)
             m = magnetization_from_blocks(blocks, N)
-        except Exception as e:
-            print(f"[ERROR] magnetization failed | r={r} | {e}")
-            bad_r.append(r)
-            continue
 
-        if sweeps_ref is None:
-            sweeps_ref = sweeps
-        elif len(sweeps_ref) != len(sweeps):
-            print(f"[WARNING] sweep mismatch | r={r}")
+            m1 = np.mean(m)
+            m2 = np.mean(m**2)
+            m4 = np.mean(m**4)
 
-        all_m.append(m)
-        r_list.append(r)
+            # Pour chaque réalisation, l'erreur est l'écart-type divisé par sqrt(n_sweeps)
+            n_sweeps = len(m)
+            dm1 = np.std(m, ddof=1) / np.sqrt(n_sweeps) if n_sweeps > 1 else 0.0
+            dm2 = np.std(m**2, ddof=1) / np.sqrt(n_sweeps) if n_sweeps > 1 else 0.0
+            dm4 = np.std(m**4, ddof=1) / np.sqrt(n_sweeps) if n_sweeps > 1 else 0.0
 
-    if len(all_m) == 0:
-        print(f"  empty T = {T}")
-        continue
+            data.append({
+                "r": r,
+                "m1": m1,
+                "m2": m2,
+                "m4": m4,
+                "dm1": dm1,
+                "dm2": dm2,
+                "dm4": dm4
+            })
 
-    if bad_r:
-        print(f"  WARNING bad r: {sorted(set(bad_r))}")
+            m1_list.append(m1)
+            m2_list.append(m2)
+            m4_list.append(m4)
 
-    M     = np.stack(all_m, axis=1)
-    order = np.argsort(r_list)
-    M     = M[:, order]
-    r_sorted = sorted(r_list)
+        R = len(data)
 
-    with open(out_file, "w") as out:
-        out.write("sweep," + ",".join([f"r{r}" for r in r_sorted]) + "\n")
-        for i, s in enumerate(sweeps_ref):
-            out.write(
-                str(s) + "," +
-                ",".join(str(M[i, j]) for j in range(M.shape[1])) +
-                "\n"
-            )
+        def err(x):
+            return np.std(x, ddof=1) / np.sqrt(R) if R > 1 else 0.0
 
-    print("  saved:", out_file)
+        mean_row = {
+            "r": "mean",
+            "m1": np.mean(m1_list),
+            "m2": np.mean(m2_list),
+            "m4": np.mean(m4_list),
+            "dm1": err(m1_list),
+            "dm2": err(m2_list),
+            "dm4": err(m4_list),
+        }
+
+        df = pd.DataFrame([mean_row] + data)
+
+        # force column order explicitly
+        df = df[["r", "m1", "m2", "m4", "dm1", "dm2", "dm4"]]
+
+        df.to_csv(out_file, index=False)
+
+        print("saved:", out_file)
 
 print("\nDONE")

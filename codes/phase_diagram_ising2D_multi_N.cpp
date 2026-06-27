@@ -70,50 +70,7 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // ──────────────────────────────────────────────
 // Print and compare spin configurations across realizations
 // ──────────────────────────────────────────────
-void print_neurons(const vector<int>& neurons_before,
-                   const vector<int>& neurons_classic,
-                   const vector<int>& neurons_bits,
-                   int N_neurons, int prefix_width, int col_width) {
 
-    bool all_equal = true;
-
-    for (int r = 0; r < n_bits; r++) {
-
-        ostringstream oss;
-        //Uncomment to print the spins when comparing
-        /*
-        oss << "Realization" << right << setw(3) << r+1;
-        cout << oss.str() << "\n";
-
-        cout << left << setw(prefix_width) << "       before: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_before[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "after classic: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_classic[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "   after bits: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_bits[r*N_neurons+i] << " ";
-        cout << "\n\n";
-        */
-
-        for (int i = 0; i < N_neurons; i++) {
-            if (neurons_classic[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
-                all_equal = false;
-                cout << "Mismatch at r=" << r+1 << " i=" << i+1 << endl;
-            }
-        }
-    }
-
-    if (all_equal)
-        cout << "OK: classic and bitwise results are identical\n";
-    else
-        cout << "WARNING: differences detected between classic and bitwise results\n";
-}
 
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
@@ -132,27 +89,32 @@ int main() {
 
     vector<double> temperatures;    
     
-    const double Tc    = 2.269;
-    const double T_min = 0.1;
-    const double T_max = 4.0;
-    const int    n_T   = 50;
+    const double Tc = 2.0 / log(1.0 + sqrt(2.0));
+    const double T_min = 1;
+    const double T_max = 3;
+    const int    n_T   = 37;
+
+    const double alpha = 2.5;  // exposant : 2→ ~2 puissances, 3→ ~3 puissances
 
     for (int i = 0; i < n_T; ++i) {
-        double u = (double)i / (n_T - 1);           // uniforme [0,1]
-        double T_uniform = T_min + u * (T_max - T_min);
-        // attirer vers Tc via une transformation
-        double pull = 0.4 * std::sin(M_PI * u);     // déplacement maximal au centre
-        double T = T_uniform - pull * (T_uniform - Tc);
+        double u = (double)i / (n_T - 1);  // ∈ [0, 1]
+        double s = 2*u - 1;                // ∈ [-1, 1], s=0 en Tc
+        double T;
+        if (s >= 0)
+            T = Tc + (T_max - Tc) * std::pow(s, alpha);
+        else
+            T = Tc + (T_min - Tc) * std::pow(-s, alpha);
         temperatures.push_back(T);
     }
 
     for (double T : temperatures) cout <<T <<"  ";
     cout <<" \n";
 
-   gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+    gsl_rng_set(ran, 123);
 
     // ── Lattice sizes ──────────────────────────────
-    vector<int> N_vals = {80*80, 100*100, 150*150, 200*200};
+    vector<int> N_vals = {30*30, 50*50, 80*80, 100*100, 150*150, 200*200};
 
     for (int N_spins : N_vals) {
 
@@ -166,27 +128,44 @@ int main() {
         bits.initNetwork2D_PBC();
         cout << "Network initialized\n" << endl;
 
-        gsl_rng_set(ran, 123);
+
         bits.initSpinsBits(ran);
         cout << "Bitwise initialization done" << endl;
 
         // ── Temperature sweep ──────────────────────
+
         for (int i = 0; i < (int)temperatures.size(); ++i) {
             double T     = temperatures[temperatures.size() - i - 1];
             double betaJ = 1.0 / T;
 
             bits.setBeta(betaJ);
 
-            if (i == 0) {
-                N_sweeps = 1 << 16;
-                bits.setNSweeps(N_sweeps);
-            } else {
-                N_sweeps = 1 << 15;
-                bits.setNSweeps(N_sweeps);
-            }
+            // ── Adaptive N_sweeps ──────────────────
+            // Compute local step size dT
+            double dT;
+            if (i == 0)
+                dT = std::abs(temperatures[temperatures.size()-1] - temperatures[temperatures.size()-2]);
+            else if (i == (int)temperatures.size()-1)
+                dT = std::abs(temperatures[1] - temperatures[0]);
+            else
+                dT = std::abs(temperatures[temperatures.size()-i] - temperatures[temperatures.size()-i-2]) / 2.0;
 
-            cout << "N=" << N_spins << "  T=" << T
-                 << "  Step " << i+1 << "/" << temperatures.size() << endl;
+            // dT_max ~ 2.0/49 ≈ 0.04 (bords), dT_min ~ ? (centre)
+            // N_sweeps = 2^16 at dT_max, increases as dT shrinks
+            const double dT_ref  = (T_max - T_min) / (n_T - 1);  // pas uniforme de référence
+            const int    exp_base = 15;
+            const int    exp_max  = 19;  // plafond à 2^19
+
+            int exp_sweeps = exp_base + (int)std::round(std::log2(dT_ref / dT));
+            exp_sweeps     = std::max(exp_base, std::min(exp_max, exp_sweeps));
+            N_sweeps       = 1 << exp_sweeps;
+
+            bits.setNSweeps(N_sweeps);
+
+            cout << "N=" << N_spins << "  T=" << fixed << setprecision(4) << T
+                << "  dT=" << setprecision(4) << dT
+                << "  N_sweeps=2^" << exp_sweeps
+                << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
             // Build folder name
             ostringstream folder_name;
