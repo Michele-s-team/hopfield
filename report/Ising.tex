@@ -70,16 +70,16 @@ with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ the number of neighbor of the spin $k$.
 In addition, according to the definition of $\Delta E_k$ \eqref{eq:DeltaE_ising}, we have $-2Jn_k \leq \Delta E_k \leq 2Jn_k$. Plugging this into Eq~\eqref{eq:flip_ising} yields the flip escape condition:
 \begin{equation}
   \lfloor \rho \rfloor \geq n_k.
-  \label{eq:flip_ising_bitwise}
+  \label{eq:flip_ising_escape_int}
 \end{equation}
-When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
+When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_escape_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
 Knowing that, we can write the pseudocode for the evolution of the Ising network under the Metropolis algorithm:
 
 \begin{algorithm}
 \DontPrintSemicolon
 \caption{Ising Metropolis sweep (bitwise)}
 
-\KwIn{Lattice spins $\{S_i\}$, couplings $J$, inverse temperature $\beta$}
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
 
 \BlankLine
