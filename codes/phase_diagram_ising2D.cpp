@@ -123,40 +123,48 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
-int main(int argc, char* argv[]) {
+int main() {
 
-    if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " <N_spins>\n";
-        cerr << "  e.g. " << argv[0] << " 6400\n";
-        return 1;
-    }
-    const int N_spins = atoi(argv[1]);
+    const int N_spins = 100*100;
 
     int N_sweeps = 1 << 16;
 
+    double T_max=3;
+    double T_min=1;
+    double n_T=25;
+
+
     // ── Temperature Range ───────────────────
-    vector<double> temperatures;
-
-    const double Tc    = 2.0 / log(1.0 + sqrt(2.0));
-    const double T_min = 1;
-    const double T_max = 3;
-    const int    n_T   = 37;
-    const double alpha = 2.5;
-
-    for (int i = 0; i < n_T; ++i) {
-        double u = (double)i / (n_T - 1);
-        double s = 2*u - 1;
-        double T;
-        if (s >= 0)
-            T = Tc + (T_max - Tc) * std::pow(s, alpha);
-        else
-            T = Tc + (T_min - Tc) * std::pow(-s, alpha);
-        temperatures.push_back(T);
-    }
-
-    for (double T : temperatures) cout << T << "  ";
-    cout << "\n";
-
+    vector<double> temperatures = {
+    1.000,
+    1.300,
+    1.550,
+    1.750,
+    1.880,
+    1.980,
+    2.060,
+    2.120,
+    2.166,
+    2.200,
+    2.226,
+    2.246,
+    2.260,
+    2.269,
+    2.279,
+    2.291,
+    2.306,
+    2.324,
+    2.346,
+    2.376,
+    2.416,
+    2.471,
+    2.535,
+    2.601,
+    2.681,
+    2.771,
+    2.871,
+    3.000
+};
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);
 
@@ -181,6 +189,7 @@ int main(int argc, char* argv[]) {
 
         bits.setBeta(betaJ);
 
+    
         double dT;
         if (i == 0)
             dT = std::abs(temperatures[temperatures.size()-1] - temperatures[temperatures.size()-2]);
@@ -190,8 +199,8 @@ int main(int argc, char* argv[]) {
             dT = std::abs(temperatures[temperatures.size()-i] - temperatures[temperatures.size()-i-2]) / 2.0;
 
         const double dT_ref   = (T_max - T_min) / (n_T - 1);
-        const int    exp_base = 15;
-        const int    exp_max  = 19;
+        const int    exp_base = 16;
+        const int    exp_max  = 20;
 
         int exp_sweeps = exp_base + (int)std::round(std::log2(dT_ref / dT));
         exp_sweeps     = std::max(exp_base, std::min(exp_max, exp_sweeps));

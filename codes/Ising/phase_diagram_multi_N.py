@@ -50,8 +50,8 @@ COLORS  = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#e07b00', '#8c564b']
 MARKERS = ['o', 's', '^', 'D', 'v', 'p']
 # fillstyle='none' → marqueurs creux
 
-N_LIST = [900, 2500, 6400, 10000, 22500, 40000]
-L_LIST = [30,  50,   80,  100,   150,   200  ]
+N_LIST = [900, 1600, 2500, 4900, 10000, 22500, 40000]
+L_LIST = [30,  40,  50,  70,  100,  150,   200  ]
 
 moments_dir = "../results/Ising/moments"
 output_dir  = "../results/Ising"
@@ -229,8 +229,14 @@ for label in ax2.get_yticklabels():
 ax2.yaxis.set_minor_locator(ticker.MultipleLocator(0.05))
 
 # ── Axe x du haut avec un seul tick à Tc ──────────────
-ax2_top = ax2.twiny()
-ax2_top.set_xlim(ax2.get_xlim())
+# CORRECTION : Utiliser secondary_xaxis à la place de twiny()
+def forward(x):
+    return x
+
+def inverse(x):
+    return x
+
+ax2_top = ax2.secondary_xaxis('top', functions=(forward, inverse))
 ax2_top.set_xticks([Tc])
 ax2_top.set_xticklabels([r"$T_c$"], fontsize=8)
 ax2_top.tick_params(direction="in", length=5, width=0.8)
@@ -273,6 +279,7 @@ for N, L in zip(N_avail, L_avail):
                        zorder=3)
 
 ax_in.axvline(Tc, color="0.6", lw=0.6, ls=":")
+ax_in.axhline(2/3, color="0.6", lw=0.6, ls=":")
 ax_in.set_xlim(zoom_xmin, zoom_xmax)
 ax_in.set_ylim(zoom_ymin, zoom_ymax)
 ax_in.xaxis.set_major_locator(ticker.MultipleLocator(0.05))
