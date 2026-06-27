@@ -1,0 +1,19 @@
+2.188  2.218  2.24  2.255  2.265  2.269  2.273  2.286  2.299  2.316  2.338   
+
+##############################################
+N = 6400
+##############################################
+Network initialized
+
+Bitwise initialization done
+Sweep: 26214 (9%)    Sweep: 52428 (19%)    Sweep: 78642 (29%)    Sweep: 104856 (39%)    Sweep: 131070 (49%)    Sweep: 157284 (59%)    Sweep: 183498 (69%)    Sweep: 209712 (79%)    Sweep: 235926 (89%)    Sweep: 262140 (99%)    
+Warmup T=3 done
+Sweep: 26214 (9%)    Sweep: 524Sweep: 1048Sweep: 786Sweep: 209714 (19%)    Sweep: 314571 (29%)    Sweep: 419428 (39%)    Sweep: 524285 (49%)    Sweep: 629142 (59%)    Sweep: 733999 (69%)    Sweep: 838856 (79%)    Sweep: 943713 (89%)    Sweep: 1048570 (99%)    
+ second half done
+N=6400  T=2.3160  Step 2/11
+Sweep: 104857 (9%)    Sweep: 209714 (19%)    Sweep: 314571 (29%)    )    Sweep: 183498 (69%)    Sweep: 209712 (79%)    Sweep: 235926 (89%)    Sweep: 262140 (99%)    
+Warmup T=2.4 done
+Warmup complete
+
+N=6400  T=2.3380  Step 1/11
+Sweep: 104857 (9%)    Sweep: 209714 (19%)    Sweep: 314571 (29%)    Sweep: 419428 (39%)    Sweep: 524285 (49%)    Sweep: 629142 (59%)    Sweep: 733999 (69%)    Sweep: 838856 (79%)    
