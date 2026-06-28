@@ -148,7 +148,7 @@ int main() {
     out_csv << fixed << setprecision(6);
 
     // ── Lattice sizes ──────────────────────────────
-    vector<int> N_vals = {10*10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80};
+    vector<int> N_vals = {10*10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80, 90*90, 10*10};
 
     for (int N_spins : N_vals) {
 
@@ -205,7 +205,7 @@ int main() {
         clock_t end = clock();
 
         double clock_bits = double(end - start) / CLOCKS_PER_SEC;
-        cout << "\nN = " << N_spins << " done," << clock_bits << " s\n";
+        cout << "\nN = " << N_spins << " done, " << clock_bits << " s\n";
     }
 
     out_csv.close();

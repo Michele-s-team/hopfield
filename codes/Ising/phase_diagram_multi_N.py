@@ -103,8 +103,9 @@ if not data:
 
 N_avail = [N for N in N_LIST if N in data]
 L_avail = [L_LIST[N_LIST.index(N)] for N in N_avail]
-colors  = {N: COLORS[N_LIST.index(N)] for N in N_avail}
-markers = {N: MARKERS[N_LIST.index(N)] for N in N_avail}
+n = len(N_avail)
+colors  = {N: COLORS[n - 1 - N_avail.index(N)] for N in N_avail}
+markers = {N: MARKERS[n - 1 - N_avail.index(N)] for N in N_avail}
 
 # ── Onsager ────────────────────────────────────────────
 Tc   = 2.0 / np.log(1.0 + np.sqrt(2.0))
@@ -191,7 +192,7 @@ plt.show()
 # ══════════════════════════════════════════════════════
 # PLOT 2 : Binder cumulant + inset zoom
 # ══════════════════════════════════════════════════════
-fig2, ax2 = plt.subplots(figsize=(3.5, 3.2))  # un peu plus haut
+fig2, ax2 = plt.subplots(figsize=(3.5, 3.2))
 
 U4_all  = {}
 err_all = {}
@@ -221,11 +222,10 @@ ax2.set_yticklabels([
     r"$2/3$", r"$0.7$"
 ])
 
-# Réduire la taille du tick 2/3 uniquement
 for label in ax2.get_yticklabels():
     if "2/3" in label.get_text():
         label.set_fontsize(6.5)
-        
+
 ax2.yaxis.set_minor_locator(ticker.MultipleLocator(0.05))
 
 # ── Axe x du haut avec un seul tick à Tc ──────────────
@@ -246,12 +246,12 @@ ax2.set_ylim(-0.08, 0.78)
 ax2.xaxis.set_major_locator(ticker.MultipleLocator(0.5))
 ax2.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
 ax2.set_xlabel(r"$T/J$")
-ax2.set_ylabel(r"$U_4$")
+ax2.set_ylabel(r"$U_L$")
 
 # ── Inset ──────────────────────────────────────────────
-ax_in = ax2.inset_axes([0.0825, 0.285, 0.50, 0.44])
-zoom_xmin, zoom_xmax = 2.05, 2.35
-zoom_ymin, zoom_ymax = 0.5, 0.685
+ax_in = ax2.inset_axes([0.1, 0.29, 0.43, 0.5])
+zoom_xmin, zoom_xmax = 2.101, 2.325
+zoom_ymin, zoom_ymax = 0.555, 0.675
 
 for N, L in zip(N_avail, L_avail):
     T_vals, U4 = U4_all[N]
@@ -279,18 +279,57 @@ for N, L in zip(N_avail, L_avail):
 # ── Lignes de référence ──────────────────────────────
 U4_star = 0.61069
 ax_in.axvline(Tc, color="0.6", lw=0.6, ls=":")
-#ax_in.axhline(U4_star, color="0.6", lw=0.6, ls=":")
 
-# ── Ajout de l'étoile U4* sur le graphique principal ──
-# Étoile à 8 branches sur le graphique principal
-ax2.scatter(Tc, U4_star, marker=r'$\star$', color='black', zorder=10, label=r'$U_4^*$')
+# ── Inset dans l'inset ────────────────────────────────
+zoom2_xmin, zoom2_xmax = 2.24, Tc + 0.03
+zoom2_ymin, zoom2_ymax = U4_star - 0.03, 0.645
 
-ax_in.scatter(Tc, U4_star, marker=r'$\star$', color='black',zorder=10)
+ax_in2 = ax_in.inset_axes([0.15, 0.107, 0.48, 0.48])
+
+for N, L in zip(N_avail, L_avail):
+    T_vals, U4 = U4_all[N]
+    err_U4     = err_all[N]
+    mask_line  = (T_vals >= zoom2_xmin - 0.02) & (T_vals <= zoom2_xmax + 0.02)
+    mask_pts   = (T_vals >= zoom2_xmin)         & (T_vals <= zoom2_xmax)
+    Tz_line    = T_vals[mask_line]
+    U4_line    = U4[mask_line]
+    Tz_pts     = T_vals[mask_pts]
+    U4z        = U4[mask_pts]
+    errz       = err_U4[mask_pts]
+    if len(Tz_line) == 0:
+        continue
+    c  = colors[N]
+    mk = markers[N]
+    ax_in2.plot(Tz_line, U4_line, color=c, lw=0.7, zorder=2)
+    if len(Tz_pts) > 0:
+        ax_in2.errorbar(Tz_pts, U4z, yerr=errz,
+                        fmt=mk, color=c,
+                        ms=2.5, lw=0,
+                        elinewidth=0.4, capsize=1.0, capthick=0.4,
+                        fillstyle='none', markeredgewidth=0.6,
+                        zorder=3)
+
+ax_in2.scatter(Tc, U4_star, marker=r'$\star$', color='black', s=30, alpha=0.65, zorder=10)
+ax_in2.axvline(Tc, color="0.6", lw=0.5, ls=":")
+
+ax_in2.set_xlim(zoom2_xmin, zoom2_xmax)
+ax_in2.set_ylim(zoom2_ymin, zoom2_ymax)
+ax_in2.xaxis.set_major_locator(ticker.MultipleLocator(0.02))
+ax_in2.xaxis.set_minor_locator(ticker.NullLocator())
+ax_in2.yaxis.set_major_locator(ticker.MultipleLocator(0.02))
+ax_in2.yaxis.set_minor_locator(ticker.NullLocator())
+ax_in2.tick_params(labelsize=4.5, which="major", length=2, direction="in", pad=1)
+for sp in ax_in2.spines.values():
+    sp.set_linewidth(0.5)
+
+ax_in.indicate_inset_zoom(ax_in2, edgecolor="0.75", lw=0.4, zorder=0)
+
+ax_in.scatter(Tc, U4_star, marker=r'$\star$', color='black', zorder=10, alpha=0.8)
+
 # ── Ticks y (gauche) ─────────────────────────────────
 y_ticks = [0.50, 0.55, 0.60, 0.65, 0.70]
 ax_in.set_yticks(y_ticks)
 ax_in.set_yticklabels([f'{tick:.2f}' for tick in y_ticks], fontsize=6)
-ax_in.set_ylim(0.5, 0.685)
 
 # ── Configuration des axes ────────────────────────────
 ax_in.set_xlim(zoom_xmin, zoom_xmax)
@@ -303,10 +342,42 @@ ax_in.tick_params(which="minor", length=1.5, direction="in")
 for sp in ax_in.spines.values():
     sp.set_linewidth(0.6)
 
-ax2.indicate_inset_zoom(ax_in, edgecolor="0.5", lw=0.6)
+ax2.indicate_inset_zoom(ax_in, edgecolor="0.75", lw=0.4, zorder=0)
 
-# ── Légende en bas à gauche, sous l'inset ─────────────
-ax2.legend(loc="lower left", ncol=2, columnspacing=0.8,
+# ── Légende manuelle : 6 L + U* en 4ème position ─────
+star_proxy  = mpl.lines.Line2D([], [], marker=r'$\star$', color='black',
+                               linestyle='None', markersize=5)
+empty_proxy = mpl.lines.Line2D([], [], linestyle='None')
+
+handles_L = []
+labels_L  = []
+for N, L in zip(N_avail, L_avail):
+    h = mpl.lines.Line2D([], [], marker=markers[N], color=colors[N],
+                         linestyle='-', markersize=5,
+                         markerfacecolor='none', markeredgewidth=1.0)
+    handles_L.append(h)
+    labels_L.append(rf"$L={L}$")
+
+# Ordre : L1, L2, L3, U*, L4, L5, L6
+handles_ordered = (
+    handles_L[:3] +
+    [star_proxy] +
+    handles_L[3:] +
+    [empty_proxy]
+)
+
+labels_ordered = (
+    labels_L[:3] +
+    [r'$U^* \!\! \approx 0.61$'] +
+    labels_L[3:] +
+    ['']
+)
+
+ax2.legend(handles=handles_ordered,
+           labels=labels_ordered,
+           loc="lower left",
+           ncol=2,
+           columnspacing=0.8,
            bbox_to_anchor=(0.0, 0.0))
 
 plt.tight_layout(pad=0.3)
