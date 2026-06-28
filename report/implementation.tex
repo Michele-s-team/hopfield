@@ -170,7 +170,7 @@ Now that we know how to conveniently handle binary variables such as spins, we n
 ({6*\step},{-3*\rowsep-0.2})
 node[midway,below=7pt] {64 replicas};
 \end{tikzpicture}
-\caption{An \UnsignedInt encoding 64 parallel unsigned integers. Each row is a \Bits associated with a power of 2. The value of each integer is obtained by reading the \UnsignedInt along the corresponding column. For instance, the fourth integer stored in $Z$ is $Z_4=\sum\limits_{i=0}^l b_4^i\, 2^i$.}
+\caption{An \UnsignedInt encoding 64 parallel unsigned integers. Each row is a \Bits associated with a power of 2. The value of each integer is obtained by reading the \UnsignedInt along the corresponding column. For instance, the fifth integer stored in $Z$ is $Z_4=\sum\limits_{i=0}^l b_i^4\, 2^i$.}
 \label{fig:UnsignedInt}
 \end{figure}
 In the same way as for \Bits, the \UnsignedInt data structure enables us to add, subtract or even multiply two sets of 64 integers with just the cost of one operation.\\
