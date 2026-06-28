@@ -46,8 +46,8 @@ mpl.rcParams.update({
 mpl.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
 # ── Palette : marqueurs creux, couleurs vives ──────────
-COLORS  = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#e07b00', '#8c564b']
-MARKERS = ['o', 's', '^', 'D', 'v', 'p']
+COLORS  = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#e07b00', '#8c564b', '#17becf']
+MARKERS = ['o', 's', '^', 'D', 'v', 'p', '*']
 # fillstyle='none' → marqueurs creux
 
 N_LIST = [900, 1600, 2500, 4900, 10000, 22500, 40000]
@@ -229,7 +229,6 @@ for label in ax2.get_yticklabels():
 ax2.yaxis.set_minor_locator(ticker.MultipleLocator(0.05))
 
 # ── Axe x du haut avec un seul tick à Tc ──────────────
-# CORRECTION : Utiliser secondary_xaxis à la place de twiny()
 def forward(x):
     return x
 
@@ -240,7 +239,6 @@ ax2_top = ax2.secondary_xaxis('top', functions=(forward, inverse))
 ax2_top.set_xticks([Tc])
 ax2_top.set_xticklabels([r"$T_c$"], fontsize=8)
 ax2_top.tick_params(direction="in", length=5, width=0.8)
-# Supprimer les autres ticks du haut
 ax2_top.xaxis.set_minor_locator(ticker.NullLocator())
 
 ax2.set_xlim(0.9, 3.1)
@@ -251,9 +249,9 @@ ax2.set_xlabel(r"$T/J$")
 ax2.set_ylabel(r"$U_4$")
 
 # ── Inset ──────────────────────────────────────────────
-ax_in = ax2.inset_axes([0.085, 0.285, 0.50, 0.44])
-zoom_xmin, zoom_xmax = 2.2135, 2.325
-zoom_ymin, zoom_ymax = 0.53, 0.68
+ax_in = ax2.inset_axes([0.0825, 0.285, 0.50, 0.44])
+zoom_xmin, zoom_xmax = 2.05, 2.35
+zoom_ymin, zoom_ymax = 0.5, 0.685
 
 for N, L in zip(N_avail, L_avail):
     T_vals, U4 = U4_all[N]
@@ -278,13 +276,27 @@ for N, L in zip(N_avail, L_avail):
                        fillstyle='none', markeredgewidth=0.8,
                        zorder=3)
 
+# ── Lignes de référence ──────────────────────────────
+U4_star = 0.61069
 ax_in.axvline(Tc, color="0.6", lw=0.6, ls=":")
-ax_in.axhline(2/3, color="0.6", lw=0.6, ls=":")
+#ax_in.axhline(U4_star, color="0.6", lw=0.6, ls=":")
+
+# ── Ajout de l'étoile U4* sur le graphique principal ──
+# Étoile à 8 branches sur le graphique principal
+ax2.scatter(Tc, U4_star, marker=r'$\star$', color='black', zorder=10, label=r'$U_4^*$')
+
+ax_in.scatter(Tc, U4_star, marker=r'$\star$', color='black',zorder=10)
+# ── Ticks y (gauche) ─────────────────────────────────
+y_ticks = [0.50, 0.55, 0.60, 0.65, 0.70]
+ax_in.set_yticks(y_ticks)
+ax_in.set_yticklabels([f'{tick:.2f}' for tick in y_ticks], fontsize=6)
+ax_in.set_ylim(0.5, 0.685)
+
+# ── Configuration des axes ────────────────────────────
 ax_in.set_xlim(zoom_xmin, zoom_xmax)
 ax_in.set_ylim(zoom_ymin, zoom_ymax)
 ax_in.xaxis.set_major_locator(ticker.MultipleLocator(0.05))
 ax_in.xaxis.set_minor_locator(ticker.MultipleLocator(0.025))
-ax_in.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
 ax_in.yaxis.set_minor_locator(ticker.MultipleLocator(0.025))
 ax_in.tick_params(labelsize=6, which="major", length=3, direction="in", pad=1)
 ax_in.tick_params(which="minor", length=1.5, direction="in")

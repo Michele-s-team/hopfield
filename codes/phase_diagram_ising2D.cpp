@@ -125,7 +125,7 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 int main() {
 
-    const int N_spins = 100*100;
+    const int N_spins = 150*150;
 
     int N_sweeps = 1 << 16;
 
