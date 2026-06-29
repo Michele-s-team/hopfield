@@ -3,11 +3,11 @@ We first implement the method on the Ising model, which is the simplest one.
 \subsection{The model}
 The Hamiltonian of the Ising network is given by
 \begin{equation*}
-  H_\text{Ising}=-J\sum_{<i,j>}S_iS_j -h \sum_i S_i,
+  H_\text{Ising}=-J\sum_{\langle i,j \rangle<i,j>}S_iS_j -h \sum_i S_i,
 \end{equation*}
 which, in absence of external field $h$ becomes,
 \begin{equation}
-  H_{\text{Ising, } h=0}=-J\sum_{<i,j>}S_iS_j.
+  H_{\text{Ising, } h=0}=-J\sum_{\langle i,j \rangle}S_iS_j.
   \label{eq:ising}
 \end{equation}
 When flipping the spin $S_k$ ($S_k \to - S_k$), the associated energy shift is
@@ -27,7 +27,7 @@ where $i \in \partial k$ denotes the summation over the neighbors of $k$. If $\D
 \end{aligned}
 \label{eq:flip_ising}
 \end{equation}
-With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J}$ and mean $(2\beta J)^{-1}$.
+With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
 The right-hand side of the equation is an integer which can be positive of negative. (However, due to the first escape condition of the algorithm, we know that it is strictly positive.) The left-hand side is thus compared with an (positive) integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
 \begin{equation}
   \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}S_i.\\
@@ -205,5 +205,5 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \caption{Speedup factor between classical and bitwise implementations of the Ising Metropolis algorithm for several lattice sizes and temperatures.}
 \label{fig:speedup_ising}
 \end{figure}
-The speedup factor is lies between 20 and 40, which is a substantial increase. We notice that this speedup factor consistently increases for the highest temperatures, where the escape condition in the bitwise implementation occurs more frequently. In theory, this factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
+The speedup factor is lies between 20 and 40, which is a substantial increase. We notice that this speedup factor consistently increases for the highest temperatures, where the escape condition in the bitwise implementation occurs more frequently. The increases however seems to be uncorrelated with the size of the system. In theory, this factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
 It must be noted that, while we here measure an increase in the speed of the code for a fixed number of outputs, the true advantage of the bitwise implementation is to produce more independent results within the same computational time.

@@ -1,4 +1,22 @@
 \section{The Spinglass model}
-\subsection{The model}
+We now move on a more complex model, that is the Edwards–Anderson model.
+\subsection{The Edwards–Anderson model}
+The Edwards–Anderson (EA) model -- first introduced by .. \cite{SFEdwards_1975} -- is a finite dimensional spin glass model with short range interaction. It is not a mean field spin glass model with infinite range interactions such as the Sherrington–Kirkpatrick model \cite{SK_model}. The model is formally described as follows:
+\begin{equation}
+  H_\text{EA}=\sum_{\langle i,j \rangle}J_{ij}S_iS_j.
+  \label{eq:EA_model}
+\end{equation}
+Where $J_{ij}$ is a random variable taking its values in $\{-1,\,1\}$ with equal probability. Thus, it can easily be represented by a \Bits.
+Under a spin flip ($S_k \to - S_k$), the energy shift is:
+\begin{equation}
+  \Delta E_k=2 S_k \sum_{i \partial k}J_{ki}S_i.
+  \label{eq:EA_energy_shift}
+\end{equation}
+Performing the same derivation as for the Ising model, the spin flip condition for this model is thus:
+\begin{equation}
+  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}J_{ki}S_i,\\
+  \label{eq:flip_EA_int}
+\end{equation}
+with $\rho$ the same exponential random variable as in the previous section.
 \subsection{Bitwise Implementation}
 \subsection{Performance test}
