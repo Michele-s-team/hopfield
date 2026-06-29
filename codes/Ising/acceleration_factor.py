@@ -29,7 +29,7 @@ marker  = {N: markers[i % len(markers)] for i, N in enumerate(N_vals)}
 Z = df.pivot(index="N", columns="T", values="ratio")
 Z = Z.sort_index().sort_index(axis=1)
 
-fig1, ax = plt.subplots(figsize=(5.5, 3.8))
+fig1, ax = plt.subplots(figsize=(4, 3.2))
 
 im = ax.imshow(
     Z.values,
@@ -96,7 +96,7 @@ plt.rcParams.update({
 # ════════════════════════════════════════════════════════════════════════════
 # Figure 2 — Courbes speed-up vs T
 # ════════════════════════════════════════════════════════════════════════════
-fig2, ax = plt.subplots(figsize=(3.4, 2.8))
+fig2, ax = plt.subplots(figsize=(4, 3.2))
 
 for N in N_vals:
     group = df[df["N"] == N].sort_values("T")
@@ -116,7 +116,8 @@ ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax.grid(True, which="major", alpha=0.25, linewidth=0.5)
 ax.legend(framealpha=0.9, edgecolor="0.7", handlelength=1.8, ncol=2)
 
+
+fig2.savefig("../results/Ising/speedup_curves_ising.pdf", bbox_inches="tight", pad_inches=0.05)
 fig2.tight_layout()
-fig2.savefig("../results/Ising/speedup_curves_ising.pdf", bbox_inches="tight")
 fig2.savefig("../results/Ising/speedup_curves_ising.png", bbox_inches="tight", dpi=300)
 print("Saved: speedup_curves.pdf / .png")
