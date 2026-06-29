@@ -130,7 +130,7 @@ int main() {
     // ── Temperature Range ───────────────────
     vector<double> temperatures;
     const double T_min = 0.5;
-    const double T_max = 5.0;
+    const double T_max = 5;
     const double step  = 0.5;
     const int    n_T   = (int)((T_max - T_min) / step) + 1;
 
@@ -148,7 +148,7 @@ int main() {
     out_csv << fixed << setprecision(6);
 
     // ── Lattice sizes ──────────────────────────────
-    vector<int> N_vals = {10*10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80, 90*90, 10*10};
+    vector<int> N_vals = {30*30, 40*40, 50*50, 90*90, 100*100};
 
     for (int N_spins : N_vals) {
 

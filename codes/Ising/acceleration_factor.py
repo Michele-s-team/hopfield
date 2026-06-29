@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # ==========================================================
 # Read CSV
 # ==========================================================
-df = pd.read_csv("../results/Ising/speedup.csv")
+df = pd.read_csv("../results/Ising/speedup_save.csv")
 
 # ==========================================================
 # Pivot for heatmap
