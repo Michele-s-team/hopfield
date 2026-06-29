@@ -1,0 +1,12 @@
+\begin{appendix}
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
+% Pour s'assurer que seules les sous-sections apparaissent dans la TOC
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+
+% Redéfinition de la numérotation des sous-sections pour les appendices
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+% Appendix A
+\subsection{Simulation for the migration model between two islands}

@@ -1,53 +1,56 @@
 \documentclass[a4paper,11pt]{article}
-
 % --- Encoding and language ---
-\usepackage[utf8]{inputenc} % UTF-8 encoding
-\usepackage[english]{babel} % Document language
-% --- Typography ---
-\usepackage{microtype}        % Spacing optimisation
-\usepackage{xspace}           % Smart space management after macros
-\usepackage{setspace}         % Line spacing control if needed
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+% ne pas charger de package math → LaTeX garde CM pour les maths
+\usepackage{microtype}
+\usepackage{xspace}
+\usepackage{setspace}
 % --- Page layout ---
-\usepackage{geometry} % Margins
+\usepackage{geometry}
 \geometry{
- a4paper,
- total={170mm,257mm},
- left=20mm,
- right=20mm,
- top=20mm,
- bottom=20mm
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  right=20mm,
+  top=20mm,
+  bottom=20mm
 }
 \setlength{\headheight}{14pt}
 % --- Section and title formatting ---
-\usepackage{titlesec} % Title customisation
+\usepackage{titlesec}
 \setcounter{tocdepth}{2}
 \titleformat{\section}[hang]{\normalfont\Large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}[hang]{\normalfont\large\bfseries}{\thesubsection}{1em}{}
 \titleformat{\subsubsection}[hang]{\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
-\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\} % Depth-4 sections
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
 % --- Mathematics and symbols ---
-\usepackage{amsmath, amsfonts, amssymb, mathrsfs, stmaryrd} % Symbols and mathematics
-\usepackage{siunitx} % SI unit management
+\usepackage{amsmath, amsfonts, amssymb, mathrsfs, stmaryrd}
+\usepackage{siunitx}
+% --- Typography ---
+\usepackage{newpxtext, newpxmath}
 % --- Graphics and figures ---
-\usepackage{graphicx, subcaption, float, wrapfig} % Image and subfigure management
-\usepackage[tikz]{bclogo} % Logo boxes
-\usepackage{sidecap} % Side captions
+\usepackage{graphicx, subcaption, float, wrapfig}
+\usepackage[tikz]{bclogo}
+\usepackage{sidecap}
 % --- Tables ---
-\usepackage{multirow, array, makecell} % Advanced tables
+\usepackage{booktabs}                          % <-- added
+\usepackage{multirow, array, makecell}
 % --- Paragraphs ---
-\usepackage{ragged2e} % Text alignment
-\setlength{\parindent}{0pt} % No default indentation
-\newcommand{\myindent}{\hspace*{1.5em}} % Manual indentation
+\usepackage{ragged2e}
+\setlength{\parindent}{0pt}
+\newcommand{\myindent}{\hspace*{1.5em}}
 % --- List management ---
-\usepackage{enumitem} % Custom lists
+\usepackage{enumitem}
 % --- References and hyperlinks ---
-\usepackage{url, hyperref} % URL and hyperlink management
+\usepackage{url, hyperref}
+\usepackage{cleveref}                          % <-- added (must be after hyperref)
 % --- Glossary ---
-%\usepackage{glossaries, glossaries-extra} % Glossary management
+%\usepackage{glossaries, glossaries-extra}
 %\makeglossaries
 %\input{glossary}
 % --- Headers and footers ---
-\usepackage{fancyhdr} % Header and footer customisation
+\usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand\headrulewidth{1pt}
@@ -56,23 +59,24 @@
 \fancyfoot[C]{\thepage}
 % --- Miscellaneous tools ---
 \usepackage[ruled,vlined]{algorithm2e}
-\usepackage{lettrine} % Drop capitals
-\usepackage{pifont} % Special symbols
-\usepackage{pdfpages} % PDF inclusion
-\usepackage{eurosym} % Euro symbol
-\usepackage{listings} % Source code inclusion
-\usepackage{changepage} % Margin adjustment
-\usepackage[normalem]{ulem} % Strikethrough and underline
-\usepackage{frcursive} % Cursive font
-\usepackage{fvextra} % Alternative to verbatim
-\usepackage{setspace} % Manual line spacing
-\usepackage{comment} % Comments
+\usepackage{lettrine}
+\usepackage{pifont}
+\usepackage{pdfpages}
+\usepackage{eurosym}
+\usepackage{listings}
+\usepackage{changepage}
+\usepackage[normalem]{ulem}
+\usepackage{frcursive}
+\usepackage{fvextra}
+\usepackage{comment}
 \usepackage{tikz}
 \usepackage{import}
-\usepackage{natbib} % citations
+\usepackage{natbib}
+% --- Macros : annotations ---
 \newcommand{\noteBastien}[1]{\textcolor{blue}{#1}}
 \newcommand{\noteMichele}[1]{\textcolor{red}{#1}}
 \newcommand{\noteDavid}[1]{\textcolor{green}{#1}}
+% --- Macros : code identifiers ---
 \newcommand{\UnsignedInt}{\texttt{UnsignedInt}\xspace}
 \newcommand{\UnsignedInts}{\texttt{UnsignedInts}\xspace}
 \newcommand{\BitSet}{\texttt{BitSet}\xspace}
@@ -82,11 +86,11 @@
 \addto\captionsfrench{\renewcommand{\contentsname}{\center{Table des matières}}}
 \renewcommand{\thesection}{\arabic{section}}
 \newcommand{\clearemptydoublepage}{%
-\newpage{\pagestyle{empty}\cleardoublepage}}
-
+  \newpage{\pagestyle{empty}\cleardoublepage}}
 \usetikzlibrary{decorations.pathreplacing}
 \graphicspath{{pictures/}}
-
+\crefname{algocf}{algorithm}{algorithms}
+\Crefname{algocf}{Algorithm}{Algorithms}
 
 
 \begin{document}
@@ -99,17 +103,17 @@
 
 \includegraphics[height=2.5cm]{pictures/logo_AMu.png}
 
-\vspace{1cm}
+\vspace{0.8cm}
 
 \includegraphics[height=3cm]{pictures/logo_curie.png}
 
-\vspace{1cm}
+\vspace{0.8cm}
 
 \includegraphics[height=2cm]{pictures/logo_ESPCI_cropped.png}
 
 \end{figure}
 
-\vspace{1cm}
+\vspace{0.8cm}
 % Title
 \begin{center}
     \rule{\textwidth}{1pt} \\[0.4cm]
@@ -167,6 +171,7 @@ placeholder
 \include{Spinglass}
 \include{Hopfield}
 \include{Conclusion}
+\include{Appendices}
 \pagestyle{fancy}
 \setlength{\bibsep}{2pt}
 \bibliographystyle{unsrt}

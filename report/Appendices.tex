@@ -1,0 +1,41 @@
+\begin{appendix}
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
+% Pour s'assurer que seules les sous-sections apparaissent dans la TOC
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+
+% Redéfinition de la numérotation des sous-sections pour les appendices
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+% Appendix A
+\subsection{Naive implementation of the classic Metropolis algorithm}
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Ising Metropolis sweep (classical, naive)}
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+\BlankLine
+\BlankLine
+\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$k = 1$ \KwTo $N$}{
+      \For{$r = 1$ \KwTo $n_\text{bits}$}{
+          Compute $\Lambda_k = s_k^{(r)} \sum_{i \in \partial k} s_i^{(r)}$\;
+          \BlankLine
+          \tcp{Unconditional flip: energy is lowered}
+          \eIf{$\Lambda_k^{(r)} \leq 0$}{
+              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+          }{
+              \tcp{Conditional flip: draw Poisson threshold}
+              Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
+              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+              }
+          }
+      }
+    }
+}
+\label{alg:ising_classic_naive}
+\end{algorithm}
+
+\end{appendix}

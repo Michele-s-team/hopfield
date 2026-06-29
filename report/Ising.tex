@@ -74,11 +74,10 @@ In addition, according to the definition of $\Delta E_k$ \eqref{eq:DeltaE_ising}
 \end{equation}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_escape_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
 
-The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is:
+The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Ising Metropolis sweep (bitwise)}
 
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
@@ -118,40 +117,12 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
         }
     }
 }
+\caption{Ising Metropolis sweep (bitwise)}
 \label{alg:ising_bitwise}
 \end{algorithm}
 
-On the other hand, a first naive implementation of the classical algorithm is:
+On the other hand, a first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}:
 
-\begin{algorithm}[H]
-\DontPrintSemicolon
-\caption{Ising Metropolis sweep (classical, naive)}
-\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
-\KwOut{Updated lattice spins $\{S_i\}$}
-\BlankLine
-\BlankLine
-\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
-    \For{$k = 1$ \KwTo $N$}{
-      \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k = s_k^{(r)} \sum_{i \in \partial k} s_i^{(r)}$\;
-          \BlankLine
-          \tcp{Unconditional flip: energy is lowered}
-          \eIf{$\Lambda_k^{(r)} \leq 0$}{
-              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-          }{
-              \tcp{Conditional flip: draw Poisson threshold}
-              Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
-              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
-                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-              }
-          }
-      }
-    }
-}
-\label{alg:ising_classic_naive}
-\end{algorithm}
-
-A more efficient implementation would be to share the drawn random threshold across the replicas:
 \begin{algorithm}[H]
 \DontPrintSemicolon
 \caption{Ising Metropolis sweep (classical)}
@@ -179,23 +150,25 @@ A more efficient implementation would be to share the drawn random threshold acr
 }
 \label{alg:ising_classic}
 \end{algorithm}
+
 This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared amongst all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used.\\
 
 \subsection{Phase diagram}
-\myindent We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is agreement with the known analytical results. We show in Figure~\ref{fig:magnetizations_multiN} the obtained phase diagram for several sizes of two-dimensional square lattices. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization.
-\begin{figure}[H]
+\myindent We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is agreement with the known analytical results. We show in Figure~\ref{fig:magnetizations_multiN} the obtained phase diagram for several sizes of two-dimensional square lattices. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization.\\
+Qualitatively, it appears that the magnetization curve get closer to the exact solution when the lattice size is increased. This was to be expected as we gradually get closer to the infinite size case when increasing the lattice size. We also notice an excellent agreement between the exact analytical magnetization and the obtained ones in the ferromagnetic part of the phase diagram. Thus, the obtained phase diagram is in excellent agreement with the expected phase diagram, taking into account that we work on finite size lattices. In this plot, each point corresponds to the mean over the $n_\text{bits}=64$ independent realizations. We show in Figure~\ref{fig:evolution_ising} the trajectories
+\begin{figure}[htbp]
 \centering
 
 \includegraphics[height=8cm]{pictures/magnetizations_multiN.pdf}
 \caption{Phase diagram of the Ising model for several sizes of square lattices. The network is built with Periodic Boundary Conditions (PBC).The black line corresponds to the exact analytical solution found by Onsager in the case of an infinite square lattice \cite{Onsager1944}: $m(T)=0$ for $T\geq T_c$ and $m(T)_\pm= \pm \left[ 1 - \sinh^{-4}(2K) \right]^{1/8}$ for $T \leq T_c$, with $ K=J/T$ and $ T_c=2J/\log\left(1+\sqrt 2\right)\approx 2.269$.}
 \label{fig:magnetizations_multiN}
 \end{figure}
-Qualitatively, it appears that the magnetization curve get closer to the exact solution when the lattice size is increased. This was to be expected as we gradually get closer to the infinite size case when increasing the lattice size. We also notice an excellent agreement between the exact analytical magnetization and the obtained ones in the ferromagnetic part of the phase diagram. Thus, the obtained phase diagram is in excellent agreement with the expected phase diagram, taking into account that we work on finite size lattices. In this plot, each point corresponds to the mean over the $n_\text{bits}=64$ independent realizations. We show in Figure~\ref{fig:evolution_ising} the trajectories  over time of the magnetizations for those 64 realizations.
+ over time of the magnetizations for those 64 realizations.
 \begin{figure}[H]
 \centering
 
 \includegraphics[height=4.5cm]{pictures/evolution_ising_T1.5_L100.pdf}
-\caption{Trajectories of the 64 magnetizations over time for $L=100$ and $T/J=1.5$. All those trajectories have been obtained from the same unique simulations. While some realizations quickly collapse into the equilibrium attractors $m_\pm = \pm 0.953$, some require $\sim 10^2$ times more sweeps to reach the same equilibrium. }
+\caption{Trajectories of the 64 magnetizations over time for $L=100$ and $T/J=1.5$. All those trajectories have been obtained from the same simulation. While some realizations quickly collapse into the equilibrium attractors $m_\pm = \pm 0.953$, some require $\sim 10^2$ times more sweeps to reach the same equilibrium.}
 \label{fig:evolution_ising}
 \end{figure}
 In order to make sure that the phase transition of our network is well at $T_c=2.269$ for all lattice sizes, we plot the Binder $U_L$, defined as:
@@ -211,6 +184,26 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \label{fig:binder}
 \end{figure}
 \subsection{Performance test}
-\myindent Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to evolve the system over $N_\text{sweeps}=2^{16}$ sweeps using both the classical naive implementation and the bitwise implementation, for various square lattice sizes and temperatures.
+\myindent Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to evolve the system over $N_\text{sweeps}=2^{16}$ sweeps using both the classical naive implementation and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
+\begin{figure}[H]
+\centering
+
+\begin{subfigure}{0.4\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{speedup_heatmap_ising.pdf}
+    \caption{Speedup factor heatmap.}
+    \label{fig:speedup_ising_heatmap}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.4\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{speedup_curves_ising.pdf}
+    \caption{Speedup factor evolution.}
+    \label{fig:speedup_ising_curve}
+\end{subfigure}
+
+\caption{Speedup factor between classical and bitwise implementations of the Ising Metropolis algorithm for several lattice sizes and temperatures.}
+\label{fig:speedup_ising}
+\end{figure}
 
 \noteBastien{manière dont c'est utlisé : + de résults pas moins de temps}
