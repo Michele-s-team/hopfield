@@ -46,10 +46,10 @@ im = ax.imshow(
 ax.set_xticks(range(len(Z.columns)))
 ax.set_xticklabels([f"{t:.1f}" for t in Z.columns], rotation=45, ha="right", fontsize=8)
 ax.set_yticks(range(len(Z.index)))
-ax.set_yticklabels([str(n) for n in Z.index], fontsize=8)
+ax.set_yticklabels([str(int(np.sqrt(n))) for n in Z.index], fontsize=8)
 
 ax.set_xlabel(r"$T\,/\,J$")
-ax.set_ylabel(r"$N = L^2$")
+ax.set_ylabel(r"$L$")
 
 cbar = fig1.colorbar(im, ax=ax, pad=0.02)
 cbar.set_label("Speed-up factor", fontsize=10)
@@ -106,7 +106,7 @@ for N in N_vals:
         markersize=4,
         color=color[N],
         linewidth=1.2,
-        label=f"$N={N}$",
+        label=f"$L={int(np.sqrt(N))}$",
     )
 
 ax.set_xlabel(r"$T\,/\,J$")

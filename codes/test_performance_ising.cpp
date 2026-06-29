@@ -148,7 +148,7 @@ int main() {
     out_csv << fixed << setprecision(6);
 
     // ── Lattice sizes ──────────────────────────────
-    vector<int> N_vals = {50*50, 90*90, 100*100};
+    vector<int> N_vals = {25*25};
 
     for (int N_spins : N_vals) {
 
