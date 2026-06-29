@@ -121,3 +121,42 @@ fig2.savefig("../results/Ising/speedup_curves_ising.pdf", bbox_inches="tight", p
 fig2.tight_layout()
 fig2.savefig("../results/Ising/speedup_curves_ising.png", bbox_inches="tight", dpi=300)
 print("Saved: speedup_curves.pdf / .png")
+
+
+N_sweeps = 2*16
+
+# ════════════════════════════════════════════════════════════════════════════
+# Figure 3 — Temps normalisé t / (N * N_sweeps) vs T
+# ════════════════════════════════════════════════════════════════════════════
+
+fig3, ax1 = plt.subplots(figsize=(4, 3.2))
+ax2 = ax1.twinx()
+
+df["t_bits_norm"]   = df["t_bits"]   / (df["N"] * N_sweeps) * 1e3
+df["t_nobits_norm"] = df["t_nobits"] / (df["N"] * N_sweeps) * 1e3
+
+mean_bits   = df.groupby("T")["t_bits_norm"].mean()
+mean_nobits = df.groupby("T")["t_nobits_norm"].mean()
+
+ax1.plot(mean_bits.index,   mean_bits.values,
+         color="C0", linewidth=1.2, linestyle="-",  marker="o", markersize=4, label="bitwise")
+ax2.plot(mean_nobits.index, mean_nobits.values,
+         color="C1", linewidth=1.2, linestyle="--", marker="s", markersize=4, label="classic")
+
+ax1.set_xlabel(r"$T\,/\,J$")
+ax1.set_ylabel(r"$\langle t_{\rm bits} / (N \cdot N_{\rm sweep}) \rangle$ [ms]",   color="C0")
+ax2.set_ylabel(r"$\langle t_{\rm classic} / (N \cdot N_{\rm sweep}) \rangle$ [ms]", color="C1")
+ax1.tick_params(axis="y", labelcolor="C0")
+ax2.tick_params(axis="y", labelcolor="C1")
+
+ax1.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+ax1.grid(True, which="major", alpha=0.25, linewidth=0.5)
+
+lines = [plt.Line2D([0],[0], color="C0", linestyle="-",  marker="o", markersize=4),
+         plt.Line2D([0],[0], color="C1", linestyle="--", marker="s", markersize=4)]
+ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center right")
+
+fig3.tight_layout()
+fig3.savefig("../results/Ising/time_normalized_ising.pdf", bbox_inches="tight", pad_inches=0.05)
+fig3.savefig("../results/Ising/time_normalized_ising.png", bbox_inches="tight", dpi=300)
+print("Saved: time_normalized_ising.pdf / .png")

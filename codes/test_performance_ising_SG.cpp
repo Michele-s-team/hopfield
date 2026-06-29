@@ -27,6 +27,11 @@ using namespace std;
 #include "ising_model.hpp"
 #include "ising_nobits.hpp"
 #include "ising_bits.hpp"
+
+#include "spinglass_model.hpp"
+#include "spinglass_nobits.hpp"
+#include "spinglass_bits.hpp"
+
 #include <sys/stat.h> // for mkdir
 
 BitSet BitSet_one; // really strange that we need to define this for the operator -= of BitSet 
@@ -124,35 +129,41 @@ void make_dir(const string& path) {
 // Main
 // ──────────────────────────────────────────────
 int main() {
+
+
+    struct timespec t_init_1, t_final_1, t_init_2, t_final_2, t_start, t_end ,t0, t1;
+
     // ── Parameters ────────────────────────────
     int       N_sweeps = 1 << 16;
 
-    // ── Temperature Range ───────────────────
-    vector<double> temperatures;
-    const double T_min = 6;
-    const double T_max = 8;
-    const double step  = 1;
-    const int    n_T   = (int)((T_max - T_min) / step) + 1;
-
-    for (int i = 0; i < n_T; ++i)
-        temperatures.push_back(round((T_min + i * step) * 1000.0) / 1000.0);
-
-    for (double T : temperatures) cout <<T <<"  ";
-        cout <<" \n";
-
-    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-
-    // ── Output file ────────────────────────────
-    ofstream out_csv("../results/Ising/speedup.csv");
-    out_csv << "N,T,t_bits,t_nobits,ratio\n";
-    out_csv << fixed << setprecision(6);
-
     // ── Lattice sizes ──────────────────────────────
     vector<int> N_vals = {10 *10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80};
+    
+    gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+
+    // ── Temperature Range ───────────────────
+    vector<double> temperatures1;
+    const double T_min1 = 6;
+    const double T_max1 = 8;
+    const double step1  = 1;
+    int    n_T1   = (int)((T_max1 - T_min1) / step1) + 1;
+
+    for (int i = 0; i < n_T1; ++i)
+        temperatures1.push_back(round((T_min1 + i * step1) * 1000.0) / 1000.0);
+
+    for (double T : temperatures1) cout <<T <<"  ";
+        cout <<" \n";
+
+    // ── Output file ────────────────────────────
+    ofstream out_ising_csv("../results/Ising/speedup.csv");
+    out_ising_csv << "N,T,t_bits,t_nobits,ratio\n";
+    out_ising_csv << fixed << setprecision(6);
+
+    clock_gettime(CLOCK_MONOTONIC, &t_init_1);
 
     for (int N_spins : N_vals) {
 
-        clock_t start = clock();
+        clock_gettime(CLOCK_MONOTONIC, &t_start);
 
         cout << "\n##############################################\n";
         cout << "N = " << N_spins << "\n";
@@ -161,8 +172,8 @@ int main() {
         IsingBits   bits  (N_spins, 1, N_sweeps);
         IsingNoBits nobits(N_spins, 1, N_sweeps);
 
-        for (int i = 0; i < (int)temperatures.size(); ++i) {
-            double T     = temperatures[i];
+        for (int i = 0; i < (int)temperatures1.size(); ++i) {
+            double T     = temperatures1[i];
             double betaJ = 1.0 / T;
 
             bits.initNetwork2D_PBC();
@@ -177,38 +188,142 @@ int main() {
             nobits.setBeta(betaJ);
 
             cout << "N=" << N_spins << "  T=" << T
-                 << "  Step " << i+1 << "/" << temperatures.size() << endl;
+                 << "  Step " << i+1 << "/" << temperatures1.size() << endl;
 
             // ── Bits timing ──────────────────
-            bits.fromCanonical();
-            clock_t t0_bits = clock();
+            bits.fromCanonical(); 
+
+            clock_gettime(CLOCK_MONOTONIC, &t0);
             bits.runSweeps(ran, false, 0, 0);
-            clock_t t1_bits = clock();
-            double t_bits = double(t1_bits - t0_bits) / CLOCKS_PER_SEC;
+            clock_gettime(CLOCK_MONOTONIC, &t1);
+            double t_bits = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
             cout << "  bits:   " << t_bits << " s" << endl;
 
             // ── NoBits timing ─────────────────
-            clock_t t0_nobits = clock();
+            clock_gettime(CLOCK_MONOTONIC, &t0);
             nobits.runSweepsIndependentRNG(ran, false, 0);
-            clock_t t1_nobits = clock();
-            double t_nobits = double(t1_nobits - t0_nobits) / CLOCKS_PER_SEC;
+            clock_gettime(CLOCK_MONOTONIC, &t1);
+            double t_nobits = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
             cout << "  nobits: " << t_nobits << " s" << endl;
 
             double ratio = (t_bits > 0) ? t_nobits / t_bits : 0.0;
             cout << "  ratio:  " << ratio << endl;
 
-            out_csv << N_spins << "," << T << ","
+            out_ising_csv << N_spins << "," << T << ","
                     << t_bits  << "," << t_nobits << ","
                     << ratio   << "\n";
-            out_csv.flush();
+            out_ising_csv.flush();
         }
-        clock_t end = clock();
+        clock_gettime(CLOCK_MONOTONIC, &t_end);
 
-        double clock_bits = double(end - start) / CLOCKS_PER_SEC;
-        cout << "\nN = " << N_spins << " done, " << clock_bits << " s\n";
+        double elapsed_N = (t_end.tv_sec  - t_start.tv_sec) + (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
+        cout << "\nN = " << N_spins << " done, " << elapsed_N << " s\n";
     }
 
-    out_csv.close();
+    clock_gettime(CLOCK_MONOTONIC, &t_final_1);
+    double elapsed1 = (t_final_1.tv_sec  - t_init_1.tv_sec) + (t_final_1.tv_nsec - t_init_1.tv_nsec) * 1e-9;
+
+    cout << "total time: " << elapsed1 <<endl;
+
+    out_ising_csv.close();
+
+    N_sweeps = 1 << 14;
+
+    // ── Temperature Range ───────────────────
+    vector<double> temperatures2;
+    const double T_min2 = 0.5;
+    const double T_max2 = 5;
+    const double step2 = 0.5;
+    int    n_T2   = (int)((T_max2 - T_min2) / step2) + 1;
+
+    for (int i = 0; i < n_T2; ++i)
+        temperatures2.push_back(round((T_min2 + i * step2) * 1000.0) / 1000.0);
+    temperatures2.push_back(6);
+    temperatures2.push_back(7);
+    temperatures2.push_back(8);
+
+
+    for (double T : temperatures2) cout <<T <<"  ";
+        cout <<" \n";
+
+    // ── Output file ────────────────────────────
+    ofstream out_SG_csv("../results/SpinGlass/speedup.csv");
+    out_SG_csv << "N,T,t_bits,t_nobits,ratio\n";
+    out_SG_csv << fixed << setprecision(6);
+
+
+    clock_gettime(CLOCK_MONOTONIC, &t_init_2);
+
+
+    for (int N_spins : N_vals) {
+
+        clock_gettime(CLOCK_MONOTONIC, &t_start);
+
+        cout << "\n##############################################\n";
+        cout << "N = " << N_spins << "\n";
+        cout << "##############################################\n";
+
+        SpinGlassBits   bits  (N_spins, 1, N_sweeps);
+        SpinGlassNoBits nobits(N_spins, 1, N_sweeps);
+
+        for (int i = 0; i < (int)temperatures2.size(); ++i) {
+            double T     = temperatures2[i];
+            double betaJ = 1.0 / T;
+
+            bits.initNetwork2D_PBC();
+            nobits.initNetwork2D_PBC();
+
+            gsl_rng_set(ran, 123);
+            bits.initSpins(ran);
+            vector<int> initial_config = bits.getSpinsConfig();
+            nobits.initSpinsFromConfig(initial_config);
+
+            bits.initCouplings(ran);
+            vector<vector<vector<int>>> couplings = bits.getCouplingsConfig();
+            nobits.initCouplingsFromConfig(couplings);
+
+            bits.setBeta(betaJ);
+            nobits.setBeta(betaJ);
+
+            cout << "N=" << N_spins << "  T=" << T
+                 << "  Step " << i+1 << "/" << temperatures2.size() << endl;
+
+            // ── Bits timing ──────────────────
+            bits.fromCanonical();
+
+            clock_gettime(CLOCK_MONOTONIC, &t0);
+            bits.runSweeps(ran, false, 0);
+            clock_gettime(CLOCK_MONOTONIC, &t1);
+            double t_bits = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+            cout << "  bits:   " << t_bits << " s" << endl;
+
+            // ── NoBits timing ─────────────────
+            clock_gettime(CLOCK_MONOTONIC, &t0);
+            nobits.runSweepsIndependentRNG(ran, false, 0);
+            clock_gettime(CLOCK_MONOTONIC, &t1);
+            double t_nobits = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+            cout << "  nobits: " << t_nobits << " s" << endl;
+
+            double ratio = (t_bits > 0) ? t_nobits / t_bits : 0.0;
+            cout << "  ratio:  " << ratio << endl;
+
+            out_SG_csv << N_spins << "," << T << ","
+                    << t_bits  << "," << t_nobits << ","
+                    << ratio   << "\n";
+            out_SG_csv.flush();
+        }
+        clock_gettime(CLOCK_MONOTONIC, &t_end);
+
+        double elapsed_N = (t_end.tv_sec  - t_start.tv_sec) + (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
+        cout << "\nN = " << N_spins << " done, " << elapsed_N << " s\n";
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &t_final_2);
+    double elapsed2 = (t_final_2.tv_sec  - t_init_2.tv_sec) + (t_final_2.tv_nsec - t_init_2.tv_nsec) * 1e-9;
+    cout << "total time: " << elapsed2 <<endl;
+
+    out_SG_csv.close();
     gsl_rng_free(ran);
+
     return 0;
 }

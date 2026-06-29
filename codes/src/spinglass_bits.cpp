@@ -124,7 +124,7 @@ void SpinGlassBits::initCouplingsFromConfig(vector<vector<Bits>> Config) {
     Couplings = Config;
 }
 // Return a copy of the full coupling tensor
-vector<vector<Bits>> SpinGlassBits::getCouplingsConfig() {
+vector<vector<Bits>> SpinGlassBits::getCouplingsConfigBits() {
     return Couplings;
 }
 

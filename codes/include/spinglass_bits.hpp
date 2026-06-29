@@ -41,9 +41,8 @@ public:
     void initCouplingsBits(gsl_rng* ran);
     void initCouplingsFromConfig(vector<vector<Bits>> Config);
     
-    vector<vector<Bits>> getCouplingsConfig();
+    vector<vector<Bits>> getCouplingsConfigBits();
 
-private:
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
     void runSweeps(gsl_rng* ran, bool save, double freq);
