@@ -74,7 +74,7 @@ In addition, according to the definition of $\Delta E_k$ \eqref{eq:DeltaE_ising}
 \end{equation}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_escape_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
 
-The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.
+The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -121,7 +121,7 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \label{alg:ising_bitwise}
 \end{algorithm}
 
-On the other hand, a first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}:
+On the other hand, a first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}:\\
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -150,7 +150,7 @@ On the other hand, a first naive implementation of the classical algorithm is gi
 }
 \label{alg:ising_classic}
 \end{algorithm}
-
+\vspace{1em}
 This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared amongst all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used.\\
 
 \subsection{Phase diagram}
@@ -188,14 +188,14 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \begin{figure}[H]
 \centering
 
-\begin{subfigure}{0.4\textwidth}
+\begin{subfigure}{0.5\textwidth}
     \centering
     \includegraphics[width=\linewidth]{speedup_heatmap_ising.pdf}
     \caption{Speedup factor heatmap.}
     \label{fig:speedup_ising_heatmap}
 \end{subfigure}
 \hfill
-\begin{subfigure}{0.4\textwidth}
+\begin{subfigure}{0.48\textwidth}
     \centering
     \includegraphics[width=\linewidth]{speedup_curves_ising.pdf}
     \caption{Speedup factor evolution.}
@@ -205,5 +205,5 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \caption{Speedup factor between classical and bitwise implementations of the Ising Metropolis algorithm for several lattice sizes and temperatures.}
 \label{fig:speedup_ising}
 \end{figure}
-
-\noteBastien{manière dont c'est utlisé : + de résults pas moins de temps}
+The speedup factor is lies between 20 and 40, which is a substantial increase. We notice that this speedup factor consistently increases for the highest temperatures, where the escape condition in the bitwise implementation occurs more frequently. In theory, this factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
+It must be noted that, while we here measure an increase in the speed of the code for a fixed number of outputs, the true advantage of the bitwise implementation is to produce more independent results within the same computational time.

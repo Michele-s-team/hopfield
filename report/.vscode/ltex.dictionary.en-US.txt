@@ -20,3 +20,5 @@ fondamentale
 parcours
 BitSet
 UnsignedInt
+speedup
+Speedup
