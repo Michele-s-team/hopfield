@@ -92,7 +92,7 @@ plt.rcParams.update({
     "lines.linewidth"            : 1.2,
 })
 
-
+BOTTOM = 0.15  # marge inférieure commune à fig2 et fig3
 
 # ════════════════════════════════════════════════════════════════════════════
 # Figure 2 — Courbes speed-up vs T
@@ -117,10 +117,10 @@ ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax.grid(True, which="major", alpha=0.25, linewidth=0.5)
 ax.legend(framealpha=0.9, edgecolor="0.7", handlelength=1.8, ncol=2)
 
-
-fig2.savefig("../results/Ising/speedup_curves_ising.pdf", bbox_inches="tight", pad_inches=0.05)
 fig2.tight_layout()
-fig2.savefig("../results/Ising/speedup_curves_ising.png", bbox_inches="tight", dpi=300)
+fig2.subplots_adjust(bottom=BOTTOM)
+fig2.savefig("../results/Ising/speedup_curves_ising.pdf", pad_inches=0.05)
+fig2.savefig("../results/Ising/speedup_curves_ising.png", dpi=300)
 print("Saved: speedup_curves.pdf / .png")
 
 
@@ -129,7 +129,6 @@ N_sweeps = 2**16
 # ════════════════════════════════════════════════════════════════════════════
 # Figure 3 — Temps normalisé t / (N * N_sweeps) vs T
 # ════════════════════════════════════════════════════════════════════════════
-
 fig3, ax1 = plt.subplots(figsize=(4, 3.2))
 ax2 = ax1.twinx()
 
@@ -155,13 +154,14 @@ ax2.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, prune=None))
 ax1.xaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax1.grid(True, which="major", alpha=0.25, linewidth=0.5)
 
-lines = [plt.Line2D([0],[0], color="C0", linestyle="-",  marker="o", markersize=4),
-         plt.Line2D([0],[0], color="#2ca02c", linestyle="--", marker="s", markersize=4)]
+lines = [plt.Line2D([0],[0], color="C0",      linestyle="-",  marker="o", markersize=4),
+         plt.Line2D([0],[0], color="#2ca02c",  linestyle="--", marker="s", markersize=4)]
 ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center")
 
 fig3.tight_layout()
-fig3.savefig("../results/Ising/time_normalized_ising.pdf", bbox_inches="tight", pad_inches=0.05)
-fig3.savefig("../results/Ising/time_normalized_ising.png", bbox_inches="tight", dpi=300)
+fig3.subplots_adjust(bottom=BOTTOM)
+fig3.savefig("../results/Ising/time_normalized_ising.pdf", pad_inches=0.05)
+fig3.savefig("../results/Ising/time_normalized_ising.png", dpi=300)
 print("Saved: time_normalized_ising.pdf / .png")
 
 
@@ -176,12 +176,12 @@ fig4, (ax_b, ax_c) = plt.subplots(1, 2, figsize=(7, 3.2), sharey=False)
 
 for T in T_vals:
     group = df[df["T"] == T].sort_values("N")
-    ax_b.plot(group["N"], group["t_bits"]   / N_sweeps * 1e9,   # ns / sweep
+    ax_b.plot(group["N"], group["t_bits"]   / N_sweeps * 1e9,
               marker="o", markersize=3, linewidth=1.0, color=color4[T])
-    ax_c.plot(group["N"], group["t_nobits"] / N_sweeps * 1e6,   # µs / sweep
+    ax_c.plot(group["N"], group["t_nobits"] / N_sweeps * 1e6,
               marker="s", markersize=3, linewidth=1.0, color=color4[T])
 
-for ax, title in zip([ax_b, ax_c], ["bitwise", "classic"]):
+for ax, col, scale in zip([ax_b, ax_c], ["t_bits", "t_nobits"], [1e9, 1e6]):
     ax.set_xlabel(r"$N$")
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -190,12 +190,25 @@ for ax, title in zip([ax_b, ax_c], ["bitwise", "classic"]):
     ax.xaxis.set_minor_formatter(ticker.NullFormatter())
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
     ax.grid(True, which="major", alpha=0.25, linewidth=0.5)
-    ax.set_title(title, fontsize=10)
 
+    # fit log-log
+    all_N = df.groupby("N")[col].mean().index.values
+    all_t = df.groupby("N")[col].mean().values / N_sweeps * scale
+    slope, _ = np.polyfit(np.log(all_N), np.log(all_t), 1)
+
+    # droite de pente 1 avec exposant mesuré dans le label
+    N_ref = np.array([df["N"].min(), df["N"].max()])
+    t0    = (df[df["N"] == df["N"].min()][col] / N_sweeps * scale).mean()
+    ax.plot(N_ref, t0 * (N_ref / N_ref[0]),
+            color="k", linewidth=0.8, linestyle=":",
+            label=rf"$ \propto N^{{{slope:.2f}}}$")
+    ax.legend(fontsize=7, frameon=False)
+
+ax_b.set_title("bitwise", fontsize=10)
+ax_c.set_title("classic", fontsize=10)
 ax_b.set_ylabel(r"$t_{\rm bits} / N_{\rm sweep}$ [ns]")
 ax_c.set_ylabel(r"$t_{\rm classic} / N_{\rm sweep}$ [$\mu$s]")
 
-# Légende centralisée sur la figure (une seule, côté droit)
 handles = [plt.Line2D([0],[0], color=color4[T], linewidth=1.0,
                        marker="o", markersize=3, label=f"$T={T:.2f}$")
            for T in T_vals]
