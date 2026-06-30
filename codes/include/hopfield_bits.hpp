@@ -52,9 +52,6 @@ public:
     vector<vector<UnsignedInt>> getCouplingsConfigBits();
     vector<vector<vector<int>>> getPatternsBitsToCanonical();
 
-
-private:
-
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation

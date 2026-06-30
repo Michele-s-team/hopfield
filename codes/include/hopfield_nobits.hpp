@@ -25,12 +25,12 @@ public:
     void evolveIndependentRNG(gsl_rng*);
     void evolve_save(gsl_rng*, double freq, const std::string& filename);
 
+    void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
+    void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
+
 private:
 
     int DeltaE(int spin, int realization);
-
-    void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
-    void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
 };
 
 #endif

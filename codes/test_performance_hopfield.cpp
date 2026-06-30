@@ -126,92 +126,73 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
-int main()
-{
+int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    // ============================================================
-    // Simulation parameters
-    // ============================================================
+    const int N_sweeps = 1 << 7;
 
-    const int N_sweeps = 1 << 14;
-
-    // Square lattice sizes
     vector<int> N_vals = {
         10 * 10, 15 * 15, 20 * 20, 25 * 25, 30 * 30,
         40 * 40, 50 * 50, 60 * 60, 70 * 70, 80 * 80
     };
 
-    // Memory load α = P / N
     vector<double> alpha_vals = {
         0.02, 0.05, 0.10, 0.15, 0.20
     };
 
-    // Temperature range
     vector<double> temperatures = {
         0.5, 1.0, 1.5, 2.0, 2.5,
-        3.0, 3.5, 4.0, 4.5, 5.0, 6.0
+        3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
     };
 
-    // Random number generator
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-
-    // ============================================================
-    // Output file
-    // ============================================================
 
     ofstream out("../results/Hopfield/speedup.csv");
 
     out << "N,P,alpha,T,t_bits,t_nobits,ratio\n";
     out << fixed << setprecision(6);
 
-    // ============================================================
-    // Global timer
-    // ============================================================
-
     clock_gettime(CLOCK_MONOTONIC, &t_init);
 
     // ============================================================
-    // Loop over lattice sizes
+    // GLOBAL COUNTER (AJOUT)
     // ============================================================
+    double total_time_global = 0.0;
 
     for (int N_spins : N_vals)
     {
         clock_gettime(CLOCK_MONOTONIC, &t_start);
 
+        // ============================================================
+        // N COUNTER (AJOUT)
+        // ============================================================
+        double total_time_N = 0.0;
+
         cout << "\n==================================================\n";
         cout << "Lattice size : N = " << N_spins << '\n';
         cout << "==================================================\n";
 
-        // --------------------------------------------------------
-        // Loop over memory loads
-        // --------------------------------------------------------
-
         for (double alpha : alpha_vals)
         {
             int P = max(1, static_cast<int>(round(alpha * N_spins)));
+
+            // ============================================================
+            // ALPHA COUNTER (AJOUT)
+            // ============================================================
+            double total_time_alpha = 0.0;
 
             cout << "\n------------------------------------------\n";
             cout << "alpha = " << alpha
                       << "   P = " << P << '\n';
             cout << "------------------------------------------\n";
 
-            // Create both implementations
             HopfieldBits bits(N_spins, 1, N_sweeps, P);
             HopfieldNoBits nobits(N_spins, 1, N_sweeps, P);
-
-            // ----------------------------------------------------
-            // Loop over temperatures
-            // ----------------------------------------------------
 
             for (size_t i = 0; i < temperatures.size(); ++i)
             {
                 double T = temperatures[i];
                 double beta = 1.0 / T;
-
-                // ----------------------------------------------
-                // Generate identical initial conditions
-                // ----------------------------------------------
 
                 bits.initNetwork2D_PBC();
                 nobits.initNetwork2D_PBC();
@@ -249,7 +230,7 @@ int main()
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
-                
+
                 cout << "   bitwise   : " << t_bits << " s\n";
 
                 // ----------------------------------------------
@@ -271,12 +252,10 @@ int main()
                 double ratio =
                     (t_bits > 0.0) ? t_nobits / t_bits : 0.0;
 
-                // Display results
                 cout
                     << "   classical : " << t_nobits << " s\n"
                     << "   speedup   : " << ratio << '\n';
 
-                // Save results
                 out << N_spins << ","
                     << P << ","
                     << alpha << ","
@@ -286,7 +265,24 @@ int main()
                     << ratio << "\n";
 
                 out.flush();
+
+                // ============================================================
+                // TIME ACCUMULATION (AJOUT)
+                // ============================================================
+                double t_total = t_bits + t_nobits;
+                total_time_alpha += t_total;
+                total_time_N += t_total;
+                total_time_global += t_total;
             }
+
+            // ============================================================
+            // PRINT ALPHA TIME (AJOUT)
+            // ============================================================
+            cout << "\n[alpha timing] alpha = "
+                 << alpha
+                 << " | total time = "
+                 << total_time_alpha
+                 << " s\n";
         }
 
         clock_gettime(CLOCK_MONOTONIC, &t_end);
@@ -295,16 +291,18 @@ int main()
             (t_end.tv_sec - t_start.tv_sec) +
             (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
 
-        cout << "\nFinished N = "
-                  << N_spins
-                  << " in "
-                  << elapsed_N
-                  << " s\n";
-    }
+        cout << "\n[N timing] N = "
+             << N_spins
+             << " | accumulated = "
+             << total_time_N
+             << " s\n";
 
-    // ============================================================
-    // End of benchmark
-    // ============================================================
+        cout << "Finished N = "
+             << N_spins
+             << " in "
+             << elapsed_N
+             << " s\n";
+    }
 
     clock_gettime(CLOCK_MONOTONIC, &t_final);
 
@@ -316,6 +314,11 @@ int main()
     cout << "Total execution time : "
               << elapsed
               << " s\n";
+
+    cout << "Total accumulated compute time : "
+         << total_time_global
+         << " s\n";
+
     cout << "=========================================\n";
 
     out.close();
