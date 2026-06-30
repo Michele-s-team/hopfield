@@ -222,11 +222,11 @@ The simulation of the dynamics has been entirely coded in \texttt{C++}, using an
 
 \subsection{Standard implementation of the Metropolis algorithm}
 
-A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}:\\
+A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}. This implementation is valid for all models, given a change in the computation of $\Lambda_k= \Delta E_k /2J$ when $J$ is a constant or $\Lambda_k= \Delta E_k /2$ when it is not. \\
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Ising Metropolis sweep (classical)}
+\caption{Standard Metropolis implementation}
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
 \BlankLine
@@ -235,7 +235,7 @@ A first naive implementation of the classical algorithm is given in the \Cref{al
     \For{$k = 1$ \KwTo $N$}{
       Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
       \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k = s_k^{(r)} \sum_{i \in \partial k} s_i^{(r)}$\;
+          Compute $\Lambda_k^{(r)} $\;
           \BlankLine
           \tcp{Unconditional flip: energy is lowered}
           \eIf{$\Lambda_k^{(r)} \leq 0$}{

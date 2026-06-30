@@ -12,7 +12,9 @@
 \subsection{Naive implementation of the classic Metropolis algorithm}
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Ising Metropolis sweep (classical, naive)}
+
+\caption{Standard Metropolis implementation  (naive)}
+
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
 \BlankLine
@@ -20,7 +22,7 @@
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$k = 1$ \KwTo $N$}{
       \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k = s_k^{(r)} \sum_{i \in \partial k} s_i^{(r)}$\;
+          Compute $\Lambda_k^{(r)}$\;
           \BlankLine
           \tcp{Unconditional flip: energy is lowered}
           \eIf{$\Lambda_k^{(r)} \leq 0$}{
@@ -42,6 +44,7 @@
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
+\caption{Ising Metropolis sweep (bitwise)}
 
 \KwIn{Lattice spins $\{S_i\}$, couplings $\{J_{ij}\}$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
@@ -81,7 +84,7 @@
         }
     }
 }
-\caption{Ising Metropolis sweep (bitwise)}
+
 \label{alg:SG_bitwise}
 \end{algorithm}
 
