@@ -137,14 +137,16 @@ int main() {
     int       N_sweeps = 1 << 16;
 
     // ── Lattice sizes ──────────────────────────────
-    vector<int> N_vals = {10 *10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80};
+    vector<int> N_vals = {60*60};//10 *10, 15*15, 20*20, 25*25, 30*30, 40*40, 50*50, 60*60, 70*70, 80*80};
     
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
+    /*
+
     // ── Temperature Range ───────────────────
     vector<double> temperatures1;
-    const double T_min1 = 6;
-    const double T_max1 = 8;
+    const double T_min1 = 9;
+    const double T_max1 = 9;
     const double step1  = 1;
     int    n_T1   = (int)((T_max1 - T_min1) / step1) + 1;
 
@@ -227,20 +229,19 @@ int main() {
 
     out_ising_csv.close();
 
+    */
+
     N_sweeps = 1 << 14;
 
     // ── Temperature Range ───────────────────
     vector<double> temperatures2;
-    const double T_min2 = 0.5;
-    const double T_max2 = 5;
-    const double step2 = 0.5;
+    const double T_min2 = 3.5;
+    const double T_max2 = 3.5;
+    const double step2 = 1;
     int    n_T2   = (int)((T_max2 - T_min2) / step2) + 1;
 
     for (int i = 0; i < n_T2; ++i)
         temperatures2.push_back(round((T_min2 + i * step2) * 1000.0) / 1000.0);
-    temperatures2.push_back(6);
-    temperatures2.push_back(7);
-    temperatures2.push_back(8);
 
 
     for (double T : temperatures2) cout <<T <<"  ";

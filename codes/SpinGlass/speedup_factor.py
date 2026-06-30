@@ -12,7 +12,7 @@ plt.rcParams.update({
     })
 
 # ── Data ────────────────────────────────────────────────────────────────────
-df = pd.read_csv("../results/Ising/speedup_save.csv")
+df = pd.read_csv("../results/SpinGlass/speedup_save.csv")
 
 # ── Couleurs distinctes par N ────────────────────────────────────────────────
 N_vals  = sorted(df["N"].unique())
@@ -56,12 +56,12 @@ cbar.set_label("Speed-up factor", fontsize=10)
 cbar.ax.tick_params(labelsize=8)
 
 
-fig1.savefig("../results/Ising/speedup_heatmap_ising.pdf", bbox_inches="tight", pad_inches=0.05)
+fig1.savefig("../results/SpinGlass/speedup_heatmap_SpinGlass.pdf", bbox_inches="tight", pad_inches=0.05)
 fig1.tight_layout()
-fig1.savefig("../results/Ising/speedup_heatmap_ising.png", bbox_inches="tight", dpi=300)
+fig1.savefig("../results/SpinGlass/speedup_heatmap_SpinGlass.png", bbox_inches="tight", dpi=300)
 print("Saved: speedup_heatmap.pdf / .png")
-'''
 
+'''
 
 # ── Style global ────────────────────────────────────────────────────────────
 plt.rcParams.update({
@@ -118,13 +118,13 @@ ax.grid(True, which="major", alpha=0.25, linewidth=0.5)
 ax.legend(framealpha=0.9, edgecolor="0.7", handlelength=1.8, ncol=2)
 
 
-fig2.savefig("../results/Ising/speedup_curves_ising.pdf", bbox_inches="tight", pad_inches=0.05)
+fig2.savefig("../results/SpinGlass/speedup_curves_SpinGlass.pdf", bbox_inches="tight", pad_inches=0.05)
 fig2.tight_layout()
-fig2.savefig("../results/Ising/speedup_curves_ising.png", bbox_inches="tight", dpi=300)
+fig2.savefig("../results/SpinGlass/speedup_curves_SpinGlass.png", bbox_inches="tight", dpi=300)
 print("Saved: speedup_curves.pdf / .png")
 
 
-N_sweeps = 2**16
+N_sweeps = 2**14
 
 # ════════════════════════════════════════════════════════════════════════════
 # Figure 3 — Temps normalisé t / (N * N_sweeps) vs T
@@ -157,12 +157,12 @@ ax1.grid(True, which="major", alpha=0.25, linewidth=0.5)
 
 lines = [plt.Line2D([0],[0], color="C0", linestyle="-",  marker="o", markersize=4),
          plt.Line2D([0],[0], color="#2ca02c", linestyle="--", marker="s", markersize=4)]
-ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center")
+ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center right")
 
 fig3.tight_layout()
-fig3.savefig("../results/Ising/time_normalized_ising.pdf", bbox_inches="tight", pad_inches=0.05)
-fig3.savefig("../results/Ising/time_normalized_ising.png", bbox_inches="tight", dpi=300)
-print("Saved: time_normalized_ising.pdf / .png")
+fig3.savefig("../results/SpinGlass/time_normalized_SpinGlass.pdf", bbox_inches="tight", pad_inches=0.05)
+fig3.savefig("../results/SpinGlass/time_normalized_SpinGlass.png", bbox_inches="tight", dpi=300)
+print("Saved: time_normalized_SpinGlass.pdf / .png")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -203,6 +203,6 @@ fig4.legend(handles=handles, loc="center right", bbox_to_anchor=(1.15, 0.5),
             fontsize=7, frameon=False, title=r"$T/J$", title_fontsize=8)
 
 fig4.tight_layout()
-fig4.savefig("../results/Ising/time_total_vs_N_ising.pdf", bbox_inches="tight", pad_inches=0.05)
-fig4.savefig("../results/Ising/time_total_vs_N_ising.png", bbox_inches="tight", dpi=300)
-print("Saved: time_total_vs_N_ising.pdf / .png")
+fig4.savefig("../results/SpinGlass/time_total_vs_N_SpinGlass.pdf", bbox_inches="tight", pad_inches=0.05)
+fig4.savefig("../results/SpinGlass/time_total_vs_N_SpinGlass.png", bbox_inches="tight", dpi=300)
+print("Saved: time_total_vs_N_SpinGlass.pdf / .png")
