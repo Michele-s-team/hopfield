@@ -1,8 +1,69 @@
 \section{The Hopfield model}
 \subsection{The model}
-\label{subsec:hopfield_model}
+\begin{equation}
+  H_\text{Hopfield}=-\sum_{i,j}w_{ij}S_iS_j
+\end{equation}
+\begin{equation}
+  w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu
+\end{equation}
+\begin{equation}
+  \begin{aligned}
+  \Delta E_k&= 2\sum_{i\neq k}w_{ki}S_kS_i\\
+            &= \frac{2}{N}  \sum_{i \partial k}\sum_{mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
+  \end{aligned}
+\end{equation}
 \subsection{Bitwise Implementation}
+We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variables. Thus:
+\begin{equation}
+    \frac{\Delta E_k N}{2} = \sum_{i \partial k} G_{ki} S_i S_k, \qquad \text{with} \quad G_{ki} \in [-p, p]
+\end{equation}
+
+And the flip condition becomes:
+\begin{equation}
+  \lfloor \rho \rfloor \geq \sum_{i \partial k }G_{ki}S_kS_i,
+\end{equation}
+with $\rho =-\frac{N}{2\beta} \log r$.
 \subsubsection{Naive implementation}
+A first naive implementation would be to unfold $G_{ki}$ into its pattern components in order to deal with \Bits only objects. The flip condition would then be:
+
+\begin{equation}
+  \lfloor \rho \rfloor \geq \sum_{i \partial k}\sum_{mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
+\end{equation}
+As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
+However, this method requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times.
+
 \subsubsection{Optimized implementation}
+A more efficient way to go would be to stay with the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki} \in [0, 2p]$, in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
+\begin{equation}
+    \sum_{i \partial k} G_{ki} S_i S_k = \sum_{i \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
+    = -\sum_{i \partial k} \tilde{G}_{ki} + 2\sum_{i \partial k}
+     C_{ik}(\tilde{G}_{ki}-p) + n_k p,
+\end{equation}
+with $C_{ki}= B_k \odot B_i$.
+
+\begin{equation}
+    \lfloor \rho \rfloor + \sum_{\langle k,i\rangle} \tilde{G}_{ki} + 2p\sum_{\langle k,i\rangle} C_{ki} \geq  pn_k+
+    2\sum_{\langle k,i\rangle} C_{ki}\, \oplus \tilde{G}_{ki}
+\end{equation}
+Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{ki}$ and every \Bits composing the \UnsignedInt $\tilde{G}_{ki}$:
+\begin{equation}
+  \left(C_{ki}\, \oplus \tilde{G}_{ki}\right)_l = C_{ki} \oplus \left(\tilde{G}_{ki}\right)_l,
+\end{equation}
+where $l$ denotes the $l$-th \Bits (associated with the power $2^l$).
+This is strictly equivalent to setting the column of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave it untouched else.
+Maximum value of $R$: $pN_{k}$\\
+Maximum value of $\sum_{<k,i>}g_{ik}$: $2pN_{k}$\\
+Maximum value of $2p\sum_{<k,i>}c_{ik}$: $2pN_{k}$\\
+
+\noindent Maximum value left-hand side: $5pN_{k}$\\
+Maximum value right-hand side: $pN_{k}(1+2\cdot2)=5pN_{k}$
+
+The Metropolis condition $r \leq e^{-\beta \Delta E_k}$ is equivalent to:
+\begin{equation}
+    R := \frac{-N}{2\beta}\log r \geq \frac{\Delta E_k N}{2}
+\end{equation}
+at max, $\Delta E_k N/2=PN_k$. So if $R \geq PN_k$, unconditional flip.\\
+Else, after substitution:
+
 \subsection{Capacity of the Hopfield network}
 \subsection{Performance test}

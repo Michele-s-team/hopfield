@@ -219,3 +219,37 @@ The simulation of the dynamics has been entirely coded in \texttt{C++}, using an
 
 \end{tikzpicture}
 \end{figure}
+
+\subsection{Standard implementation of the Metropolis algorithm}
+
+A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}:\\
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Ising Metropolis sweep (classical)}
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+\BlankLine
+\BlankLine
+\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$k = 1$ \KwTo $N$}{
+      Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
+      \For{$r = 1$ \KwTo $n_\text{bits}$}{
+          Compute $\Lambda_k = s_k^{(r)} \sum_{i \in \partial k} s_i^{(r)}$\;
+          \BlankLine
+          \tcp{Unconditional flip: energy is lowered}
+          \eIf{$\Lambda_k^{(r)} \leq 0$}{
+              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+          }{
+              \tcp{Conditional flip}
+              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+              }
+          }
+      }
+    }
+}
+\label{alg:ising_classic}
+\end{algorithm}
+\vspace{1em}
+This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared amongst all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used. This standard or reference implementation will be broadly shared across all three models studied in this report.

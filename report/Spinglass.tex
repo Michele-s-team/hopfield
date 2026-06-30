@@ -1,7 +1,7 @@
 \section{The Spinglass model}
-We now move on a more complex model, that is the Edwards–Anderson model.
+We now move on a more complex model, in order to approach the structure of the Hopfield network.
 \subsection{The Edwards–Anderson model}
-The Edwards–Anderson (EA) model -- first introduced by .. \cite{SFEdwards_1975} -- is a finite dimensional spin glass model with short range interaction. It is not a mean field spin glass model with infinite range interactions such as the Sherrington–Kirkpatrick model \cite{SK_model}. The model is formally described as follows:
+The Edwards–Anderson (EA) model -- first introduced by Edwards and Anderson in 1975 \cite{SFEdwards_1975} -- is a finite dimensional spin glass model with short range interaction. It is not a mean field spin glass model with infinite range interactions such as the Sherrington–Kirkpatrick model \cite{SK_model}. The model is formally described as follows:
 \begin{equation}
   H_\text{EA}=\sum_{\langle i,j \rangle}J_{ij}S_iS_j.
   \label{eq:EA_model}
@@ -10,13 +10,27 @@ Where $J_{ij}$ is a random variable taking its values in $\{-1,\,1\}$ with equal
 Under a spin flip ($S_k \to - S_k$), the energy shift is:
 \begin{equation}
   \Delta E_k=2 S_k \sum_{i \partial k}J_{ki}S_i.
-  \label{eq:EA_energy_shift}
+  \label{eq:DeltaE_EA}
 \end{equation}
-Performing the same derivation as for the Ising model, the spin flip condition for this model is thus:
+The structure being really similar to that of \eqref{eq:DeltaE_ising}, we can perform the same derivation as for the Ising model and find the spin flip condition:
 \begin{equation}
   \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}J_{ki}S_i,\\
   \label{eq:flip_EA_int}
 \end{equation}
-with $\rho$ the same exponential random variable as in the previous section.
+with this time $\rho \sim \mathcal{E}(2\beta)$.
 \subsection{Bitwise Implementation}
+\myindent We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in the previous section, the product $S_kS_i$ can be re-written $(-1+2B_k)(-1+2B_i)=-1+2 C_{ki}$ with $C_{ki}= B_k \odot B_i$. Thus, by writing $J_{ki}=-1+2K_{ki}$ with $K_{ki}$ a \Bits, we have:
+\begin{equation}
+  \begin{aligned}
+  J_{ik}S_kS_i =& (-1+2K_{ki})(-1+2 C_{ki})\\
+               =& -1 + 2D_{ki},\\
+  \end{aligned}
+\end{equation}
+with $D_{ki}=K_{ki}\odot C_{ki}= K_{ki} \odot B_k \odot B_i =  K_{ki} \oplus B_k \oplus B_i$. As in the previous section, the flip condition is then:
+\begin{equation}
+  \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}D_{ki}.
+  \label{eq:flip_SG_bitwise}
+\end{equation}
+Both the bitwise and the classic implementation are thus similar to this of the Ising model, and we will not present them further in this report. The bitwise algorithm for the spin glass model can be found in the appendix.\\
+The bitwise implementation is not validated here, as the bitwise framework was already tested in the previous section, and the main interest of this model lies in bridging the complexity gap between the Ising model and the Hopfield network. We nonetheless verified that the standard and the bitwise implementations produce identical spin configurations when initialized from the same initial state and driven by the same sequence of random numbers.
 \subsection{Performance test}

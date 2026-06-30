@@ -38,4 +38,51 @@
 \label{alg:ising_classic_naive}
 \end{algorithm}
 
+\subsection{Bitwise implementation of the Metropolis algorithm for the spin glass model}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+
+\KwIn{Lattice spins $\{S_i\}$, couplings $J_{ki}$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+
+\BlankLine
+\textbf{Variables:} $\mathtt{Bits}\ \texttt{xnor},\ \texttt{mask}$\;
+\phantom{\textbf{Variables:}} $\mathtt{UnsignedInt}\ T_k,\ \texttt{threshold}$\;
+
+\For{$\text{sweep}=1$ \KwTo $N_{\text{sweeps}}$}{
+    \For{$\text{step}=1$ \KwTo $N$}{
+        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$
+
+        \eIf{$\lfloor \rho \rfloor \ge n_k$}{
+            $S_k \leftarrow -S_k$ \tcp*{escape condition: unconditional flip across all replicas}
+        }{
+            $T_k \leftarrow \mathbf{0}$
+
+            $\mathtt{threshold} \leftarrow \mathbf{0}$
+
+            \For{$i \in \partial k$}{
+                $\mathtt{xnor}\ \leftarrow K_{ki} \oplus B_k \oplus B_i$
+                \tcp*{bitwise XNOR across replicas}
+
+                $T_k \mathrel{+}= \mathtt{xnor}$
+                \tcp*{increment agreement count per replica}
+            }
+
+            $T_k \leftarrow 2T_k$
+
+            $\mathtt{threshold} \leftarrow \lfloor \rho \rfloor +n_k$
+
+            $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
+            \tcp*{per-replica flip condition}
+
+        $B_k \leftarrow B_k \oplus \mathtt{mask}$ \tcp*{bitwise spin flip (XOR operation): only replicas}
+        \tcp*[r]{for which $\mathtt{mask}^{(\ell)}=1$ are flipped}
+        }
+    }
+}
+\caption{Ising Metropolis sweep (bitwise)}
+\label{alg:SG_bitwise}
+\end{algorithm}
+
 \end{appendix}
