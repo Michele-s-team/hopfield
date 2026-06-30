@@ -158,28 +158,31 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \myindent Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to evolve the system over $N_\text{sweeps}=2^{16}$ sweeps using both the classical naive implementation and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
 \begin{figure}[htbp]
 \centering
-\begin{subfigure}{0.49\textwidth}
+
+% ── Top row ────────────────────────────────────────---────────────────────
+\begin{minipage}[b]{0.49\textwidth}
     \centering
     \includegraphics[width=\linewidth]{speedup_curves_ising.pdf}
-    \caption{Speedup factor heatmap.}
+    \subcaption{Speedup factor heatmap.}
     \label{fig:speedup_ising_curve}
-\end{subfigure}
+\end{minipage}
 \hfill
-\begin{subfigure}{0.49\textwidth}
+\begin{minipage}[b]{0.49\textwidth}
     \centering
     \includegraphics[width=\linewidth]{time_normalized_ising.pdf}
-    \caption{Time per system size and number of sweeps, averaged over all system sizes, for different temperatures.}
+    \subcaption{Time per system size and number of sweeps, averaged over all system sizes, for different temperatures.}
     \label{fig:speedup_ising_time}
-\end{subfigure}
+\end{minipage}
 
 \vspace{0.5em}
 
-\begin{subfigure}{\textwidth}
+% ── Bottom row ────────────────────────────────────────────────────────────
+\begin{minipage}[b]{\textwidth}
     \centering
     \includegraphics[width=\linewidth]{time_total_vs_N_ising.pdf}
-    \caption{Total time vs.\ $N$ for all temperatures.}
+    \subcaption{Total time vs.\ $N$ for all temperatures.}
     \label{fig:speedup_ising_total}
-\end{subfigure}
+\end{minipage}
 
 \caption{Speedup factor between classical and bitwise implementations of the Ising Metropolis algorithm for several lattice sizes and temperatures.}
 \label{fig:speedup_ising}
