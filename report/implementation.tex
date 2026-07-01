@@ -183,7 +183,7 @@ This implementation method has proven efficient when dealing with discreet value
 \centering
 
 \includegraphics[height=5cm]{pictures/random_number.pdf}
-\caption{All 64 replicas of the system share the same random number at each step.\noteBastien{TO BE CHANGED (BOTTOW ROW)}}
+\caption{All 64 replicas of the system share the same random number at each step.}
 \label{fig:shared_rng}
 \end{figure}
 
@@ -247,7 +247,7 @@ Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
  \label{eq:flip_escape_condition}
 \end{equation}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime.\\
-We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition}.
+We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition} to be adapted to each model.
 \vspace{1em}
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -278,4 +278,4 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \label{alg:ising_classic}
 \end{algorithm}
 \vspace{1em}
-This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared amongst all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used. This standard or reference implementation will be broadly shared across all three models studied in this report.
+This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared among all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used.
