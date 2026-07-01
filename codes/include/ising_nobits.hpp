@@ -35,6 +35,7 @@ public:
 private:
 
     int DeltaE(int spin, int realization); // local energy variation for spin flip decision
+    void DeltaE_all(int spin, vector<int>& delta_E);
  
 };
 

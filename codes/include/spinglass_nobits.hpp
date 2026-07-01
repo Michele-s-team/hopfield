@@ -29,10 +29,14 @@ public:
     void evolveIndependentRNG(gsl_rng*); // reference full-loop implementation (non-modular)
     void evolve_save(gsl_rng* ran, double freq, const string& filename);  // run simulation and save the magnetization at the frequency freq (between 0 and 1) in filename
 
-    int DeltaE(int spin, int realization); // local energy variation for spin flip decision
     void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
     void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
+
+
+private : 
+
+    int DeltaE(int spin, int realization); // local energy variation for spin flip decision
+    void DeltaE_all(int spin, vector<int>& delta_E);
+
 };
-
-
 #endif

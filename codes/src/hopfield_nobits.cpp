@@ -27,28 +27,62 @@ int HopfieldNoBits::DeltaE(int spin, int r) {
     return spins_set[r * N + spin] * sum;
 }
 // =====================================================
+// ENERGY COMPUTATION (all replicas at once)
+// =====================================================
+// Calcule DeltaE(spin, r) pour tous les réplicas r en une seule passe sur les
+// voisins, au lieu de reboucler sur neighbors[spin] à chaque r séparément.
+// Boucle k externe, r interne : accès contigu à couplings[spin][k][r].
+void HopfieldNoBits::DeltaE_all(int spin, vector<int>& delta_E) {
+    delta_E.assign(n_bits, 0);
+    for (int k = 0; k < neighbors[spin].size(); ++k) {
+        int j = neighbors[spin][k];
+        for (int r = 0; r < n_bits; ++r) {
+            delta_E[r] += couplings[spin][k][r] * spins_set[r * N + j];
+        }
+    }
+    for (int r = 0; r < n_bits; ++r) {
+        delta_E[r] *= spins_set[r * N + spin];
+    }
+}
+
+// =====================================================
 // SHARED RNG (same random threshold among replicas)
 // =====================================================
-
 void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
+
     const int total_sweeps = getNSweeps();
-    const int progress_stride = max(1, total_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+    const int progress_stride = std::max(1, total_sweeps / 10);
+    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
+
+    std::vector<int> delta_E(n_bits);
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-            int spin = gsl_rng_uniform_int(ran, N);
-            int rng = randomNumber(ran, P * neighbor_count[spin], N);
 
-            if (rng >= P * neighbor_count[spin]) {
-                // 1ST BRANCH: unconditional flip in all replicas
+        for (int step = 0; step < N; ++step) {
+
+            const int spin = gsl_rng_uniform_int(ran, N);
+            const int threshold = P * neighbor_count[spin];
+            const int rng = randomNumber(ran, threshold, N);
+
+            // Branch 1: unconditional flip
+            if (rng >= threshold) {
+
                 for (int r = 0; r < n_bits; ++r)
                     spins_set[r * N + spin] *= -1;
+
             } else {
-                // 2ND BRANCH: flip replica r only if rng >= DeltaE(spin, r)
-                for (int r = 0; r < n_bits; ++r)
-                    if (rng >= DeltaE(spin, r))
+
+                // Branch 2: compute all ΔE once
+                DeltaE_all(spin, delta_E);
+
+                for (int r = 0; r < n_bits; ++r) {
+
+                    const int dE = delta_E[r];
+
+                    if (dE <= 0 || rng >= dE) {
                         spins_set[r * N + spin] *= -1;
+                    }
+                }
             }
         }
 
@@ -56,30 +90,48 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
             SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+            std::cout << "\rSweep: " << (sweep + 1)
+                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
+                      << std::flush;
     }
-    cout << "\n";
-}
 
+    std::cout << "\n";
+}
 // =====================================================
 // INDEPENDENT RNG (different random threshold among replicas)
 // =====================================================
-
 void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
+
     const int total_sweeps = getNSweeps();
-    const int progress_stride = max(1, total_sweeps / 10);
-    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+    const int progress_stride = std::max(1, total_sweeps / 10);
+    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
+
+    std::vector<int> delta_E(n_bits);
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
+
         for (int step = 0; step < N; ++step) {
-            int spin = gsl_rng_uniform_int(ran, N);
+
+            const int spin = gsl_rng_uniform_int(ran, N);
+
+            // Compute ΔE once per spin
+            DeltaE_all(spin, delta_E);
 
             for (int r = 0; r < n_bits; ++r) {
-                int rng = randomNumber(ran, neighbor_count[spin]);
-                if (rng >= DeltaE(spin, r))
+
+                const int dE = delta_E[r];
+
+                if (dE <= 0) {
+
                     spins_set[r * N + spin] *= -1;
+
+                } else {
+
+                    const int rng = randomNumber(ran, neighbor_count[spin]);
+
+                    if (rng >= dE)
+                        spins_set[r * N + spin] *= -1;
+                }
             }
         }
 
@@ -87,13 +139,13 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
             SaveSpinConfigurations(sweep);
 
         if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+            std::cout << "\rSweep: " << (sweep + 1)
+                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
+                      << std::flush;
     }
-    cout << "\n";
-}
 
+    std::cout << "\n";
+}
 // =====================================================
 // PUBLIC API
 // =====================================================

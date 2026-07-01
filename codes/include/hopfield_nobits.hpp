@@ -31,6 +31,7 @@ public:
 private:
 
     int DeltaE(int spin, int realization);
+    void DeltaE_all(int spin, vector<int>& delta_E);
 };
 
 #endif
