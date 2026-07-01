@@ -3,7 +3,7 @@ We first implement the method on the Ising model, which is the simplest one.
 \subsection{The model}
 The Hamiltonian of the Ising network is given by
 \begin{equation*}
-  H_\text{Ising}=-J\sum_{\langle i,j \rangle<i,j>}S_iS_j -h \sum_i S_i,
+  H_\text{Ising}=-J\sum_{\langle i,j \rangle}S_iS_j -h \sum_i S_i,
 \end{equation*}
 which, in absence of external field $h$ becomes,
 \begin{equation}
@@ -14,26 +14,12 @@ When flipping the spin $S_k$ ($S_k \to - S_k$), the associated energy shift is
 \begin{equation}
 \begin{aligned}
   \Delta E_k &= H_\text{Ising}\left[-S_k\right]-H_\text{Ising}\left[S_k\right] \\
-  &= 2J S_k \sum_{i \in \partial k} S_i.
+  &= 2J S_k \sum_{i \in \partial k} S_i,
 \end{aligned}
 \label{eq:DeltaE_ising}
 \end{equation}
-where $i \in \partial k$ denotes the summation over the neighbors of $k$. If $\Delta E_k \leq 0$ the flip is accepted. Else, it is accepted if
-\begin{equation}
-\begin{aligned}
-  r&\leq e^{-\beta \Delta E_k}\\
-  \implies \frac{-1}{\beta}\log r &\geq \Delta E_k\\
-  \implies \frac{-1}{2\beta J}\log r &\geq S_k  \sum_{i \in \partial k}S_i.\\
-\end{aligned}
-\label{eq:flip_ising}
-\end{equation}
-With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
-The right-hand side of the equation is an integer which can be positive of negative. (However, due to the first escape condition of the algorithm, we know that it is strictly positive.) The left-hand side is thus compared with an (positive) integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
-\begin{equation}
-  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}S_i.\\
-  \label{eq:flip_ising_int}
-\end{equation}
-We now need to write the sum on spins in a \Bits formalism in order to properly parallelize the evolutions.
+where $i \in \partial k$ denotes the summation over the neighbors of $k$.
+We now need to implement the flip condition $\lfloor \rho \rfloor \geq \Lambda_k$ in a bitwise formalism in order to properly parallelize the evolutions.
 \subsection{Bitwise Implementation}
 Remembering that $S_i$ is actually an array containing $64$ replicas of the same spin, we write $S_i = -1 + 2B_i$, with $B_i$ a \Bits. The sum hence becomes:
 \begin{equation}
@@ -62,17 +48,12 @@ Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odo
 \begin{equation}
   \sum_{i \in \partial k}S_k S_i=2\sum_{i \in \partial k} C_{ki} - n_k,
 \end{equation}
-with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ the number of neighbor of the spin $k$. The bitwise flip condition is then:
+with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ is the number of neighbor of the spin $k$. The bitwise flip condition is then:
 \begin{equation}
   \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
   \label{eq:flip_ising_bitwise}
 \end{equation}
-In addition, according to the definition of $\Delta E_k$ \eqref{eq:DeltaE_ising}, we have $-2Jn_k \leq \Delta E_k \leq 2Jn_k$. Plugging this into Eq~\eqref{eq:flip_ising} yields the flip escape condition:
-\begin{equation}
-  \lfloor \rho \rfloor \geq n_k.
-  \label{eq:flip_ising_escape_int}
-\end{equation}
-When satisfied, this guarantees that Eq.~\eqref{eq:flip_ising_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime. Moreover, the integer flip condition \eqref{eq:flip_ising_escape_int} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively. This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
+ Moreover, the integer flip condition \eqref{eq:flip_escape_condition} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively (with $\max \Lambda_k = n_k$). This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
 
 The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
 
@@ -86,8 +67,8 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \textbf{Variables:} $\mathtt{Bits}\ \texttt{xnor},\ \texttt{mask}$\;
 \phantom{\textbf{Variables:}} $\mathtt{UnsignedInt}\ T_k,\ \texttt{threshold}$\;
 
-\For{$\text{sweep}=1$ \KwTo $N_{\text{sweeps}}$}{
-    \For{$\text{step}=1$ \KwTo $N$}{
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweep}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
         Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$
 
         \eIf{$\lfloor \rho \rfloor \ge n_k$}{
@@ -124,8 +105,8 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 
 
 \subsection{Phase diagram}
-\myindent We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is agreement with the known analytical results. We show in Figure~\ref{fig:magnetizations_multiN} the obtained phase diagram for several sizes of two-dimensional square lattices. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization. \noteBastien{+ pas de blocage état métaqtable basse température}\\
-\begin{figure}[H]
+\myindent We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is agreement with the known analytical results. We show in Figure~\ref{fig:magnetizations_multiN} the obtained phase diagram for several sizes of two-dimensional square lattices. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization. It aslo prevents the system to get stuck into metastable states such as the strip state for which several (usually two) regions of opposite magnetizations arise when the system is initialized randomly from a low temperature.\\
+\begin{figure}[htbp]
 \centering
 
 \includegraphics[height=7.75cm]{pictures/magnetizations_multiN.pdf}
@@ -134,7 +115,7 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \end{figure}
 Qualitatively, it appears that the magnetization curve get closer to the exact solution when the lattice size is increased. This was to be expected as we gradually get closer to the infinite size case when increasing the lattice size. We also notice an excellent agreement between the exact analytical magnetization and the obtained ones in the ferromagnetic part of the phase diagram. Thus, the obtained phase diagram is in excellent agreement with the expected phase diagram, taking into account that we work on finite size lattices. In this plot, each point corresponds to the mean over the $n_\text{bits}=64$ independent realizations. We show in Figure~\ref{fig:evolution_ising} the trajectories over time of the magnetizations for those 64 realizations.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 
 \includegraphics[height=4.5cm]{pictures/evolution_ising_T1.5_L100.pdf}
@@ -145,7 +126,7 @@ In order to make sure that the phase transition of our network is well at $T_c=2
 \begin{equation}
   U_L = 1-\frac{\langle m^4 \rangle_L}{3\langle m^2 \rangle_L^2}
 \end{equation}
-Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, it has been shown that all Binder curves for different lattice sizes intersect at the same scale-invariant critical point $\left(T_c,\, U^*\right)$ \cite{Binder1981}. This is because at $T_c$, the system becomes scale invariant, making the Binder cumulant independent of the system size at this specific temperature. We show in Figure~\ref{fig:binder} the plot of the Binder cumulants for the different lattice sizes.
+Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, it has been shown that all Binder curves for different lattice sizes intersect at the same scale-invariant critical point $\left(T_c,\, U^*\right)$ \cite{Binder1981}. This is because at $T_c$, the system becomes scale invariant, making the Binder cumulant independent of the system size at this specific temperature. We show in Figure~\ref{fig:binder} the plot of the Binder cumulants for the different lattice sizes. We obtain the expected curves for the different lattice sizes, with the known asymptotic values and the crossing of the curves in $\left(T_c,\,U^*\right)$, which validates our implementation.
 
 \begin{figure}[htbp]
 \centering
@@ -153,7 +134,6 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \caption{Binder cumulant for the different lattice sizes. The curves approach the two asymptotic limits and intersect at $\left(T_c,\,U^*\right)$, as expected. Insets show the zoomed region around the critical point.}
 \label{fig:binder}
 \end{figure}
-\FloatBarrier
 \subsection{Performance test}
 \myindent Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to evolve the system over $2^{16}$ sweeps using both the classical naive implementation and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
 \begin{figure}[htbp]

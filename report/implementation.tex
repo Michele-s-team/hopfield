@@ -221,9 +221,34 @@ The simulation of the dynamics has been entirely coded in \texttt{C++}, using an
 \end{figure}
 
 \subsection{Standard implementation of the Metropolis algorithm}
-
-A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix. A more efficient implementation would be to share the drawn random threshold across the replicas, this implementation is shown in the \Cref{alg:ising_classic}. This implementation is valid for all models, given a change in the computation of $\Lambda_k= \Delta E_k /2J$ when $J$ is a constant or $\Lambda_k= \Delta E_k /2$ when it is not. \\
-
+\myindent We show here the standard implementation of the Metropolis, which will be broadly shared across all models.\\
+If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^{-\beta \Delta E_k}$, yields:
+\begin{equation}
+\begin{aligned}
+  \frac{-1}{\beta}\log r &\geq \Delta E_k\\
+  \frac{-1}{2\beta J}\log r &\geq S_k  \sum_{i \in \partial k}S_i.\\
+\end{aligned}
+\label{eq:flip_condition}
+\end{equation}
+With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
+The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
+\begin{equation}
+  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}S_i= \Lambda_k.
+  \label{eq:flip_int}
+\end{equation}
+A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number. A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
+\begin{equation}
+ -\max\Lambda_k \leq \Lambda_k \leq \max\Lambda_k ,
+\end{equation}
+where $\max\Lambda_k $ only depend on the topology of the network.
+Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
+\begin{equation}
+ \lfloor \rho \rfloor \geq \max\Lambda_k
+ \label{eq:flip_escape_condition}
+\end{equation}
+When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime.\\
+We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition}.
+\vspace{1em}
 \begin{algorithm}[H]
 \DontPrintSemicolon
 \caption{Standard Metropolis implementation}
@@ -234,19 +259,20 @@ A first naive implementation of the classical algorithm is given in the \Cref{al
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$k = 1$ \KwTo $N$}{
       Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
-      \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k^{(r)} $\;
-          \BlankLine
-          \tcp{Unconditional flip: energy is lowered}
-          \eIf{$\Lambda_k^{(r)} \leq 0$}{
-              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-          }{
-              \tcp{Conditional flip}
-              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
-                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-              }
-          }
-      }
+      \eIf{$\lfloor \rho \rfloor \geq \max\Lambda_k$}{
+        \For{$r = 1$ \KwTo $n_\text{bits}$}{
+            $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+            }
+        }{
+            \For{$r = 1$ \KwTo $n_\text{bits}$}{
+                Compute $\Lambda_k^{(r)} $\;
+                \If{$\Lambda_k^{(r)} \leq 0$ \textbf{or} $\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+                    \BlankLine
+                    \tcp{the test $\Lambda_k^{(r)} \leq 0$ is not necessary as $\lfloor \rho \rfloor$ has already been drawn, but is shown for pedagogy}
+                    $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+                }
+            }
+        }
     }
 }
 \label{alg:ising_classic}
