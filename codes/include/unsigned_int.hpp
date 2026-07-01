@@ -37,7 +37,16 @@ public:
 
     void AddScalar(unsigned long long int val);
 
+
+    void Increment(Bits* mask);
+    void Decrement(Bits* mask);
+
+    void AddMasked(UnsignedInt* val, Bits* mask);
+    void SubtractMasked(UnsignedInt* val, Bits* mask);
+
     void operator = (BitSet);
+
+
     
     friend class Double;
     

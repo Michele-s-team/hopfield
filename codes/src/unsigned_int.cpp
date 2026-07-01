@@ -115,3 +115,63 @@ void UnsignedInt::AddScalar(unsigned long long int val) {
     tmp.SetAll(val);
     (*this) += &tmp;
 }
+
+// Increment by 1 the parallel systems (lanes) selected by *mask, leaving all other
+// lanes unchanged. Ripple-carry adder across the n_bits rows of b, from LSB (p=0)
+// to MSB. carry is seeded with *mask: for lanes where mask==0, carry reste nul à
+// chaque étape et le bit correspondant n'est jamais modifié.
+void UnsignedInt::Increment(Bits* mask){
+    
+    Bits carry(*mask);
+    
+    for(unsigned int p=0; p<n_bits; p++){
+        
+        Bits new_carry = b[p] & carry;   // carry-out du bit p (b[p]==1 et carry==1)
+        b[p] = b[p] ^ carry;             // bit somme (inchangé si carry==0)
+        carry = new_carry;
+        
+    }
+    
+}
+
+
+// Decrement by 1 the parallel systems (lanes) selected by *mask, leaving all other
+// lanes unchanged. Ripple-borrow subtractor across the n_bits rows of b, from LSB
+// to MSB. borrow est initialisé à *mask.
+void UnsignedInt::Decrement(Bits* mask){
+    
+    Bits borrow(*mask);
+    
+    for(unsigned int p=0; p<n_bits; p++){
+        
+        Bits new_borrow = (~b[p]) & borrow;  // borrow-out du bit p (b[p]==0 et borrow==1)
+        b[p] = b[p] ^ borrow;                // bit différence (inchangé si borrow==0)
+        borrow = new_borrow;
+        
+    }
+    
+}
+
+// Adds *val to *this, only on the lanes selected by *mask
+void UnsignedInt::AddMasked(UnsignedInt* val, Bits* mask){
+    Bits carry; carry.SetAll(false);
+    for(unsigned int p=0; p<n_bits; p++){
+        Bits add_bit = val->b[p] & (*mask);
+        Bits sum      = b[p] ^ add_bit ^ carry;
+        Bits new_carry = (b[p] & add_bit) | (b[p] & carry) | (add_bit & carry);
+        b[p]  = sum;
+        carry = new_carry;
+    }
+}
+
+// Subtracts *val from *this, only on the lanes selected by *mask
+void UnsignedInt::SubtractMasked(UnsignedInt* val, Bits* mask){
+    Bits borrow; borrow.SetAll(false);
+    for(unsigned int p=0; p<n_bits; p++){
+        Bits sub_bit = val->b[p] & (*mask);
+        Bits diff       = b[p] ^ sub_bit ^ borrow;
+        Bits new_borrow = ((~b[p]) & sub_bit) | ((~b[p]) & borrow) | (sub_bit & borrow);
+        b[p]   = diff;
+        borrow = new_borrow;
+    }
+}
