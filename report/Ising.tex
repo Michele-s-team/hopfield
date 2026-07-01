@@ -60,7 +60,7 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \begin{algorithm}[H]
 \DontPrintSemicolon
 
-\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwIn{Bit-replicated spins $\{B_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
 
 \BlankLine
@@ -69,10 +69,11 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 
 \For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweep}}$}{
     \For{$\mathrm{step}=1$ \KwTo $N$}{
+        Draw $k$ among $N$\;
         Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$
 
         \eIf{$\lfloor \rho \rfloor \ge n_k$}{
-            $S_k \leftarrow -S_k$ \tcp*{escape condition: unconditional flip across all replicas}
+            $B_k \leftarrow \neg B_k$ \tcp*{escape condition: unconditional flip across all replicas}
         }{
             $T_k \leftarrow \mathbf{0}$
 

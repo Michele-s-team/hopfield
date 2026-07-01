@@ -20,7 +20,8 @@
 \BlankLine
 \BlankLine
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
-    \For{$k = 1$ \KwTo $N$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+        Draw $k$ among $N$\;
       \For{$r = 1$ \KwTo $n_\text{bits}$}{
           Compute $\Lambda_k^{(r)}$\;
           \BlankLine
@@ -44,21 +45,24 @@
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\caption{Ising Metropolis sweep (bitwise)}
+\caption{Spin glass Metropolis sweep (bitwise)}
 
-\KwIn{Lattice spins $\{S_i\}$, couplings $\{J_{ij}\}$, inverse temperature $\beta$}
-\KwOut{Updated lattice spins $\{S_i\}$}
+\KwIn{Bit-replicated spins $\{B_i\}$, couplings $\texttt{Couplings}$, neighbor lists $\partial i$, inverse temperature $\beta$}
+\KwOut{Updated spin configurations $\{B_i\}$}
 
 \BlankLine
-\textbf{Variables:} $\mathtt{Bits}\ \texttt{xnor},\ \texttt{mask}$\;
-\phantom{\textbf{Variables:}} $\mathtt{UnsignedInt}\ T_k,\ \texttt{threshold}$\;
+\textbf{Preallocated variables:} $\mathtt{Bits}\ \texttt{xnor},\ \texttt{mask}$\;
+\phantom{\textbf{Preallocated variables:}} $\mathtt{UnsignedInt}\ T_i,\ \texttt{threshold}$\;
 
-\For{$\text{sweep}=1$ \KwTo $N_{\text{sweeps}}$}{
-    \For{$\text{step}=1$ \KwTo $N$}{
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+        Draw $k$ among $N$\;
         Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$
 
         \eIf{$\lfloor \rho \rfloor \ge n_k$}{
-            $S_k \leftarrow -S_k$ \tcp*{escape condition: unconditional flip across all replicas}
+            $B_k \leftarrow \neg B_k$ \tcp*{escape condition: unconditional flip across all replicas}
         }{
             $T_k \leftarrow \mathbf{0}$
 

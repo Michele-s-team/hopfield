@@ -33,6 +33,7 @@ with $D_{ki}=K_{ki}\odot C_{ki}= K_{ki} \odot B_k \odot B_i =  K_{ki} \oplus B_k
 \end{equation}
 Both the bitwise and the classic implementation are thus similar to this of the Ising model, and we will not present them further in this report. The bitwise algorithm for the spin glass model can be found in the appendix, see \Cref{alg:SG_bitwise}.\\
 The bitwise implementation is not validated here, as the bitwise framework was already tested in the previous section, and the main interest of this model lies in bridging the complexity gap between the Ising model and the Hopfield network. We nonetheless verified that the standard and the bitwise implementations produce identical spin configurations when initialized from the same initial state and driven by the same sequence of random numbers.
+
 \subsection{Performance test}
 \myindent We now test the performance of the implementation, for several lattice sizes and the temperatures, this time with $N_\text{sweeps}=2^{14}$. The results are shown in \Cref{fig:speedup_spinglass}. We notice the same evolution of the normalized time for both implementation as the ones observed for the Ising model. The shape of the speedup factor is similar to this of the Ising model, but its evolution is more monotonic, with what appears to be a saturation for the highest temperatures. The time per sweep also remains proportional to the system size, the complexities of the implementations thus should be similar to those of the Ising model.
 
