@@ -189,6 +189,14 @@ This implementation method has proven efficient when dealing with discreet value
 
 \subsection{Note on the independence of the realizations}
 \subsection{Structure of the code}
+\begin{figure}[H]
+\centering
+
+\includegraphics[width=\linewidth]{architecture.pdf}
+\caption{All 64 replicas of the system share the same random number at each step.}
+\label{fig:shared_rng}
+\end{figure}
+
 The simulation of the dynamics has been entirely coded in \texttt{C++}, using an object-oriented approach to the problem.
 
 \begin{figure}[ht]
