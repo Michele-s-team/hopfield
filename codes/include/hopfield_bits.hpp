@@ -56,6 +56,7 @@ public:
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
     void runSweeps(gsl_rng*, bool save, double);
+    void runSweeps_old(gsl_rng*, bool save, double);
 };
 
 #endif

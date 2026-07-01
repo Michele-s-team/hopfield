@@ -129,7 +129,7 @@ void make_dir(const string& path) {
 int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 7;
+    const int N_sweeps = 1 << 12;
 
     vector<int> N_vals = {
         10 * 10, 15 * 15, 20 * 20, 25 * 25, 30 * 30,
@@ -159,8 +159,7 @@ int main(){
     // ============================================================
     double total_time_global = 0.0;
 
-    for (int N_spins : N_vals)
-    {
+    for (int N_spins : N_vals){
         clock_gettime(CLOCK_MONOTONIC, &t_start);
 
         // ============================================================
@@ -194,8 +193,8 @@ int main(){
                 double T = temperatures[i];
                 double beta = 1.0 / T;
 
-                bits.initNetwork2D_PBC();
-                nobits.initNetwork2D_PBC();
+                bits.initNetworkFullyConnected();
+                nobits.initNetworkFullyConnected();
 
                 gsl_rng_set(ran, 123);
 

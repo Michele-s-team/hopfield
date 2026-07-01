@@ -268,7 +268,7 @@ vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
-void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
+void HopfieldBits::runSweeps_old(gsl_rng* ran, bool save, double freq){
     Bits c_ij, mask;
 
     const int total_sweeps    = getNSweeps();
@@ -337,6 +337,80 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
         if (save && sweep > 0 && (sweep % save_stride == 0))
             SaveSpinConfigurations(sweep);
 
+        if ((sweep + 1) % progress_stride == 0)
+            cout << "\rSweep: " << sweep + 1
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
+                 << flush;
+    }
+    cout << "\n";
+}
+
+void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
+    Bits c_ij, mask;
+    const int total_sweeps    = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
+    const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
+    UnsignedInt sum_c          ((unsigned long long) max_deg);
+    UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
+    UnsignedInt sum_c_times_2P ((unsigned long long) 2 * max_deg * P);
+    UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
+    UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
+    UnsignedInt tmp            ((unsigned long long) 2 * P);
+    UnsignedInt twoP           ((unsigned long long) 2 * P);
+    twoP.SetAll((unsigned long long) 2 * P);
+
+    // --- sum_g précalculé une seule fois : ne dépend jamais des spins ---
+    vector<UnsignedInt> sum_g_persist(N);
+    for (int idx = 0; idx < N; ++idx) {
+        sum_g_persist[idx] = UnsignedInt((unsigned long long) 2 * max_deg * P);
+        sum_g_persist[idx].SetAll(0);
+        for (int k = 0; k < neighbor_count[idx]; ++k) {
+            sum_g_persist[idx] += &Couplings[idx][k];
+        }
+    }
+
+    for (int sweep = 0; sweep < total_sweeps; ++sweep){
+        for (int step = 0; step < N; ++step){
+            int i      = gsl_rng_uniform_int(ran, N);
+            int deg_i  = neighbor_count[i];
+            int random = randomNumber(ran, deg_i * P, N);
+            Bits& S_i = Bits_Spins_Set[i];
+
+            if (random >= P * deg_i) {
+                S_i.ComplementTo();
+                continue;
+            }
+
+            sum_c .SetAll(0);
+            sum_cg.SetAll(0);
+            for (int k = 0; k < deg_i; ++k){
+                int j = neighbors[i][k];
+                UnsignedInt& g_ij = Couplings[i][k];
+                c_ij = ~(S_i ^ Bits_Spins_Set[j]);
+                sum_c += &c_ij;
+                tmp  = g_ij;
+                tmp &= &c_ij;
+                sum_cg += &tmp;
+            }
+
+            // RHS = P*deg_i + 2*sum_cg
+            RHS  = sum_cg;
+            RHS.MultiplyByTwoTo();
+            RHS += &P_times_Neighbor_Count[i];
+
+            // LHS = random + sum_g + 2P*sum_c
+            LHS  = sum_g_persist[i];   // <- lecture directe, plus de recalcul
+            LHS.AddScalar(random);
+            sum_c.Multiply(&twoP, &sum_c_times_2P);
+            LHS += &sum_c_times_2P;
+
+            mask = (RHS <= LHS);
+            S_i ^= &mask;
+        }
+        if (save && sweep > 0 && (sweep % save_stride == 0))
+            SaveSpinConfigurations(sweep);
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
                  << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
