@@ -46,7 +46,7 @@ public:
 
     void operator = (BitSet);
 
-
+    void MultiplyByConstant(unsigned long long int constant, UnsignedInt* result);
     
     friend class Double;
     

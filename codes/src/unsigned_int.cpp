@@ -175,3 +175,56 @@ void UnsignedInt::SubtractMasked(UnsignedInt* val, Bits* mask){
         borrow = new_borrow;
     }
 }
+
+/*
+ * Multiplies *this by a scalar constant (same value across all
+ * n_bits lanes) and writes the result to *result.
+ *
+ * Numerical equivalent of Multiply(&multiplicand, result) where multiplicand
+ * would be an UnsignedInt broadcasting “constant” across all lanes
+ * (as via MultiplyByInteger), BUT:
+ *   - no temporary UnsignedInt is created for the constant
+ *   - the zero bits of ‘constant’ are skipped entirely: no AND operation,
+ *     no unnecessary carry propagation on these rows (mathematically,
+ *     when multiplicand[s] is all zeros, the corresponding iteration
+ *     changes anything: u=0, carry remains at 0, so skipping it is strictly
+ *     equivalent)
+ *   - non-zero bits are treated as a simple addition shifted by
+ *     *this (no need for an AND operation since the mask is ‘all ones’)
+ *
+ * CONTRACT (identical to Multiply):
+ * - `this` has a size `n = GetSize()`
+ * - `result` MUST already be allocated with a size >= `n + bits(constant)`
+ * - `result` is NOT resized here; no bounds checking
+ */
+
+void UnsignedInt::MultiplyByConstant(unsigned long long int constant, UnsignedInt* result){
+    const unsigned int n_size = GetSize();
+
+    result->SetAll(Bits_zero); // une seule fois
+
+    for (unsigned int s = 0; constant != 0; ++s, constant >>= 1)
+    {
+        if (!(constant & 1ULL)) continue; // bit nul : rien à faire, on saute tout le rang
+
+        Bits carry; carry.Clear();
+
+        for (unsigned int p = 0; p < n_size; ++p)
+        {
+            unsigned int idx = p + s;
+            if (idx >= result->GetSize()) continue; // ou assert(false)
+
+            Bits t;
+            t.Set(((result->b)[idx]) ^ b[p] ^ carry);
+
+            carry.Set((b[p] & (((result->b)[idx]) | carry)) |
+                      (((result->b)[idx]) & carry));
+
+            ((result->b)[idx]).Set(t);
+        }
+
+        unsigned int idx = s + n_size;
+        if (idx < result->GetSize())
+            ((result->b)[idx]).Set(carry);
+    }
+}
