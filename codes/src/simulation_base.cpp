@@ -49,8 +49,8 @@ uint64_t SimulationBase::PackBlock(const int* data, int start, int end){
 // FILE MANAGEMENT — MAGNETIZATIONS
 // =====================================================
 
-void SimulationBase::OpenMagnetizationFiles(const string& subfolder){
-    m_io.OpenMagnetizationFiles(m_base_folder + subfolder, N, m_metropolis.getBeta());
+void SimulationBase::OpenMagnetizationFiles(){
+    m_io.OpenMagnetizationFiles(m_base_folder, N, m_metropolis.getBeta());
 }
 
 void SimulationBase::CloseMagnetizationFiles(){
@@ -67,8 +67,8 @@ string SimulationBase::format_beta(double beta){
 // FILE MANAGEMENT — SPIN CONFIGURATIONS
 // =====================================================
 
-void SimulationBase::OpenSpinFiles(const string& subfolder){
-    m_io.OpenSpinFiles(m_base_folder + subfolder, N, m_metropolis.getBeta());
+void SimulationBase::OpenSpinFiles(){
+    m_io.OpenSpinFiles(m_base_folder, N, m_metropolis.getBeta());
 }
 void SimulationBase::CloseSpinFiles(){
     m_io.CloseSpinFiles();
@@ -124,9 +124,8 @@ void SimulationBase::SaveSpinConfigurations(int sweep){
     m_io.SaveSpinConfigurations(sweep, configs);
 }
 
-void SimulationBase::SavePatterns(const string& subfolder,
-                                   const vector<vector<vector<int>>>& patterns){
-    m_io.SavePatterns(m_base_folder + subfolder, patterns, N);
+void SimulationBase::SavePatterns(const vector<vector<vector<int>>>& patterns){
+    m_io.SavePatterns(m_base_folder, patterns, N);
 }
 
 // =====================================================

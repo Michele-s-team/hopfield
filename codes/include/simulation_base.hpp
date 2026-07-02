@@ -42,16 +42,15 @@ public:
     // I/O layer
     // =========================
 
-    void OpenMagnetizationFiles(const string& folder);
+    void OpenMagnetizationFiles();
     void CloseMagnetizationFiles();
     void SaveMagnetizations(int sweep);
 
-    void OpenSpinFiles(const string& folder);
+    void OpenSpinFiles();
     void CloseSpinFiles();
     void SaveSpinConfigurations(int sweep);
 
-    void SavePatterns(const string& folder,
-                       const vector<vector<vector<int>>>& patterns);
+    void SavePatterns(const vector<vector<vector<int>>>& patterns);
     
     static string format_beta(double beta);
 

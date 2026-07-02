@@ -125,7 +125,7 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 int main() {
     // ── Parameters ────────────────────────────
-    int       N_sweeps = 1 << 16;
+    int       N_sweeps = 1 << 10;
 
     // ── Temperature Range ───────────────────
     vector<double> temperatures;
@@ -165,8 +165,8 @@ int main() {
             double T     = temperatures[i];
             double betaJ = 1.0 / T;
 
-            bits.initNetwork2D_PBC();
-            nobits.initNetwork2D_PBC();
+            bits.initNetworkFullyConnected();
+            nobits.initNetworkFullyConnected();
 
             gsl_rng_set(ran, 123);
             bits.initSpins(ran);

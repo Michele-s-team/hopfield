@@ -444,7 +444,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // Run simulation without saving (thermalization)
 void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
     fromCanonical();
-    OpenSpinFiles(filename);
+    OpenSpinFiles();
     SaveSpinConfigurations(0);
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());
@@ -457,7 +457,7 @@ void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
 void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
     fromCanonical();
     cout << "Bitwise conversion done"<<endl;
-    OpenSpinFiles(filename);
+    OpenSpinFiles();
     SaveSpinConfigurations(0);
     cout << "evolve_save called, opening: " << filename << endl;
     runSweeps(ran, /*save=*/true, freq);
@@ -469,20 +469,20 @@ void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename
 
 
 // Run simulation and save at given frequency — fully bitwise initialization
-void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){  //the call to filename must be cleaned everywhere in the coe , useless
     initPatternsBits(ran);
     initCouplingsBits();
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
     vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
-    SavePatterns("patterns", patterns);
+    SavePatterns(patterns);
     cout << "Patterns saved" << endl;
 
-    OpenSpinFiles(filename);
+    OpenSpinFiles();
     SaveSpinConfigurations(0);
     cout << "evolve_save_bits called, opening: " << filename << endl;
-    runSweeps(ran, /*save=*/true, freq);
+    runSweeps_old(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_save_bits called, closing: " << filename << endl;
@@ -494,10 +494,10 @@ void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
     initSpinsBits(ran);
 
     vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
-    SavePatterns("patterns/", patterns);
+    SavePatterns(patterns);
     cout << "Patterns saved" << endl;
 
-    OpenSpinFiles(filename);
+    OpenSpinFiles();
     SaveSpinConfigurations(0);
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());

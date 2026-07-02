@@ -123,16 +123,6 @@ void make_dir(const string& path) {
 }
 
 
-    const int N_sweeps = 1 << 10;
-
-    vector<int> N_vals = {10 * 10, 20 * 20, 30 * 30, 50 * 50, 80 * 80
-    };
-
-    vector<double> alpha_vals = {0.05, 0.10, 0.15, 0.20};
-
-    vector<double> temperatures = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
-    };
-
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
@@ -140,11 +130,11 @@ void make_dir(const string& path) {
 int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 12;
+    const int N_sweeps = 1 << 16;
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 
-        30 * 30
+        10 * 10
         //50 * 50, 80 * 80
     };
 

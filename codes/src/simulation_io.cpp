@@ -79,21 +79,17 @@ void SimulationIO::OpenSpinFiles(
     double beta)
 {
     namespace fs = std::filesystem;
-    fs::path full_folder(folder);
-    fs::create_directories(full_folder);
+    fs::path base_folder(folder);
+    fs::path spins_folder = base_folder / "spins";
+    fs::create_directories(spins_folder);
 
     const int n_blocks = num_blocks(N);
     m_spin_files.resize(n_bits);
-
-    for (int r = 0; r < n_bits; ++r)
-    {
-        fs::path path =
-            full_folder /
-            ("spins_r" + std::to_string(r) + ".csv");
+    for (int r = 0; r < n_bits; ++r){
+        fs::path path = spins_folder / ("spins_r" + std::to_string(r) + ".csv");
         m_spin_files[r].open(path, std::ios::out | std::ios::app);
         if (!m_spin_files[r].is_open())
             continue;
-
         if (m_spin_files[r].tellp() == 0)
         {
             m_spin_files[r] << "sweep";
@@ -150,7 +146,8 @@ void SimulationIO::SavePatterns(
     int N)
 {
     namespace fs = std::filesystem;
-    fs::path full_folder(folder);
+    fs::path base_folder(folder);
+    fs::path full_folder = base_folder / "patterns";
     fs::create_directories(full_folder);
 
     const int P = patterns.size();

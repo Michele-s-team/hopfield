@@ -57,14 +57,14 @@ def find_beta_dir(parent_dir, beta):
     
     # Try with different decimal formats
     beta_strs = [
-        f"beta{beta:.6f}",  # beta5.000000
-        f"beta{beta:.5f}",  # beta5.00000
-        f"beta{beta:.4f}",  # beta5.0000
-        f"beta{beta:.3f}",  # beta5.000
-        f"beta{beta:.2f}",  # beta5.00
-        f"beta{beta:.1f}",  # beta5.0
-        f"beta{beta:.0f}",  # beta5
-        f"beta{beta}",      # beta5.0
+        f"beta{beta:.6f}",
+        f"beta{beta:.5f}",
+        f"beta{beta:.4f}",
+        f"beta{beta:.3f}",
+        f"beta{beta:.2f}",
+        f"beta{beta:.1f}",
+        f"beta{beta:.0f}",
+        f"beta{beta}",
     ]
     
     # Remove duplicates while preserving order
@@ -81,11 +81,10 @@ def find_beta_dir(parent_dir, beta):
         # Try to parse the beta value from the directory name
         for d in beta_dirs:
             try:
-                # Extract number from betaX.XXX
                 match = re.search(r"beta([\d.]+)", d.name)
                 if match:
                     found_beta = float(match.group(1))
-                    if abs(found_beta - beta) < 1e-6:  # Close enough
+                    if abs(found_beta - beta) < 1e-6:
                         return d
             except:
                 continue
@@ -103,6 +102,7 @@ def find_beta_dir(parent_dir, beta):
 def find_overlaps_dir(alpha_dir, N, beta):
     """
     Find the overlaps directory with the correct path structure.
+    Path: alpha/N/beta/overlaps/
     """
     # Build the path: alpha/N/beta/overlaps/
     N_dir = alpha_dir / f"N{N}"
@@ -118,11 +118,6 @@ def find_overlaps_dir(alpha_dir, N, beta):
     if overlaps_dir.exists() and overlaps_dir.is_dir():
         return overlaps_dir
     
-    # If no overlaps subdirectory, the files might be directly in beta_dir
-    overlap_files = list(beta_dir.glob(f"overlaps_N{N}_beta*.csv"))
-    if overlap_files:
-        return beta_dir
-    
     return None
 
 # ============================================================
@@ -132,6 +127,7 @@ def find_overlaps_dir(alpha_dir, N, beta):
 def process_alpha(alpha_dir, N, beta):
     """
     Process all overlap files for a given alpha directory.
+    Files are named: overlaps_r*.csv (without N and beta)
     """
     # Find the overlaps directory
     overlaps_dir = find_overlaps_dir(alpha_dir, N, beta)
@@ -139,10 +135,16 @@ def process_alpha(alpha_dir, N, beta):
     if overlaps_dir is None:
         return None, None, None
 
-    # Try to find overlap files with flexible beta pattern
-    overlap_files = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta*_r*.csv"))
+    # New format: overlaps_r*.csv
+    overlap_files = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    
+    # Fallback: old format
     if not overlap_files:
-        overlap_files = sorted(overlaps_dir.glob(f"*overlaps*.csv"))
+        overlap_files = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta*_r*.csv"))
+    
+    # Final fallback
+    if not overlap_files:
+        overlap_files = sorted(overlaps_dir.glob("*overlaps*.csv"))
     
     if not overlap_files:
         return None, None, None
@@ -166,6 +168,28 @@ def process_alpha(alpha_dir, N, beta):
     return sweeps[:min_len], mean_curve, std_curve
 
 # ============================================================
+# GET OVERLAP FILES (helper function)
+# ============================================================
+
+def get_overlap_files(overlaps_dir, N, beta):
+    """
+    Get all overlap files, trying both new and old naming conventions.
+    """
+    # New format: overlaps_r*.csv
+    files = sorted(overlaps_dir.glob("overlaps_r*.csv"))
+    
+    # Fallback: old format
+    if not files:
+        files = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta*_r*.csv"))
+    
+    # Final fallback
+    if not files:
+        files = sorted(overlaps_dir.glob("*overlaps*.csv"))
+    
+    return files
+
+
+# ============================================================
 # MAIN
 # ============================================================
 
@@ -175,7 +199,7 @@ if __name__ == "__main__":
     # PATH STRUCTURE: alpha_*/N1024/beta5.000000/overlaps/
     # ============================================================
     
-    root_dir = Path("../results/Hopfield/")  # Base directory
+    root_dir = Path("../results/Hopfield/")
     output_dir = root_dir / "figures"
     output_dir.mkdir(exist_ok=True)
 
@@ -205,7 +229,6 @@ if __name__ == "__main__":
     if not N_dirs:
         raise ValueError(f"No N directories found in {first_alpha}")
     
-    # Use the first N directory
     first_N_dir = N_dirs[0]
     N_label = first_N_dir.name.replace("N", "")
     N = int(N_label)
@@ -215,7 +238,6 @@ if __name__ == "__main__":
     if not beta_dirs:
         raise ValueError(f"No beta directories found in {first_N_dir}")
     
-    # Use the first beta directory
     first_beta_dir = beta_dirs[0]
     beta_label = first_beta_dir.name.replace("beta", "")
     beta = float(beta_label)
@@ -242,14 +264,14 @@ if __name__ == "__main__":
             test_overlaps = test_beta_dir / "overlaps"
             print(f"  Overlaps dir exists: {test_overlaps.exists()} -> {test_overlaps}")
             if test_overlaps.exists():
-                test_files = list(test_overlaps.glob(f"overlaps_N{N}_beta*_r*.csv"))
+                test_files = get_overlap_files(test_overlaps, N, beta)
                 print(f"  Found {len(test_files)} overlap files")
                 if test_files:
                     print(f"  Example: {test_files[0].name}")
     print("="*60 + "\n")
 
     # ============================================================
-    # PLOT 1 : Mean overlap for all alpha values
+    # FIGURE 1 : Mean overlap averaged over replicas for all alpha
     # ============================================================
 
     plt.figure(figsize=(8, 5))
@@ -277,23 +299,23 @@ if __name__ == "__main__":
 
         sweeps_plot = fix_sweeps(sweeps)
 
-        plt.plot(sweeps_plot, mean_curve, label=f"α = {alpha:.3f}")
+        plt.plot(sweeps_plot, mean_curve, label=f"$\\alpha = {alpha:.3f}$")
         plt.fill_between(sweeps_plot, mean_curve-std_curve, mean_curve+std_curve, alpha=0.2)
 
     plt.xscale("log")
     plt.xlabel("Number of sweeps (log scale)", fontsize=12)
-    plt.ylabel("Mean overlap", fontsize=12)
-    plt.title(f"Mean overlap vs sweeps - N={N_label}, β={beta_label}", fontsize=14)
+    plt.ylabel(r"$\langle m^{\mu^*}  \rangle$", fontsize=12)
+    plt.title(f"Mean overlap vs sweeps - N={N_label}, $\\beta={beta_label}$", fontsize=14)
     plt.legend(loc="best", fontsize=9)
     plt.grid(True, alpha=0.3)
 
     fig1_path = output_dir / f"mean_overlap_N{N_label}_beta{beta_label}.png"
     plt.savefig(fig1_path, dpi=300, bbox_inches="tight")
-    plt.show()
-    print(f"Figure 1 saved: {fig1_path}")
+    plt.close()
+    print(f"FIGURE 1 (mean_overlap) saved: {fig1_path}")
 
     # ============================================================
-    # PLOT 4 : Phase diagram (final overlap vs alpha)
+    # FIGURE 2 : Phase diagram (final overlap vs alpha)
     # ============================================================
 
     plt.figure(figsize=(7,4))
@@ -307,17 +329,17 @@ if __name__ == "__main__":
                  capsize=3, capthick=1, markersize=6)
 
     plt.xlabel(r"$\alpha$ (storage capacity)", fontsize=12)
-    plt.ylabel("Final overlap", fontsize=12)
-    plt.title(f"Phase diagram - N={N_label}, β={beta_label}", fontsize=14)
+    plt.ylabel(r"$m^{\mu^*}$ (final)", fontsize=12)
+    plt.title(f"Phase diagram - N={N_label}, $\\beta={beta_label}$", fontsize=14)
     plt.grid(True, alpha=0.3)
 
-    fig4_path = output_dir / f"phase_diagram_N{N_label}_beta{beta_label}.png"
-    plt.savefig(fig4_path, dpi=300, bbox_inches="tight")
-    plt.show()
-    print(f"Figure 4 saved: {fig4_path}")
+    fig2_path = output_dir / f"phase_diagram_N{N_label}_beta{beta_label}.png"
+    plt.savefig(fig2_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"FIGURE 2 (phase_diagram) saved: {fig2_path}")
 
     # ============================================================
-    # Single run analysis (using a specific alpha and run)
+    # FIGURE 3 : All mu components for a single run with mu* highlighted
     # ============================================================
 
     n_alpha = 2
@@ -332,157 +354,95 @@ if __name__ == "__main__":
     else:
         r_target = 16
 
-        # Try to find the file with flexible beta pattern
-        ofile_pattern = f"overlaps_N{N}_beta*_r{r_target}.csv"
+        # Try new format first: overlaps_r16.csv
+        ofile_pattern = f"overlaps_r{r_target}.csv"
         ofiles = list(overlaps_dir.glob(ofile_pattern))
         
+        # Fallback: old format
         if not ofiles:
-            print(f"File not found: overlaps_N{N}_beta*_r{r_target}.csv")
+            ofile_pattern = f"overlaps_N{N}_beta*_r{r_target}.csv"
+            ofiles = list(overlaps_dir.glob(ofile_pattern))
+        
+        if not ofiles:
+            print(f"File not found: overlaps_r{r_target}.csv")
             print("Skipping single run analysis...")
         else:
             ofile = ofiles[0]
             sweeps, overlaps = load_overlaps(ofile)
             sweeps_plot = fix_sweeps(sweeps)
 
-            # ============================================================
-            # PLOT 2 : All mu components for a single run
-            # ============================================================
-
+            # FIGURE 3 : All mu components for a single run
             plt.figure(figsize=(10, 6))
+            
+            # Plot all components with thin colored lines
             for mu in range(overlaps.shape[1]):
-                plt.plot(sweeps_plot, overlaps[:, mu], linewidth=0.8, alpha=0.7)
+                plt.plot(sweeps_plot, overlaps[:, mu], linewidth=0.8, alpha=0.5)
+            
+            # Find and highlight mu* (pattern with maximum final overlap)
+            mu_star = np.argmax(np.abs(overlaps[-1]))
+            plt.plot(sweeps_plot, overlaps[:, mu_star], linewidth=2,
+                    label=f"$m^{{\\mu^*}}$ ($\\mu^*={mu_star}$)")
             
             plt.xlabel("Number of sweeps", fontsize=12)
-            plt.ylabel("Overlap q_μ", fontsize=12)
-            plt.title(f"All overlap components - N={N_label}, β={beta_label}, r={r_target}", fontsize=14)
+            plt.ylabel("$m^\\mu$", fontsize=12)
+            plt.title(f"All overlap components - N={N_label}, $\\beta={beta_label}$, r={r_target}", fontsize=14)
             plt.grid(True, alpha=0.3)
-            plt.legend([f"μ={i}" for i in range(overlaps.shape[1])], loc="best", ncol=4, fontsize=8)
+            plt.legend(loc="best", fontsize=10)
 
-            fig2_path = output_dir / f"mmu_single_N{N_label}_beta{beta_label}.png"
-            plt.savefig(fig2_path, dpi=300, bbox_inches="tight")
-            plt.show()
-            print(f"Figure 2 saved: {fig2_path}")
+            fig3_path = output_dir / f"all_mu_single_run_N{N_label}_beta{beta_label}.png"
+            plt.savefig(fig3_path, dpi=300, bbox_inches="tight")
+            plt.close()
+            print(f"FIGURE 3 (all_mu_single_run) saved: {fig3_path}")
 
             # ============================================================
-            # PLOT 5 : Heatmap of overlaps
+            # FIGURE 4 : Heatmap of overlaps for a single run
             # ============================================================
 
             plt.figure(figsize=(10, 6))
             im = plt.imshow(overlaps.T, aspect="auto", origin="lower", cmap="viridis")
-            plt.colorbar(im, label="Overlap q_μ")
+            plt.colorbar(im, label="$m^\\mu$")
             plt.xlabel("Sweeps", fontsize=12)
-            plt.ylabel("Pattern index μ", fontsize=12)
-            plt.title(f"Heatmap of overlaps - N={N_label}, β={beta_label}, r={r_target}", fontsize=14)
+            plt.ylabel("Pattern index $\\mu$", fontsize=12)
+            plt.title(f"Heatmap of overlaps - N={N_label}, $\\beta={beta_label}$, r={r_target}", fontsize=14)
 
-            fig5_path = output_dir / f"heatmap_N{N_label}_beta{beta_label}.png"
-            plt.savefig(fig5_path, dpi=300, bbox_inches="tight")
-            plt.show()
-            print(f"Figure 5 saved: {fig5_path}")
+            fig4_path = output_dir / f"heatmap_N{N_label}_beta{beta_label}.png"
+            plt.savefig(fig4_path, dpi=300, bbox_inches="tight")
+            plt.close()
+            print(f"FIGURE 4 (heatmap) saved: {fig4_path}")
 
             # ============================================================
-            # PLOT 3 : mu* (maximum overlap component) for all runs
+            # FIGURE 5 : mu* (maximum overlap component) for all runs
             # ============================================================
 
-            ofiles = sorted(overlaps_dir.glob(f"overlaps_N{N}_beta*_r*.csv"))
+            ofiles = get_overlap_files(overlaps_dir, N, beta)
 
             plt.figure(figsize=(10, 6))
-
-            final_mu = []
 
             for ofile in ofiles:
                 sweeps, ov = load_overlaps(ofile)
                 mu_star = np.argmax(np.abs(ov[-1]))
-                final_mu.append(mu_star)
 
                 sweeps_plot = fix_sweeps(sweeps)
                 plt.plot(sweeps_plot, ov[:, mu_star], alpha=0.4, linewidth=1)
 
             plt.xlabel("Number of sweeps", fontsize=12)
-            plt.ylabel(f"|q_μ*| (maximum overlap component)", fontsize=12)
-            plt.title(f"Evolution of μ* for all runs - N={N_label}, β={beta_label}", fontsize=14)
+            plt.ylabel(r"$m^{\mu^*}$", fontsize=12)
+            plt.title(f"Evolution of $\\mu^*$ for all runs - N={N_label}, $\\beta={beta_label}$", fontsize=14)
             plt.grid(True, alpha=0.3)
+            plt.xscale('log')
 
-            fig3_path = output_dir / f"mu_star_all_N{N_label}_beta{beta_label}.png"
-            plt.savefig(fig3_path, dpi=300, bbox_inches="tight")
-            plt.show()
-            print(f"Figure 3 saved: {fig3_path}")
-
-            # ============================================================
-            # PLOT 6 : Distribution histogram of mu*
-            # ============================================================
-
-            plt.figure(figsize=(8, 5))
-            plt.hist(final_mu, bins=np.arange(max(final_mu)+2)-0.5, edgecolor='black', alpha=0.7)
-            plt.xlabel("Pattern index μ*", fontsize=12)
-            plt.ylabel("Frequency", fontsize=12)
-            plt.title(f"Distribution of μ* - N={N_label}, β={beta_label}", fontsize=14)
-            plt.grid(True, alpha=0.3, axis='y')
-            plt.xticks(np.arange(max(final_mu)+1))
-
-            fig6_path = output_dir / f"mu_star_hist_N{N_label}_beta{beta_label}.png"
-            plt.savefig(fig6_path, dpi=300, bbox_inches="tight")
-            plt.show()
-            print(f"Figure 6 saved: {fig6_path}")
-
-    # ============================================================
-    # PLOT 7 : Conditional overlap (filtered by |q| ≈ 1)
-    # ============================================================
-
-    plt.figure(figsize=(10, 6))
-
-    for i, alpha_dir in enumerate(alpha_dirs, start=1):
-
-        alpha = float(alpha_dir.name.split("_")[1])
-        
-        # Find the overlaps directory
-        overlaps_dir = find_overlaps_dir(alpha_dir, N, beta)
-
-        if overlaps_dir is None:
-            continue
-
-        curves = []
-        sweeps_ref = None
-
-        for ofile in overlaps_dir.glob(f"overlaps_N{N}_beta*_r*.csv"):
-
-            sweeps, ov = load_overlaps(ofile)
-            mu_star = np.argmax(np.abs(ov[-1]))
-
-            # Keep only runs where the final overlap is close to 1
-            if np.isclose(np.abs(ov[-1, mu_star]), 1.0, atol=1e-3):
-                curves.append(np.abs(ov[:, mu_star]))
-                sweeps_ref = fix_sweeps(sweeps)
-
-        if len(curves) == 0:
-            print(f"  No conditional curves for alpha={alpha:.3f}")
-            continue
-
-        # Truncate to the minimum length for consistent plotting
-        min_len = min(len(c) for c in curves)
-        curves = np.array([c[:min_len] for c in curves])
-        mean_curve = curves.mean(axis=0)
-        std_curve = curves.std(axis=0)
-
-        # Plot mean curve with error band
-        plt.plot(sweeps_ref[:min_len], mean_curve, label=f"α = {alpha:.3f}", linewidth=2)
-        plt.fill_between(sweeps_ref[:min_len], 
-                         mean_curve - std_curve, 
-                         mean_curve + std_curve, 
-                         alpha=0.15)
-
-    plt.xscale("log")
-    plt.xlabel("Number of sweeps (log scale)", fontsize=12)
-    plt.ylabel("|q_μ*| (conditional, |q| ≈ 1)", fontsize=12)
-    plt.title(f"Conditional overlap (|q|≈1) - N={N_label}, β={beta_label}", fontsize=14)
-    plt.legend(loc="best", fontsize=9)
-    plt.grid(True, alpha=0.3)
-
-    fig7_path = output_dir / f"conditional_N{N_label}_beta{beta_label}.png"
-    plt.savefig(fig7_path, dpi=300, bbox_inches="tight")
-    plt.show()
-    print(f"Figure 7 saved: {fig7_path}")
+            fig5_path = output_dir / f"mu_star_all_runs_N{N_label}_beta{beta_label}.png"
+            plt.savefig(fig5_path, dpi=300, bbox_inches="tight")
+            plt.close()
+            print(f"FIGURE 5 (mu_star_all_runs) saved: {fig5_path}")
 
     print("\n" + "="*60)
     print("All figures have been successfully generated!")
     print(f"Output directory: {output_dir.resolve()}")
+    print("\nList of figures generated:")
+    print("  FIGURE 1: mean_overlap - Average overlap for each alpha")
+    print("  FIGURE 2: phase_diagram - Final overlap vs alpha")
+    print("  FIGURE 3: all_mu_single_run - All overlap components with mu* highlighted")
+    print("  FIGURE 4: heatmap - Heatmap of overlaps")
+    print("  FIGURE 5: mu_star_all_runs - Evolution of mu* for all runs")
     print("="*60)

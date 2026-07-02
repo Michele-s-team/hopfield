@@ -148,7 +148,7 @@ void IsingNoBits::evolveIndependentRNG(gsl_rng* ran) {
 
 void IsingNoBits::evolve_save(gsl_rng* ran, double freq, const std::string& filename) {
 
-    OpenSpinFiles(filename);
+    OpenSpinFiles();
 
     runSweepsSharedRNG(ran, true, freq);
 
