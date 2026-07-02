@@ -14,6 +14,8 @@
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
+#include <chrono>
+using clk = std::chrono::high_resolution_clock;
 
 using namespace std;
 
@@ -285,7 +287,7 @@ void HopfieldBits::runSweeps_old(gsl_rng* ran, bool save, double freq){
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt tmp            ((unsigned long long) 2 * P);
     UnsignedInt twoP           ((unsigned long long) 2 * P);
-    twoP.SetAll((unsigned long long) 2 * P);
+    twoP.SetAll((unsigned long long) 2 * P);      
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep){
         for (int step = 0; step < N; ++step){
@@ -345,11 +347,15 @@ void HopfieldBits::runSweeps_old(gsl_rng* ran, bool save, double freq){
     cout << "\n";
 }
 
+#include <chrono>
+
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     Bits c_ij, mask;
+
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
+
     int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
     UnsignedInt sum_c          ((unsigned long long) max_deg);
@@ -358,24 +364,27 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
     UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt tmp            ((unsigned long long) 2 * P);
-    UnsignedInt twoP           ((unsigned long long) 2 * P);
-    twoP.SetAll((unsigned long long) 2 * P);
 
-    // --- sum_g précalculé une seule fois : ne dépend jamais des spins ---
+    const unsigned long long twoP = 2 * P;
+
+    // Precompute Σ_j g_ij once
     vector<UnsignedInt> sum_g_persist(N);
-    for (int idx = 0; idx < N; ++idx) {
-        sum_g_persist[idx] = UnsignedInt((unsigned long long) 2 * max_deg * P);
-        sum_g_persist[idx].SetAll(0);
-        for (int k = 0; k < neighbor_count[idx]; ++k) {
-            sum_g_persist[idx] += &Couplings[idx][k];
-        }
+    for (int i = 0; i < N; ++i) {
+        sum_g_persist[i] = UnsignedInt((unsigned long long)2 * max_deg * P);
+        sum_g_persist[i].SetAll(0);
+
+        for (int k = 0; k < neighbor_count[i]; ++k)
+            sum_g_persist[i] += &Couplings[i][k];
     }
 
-    for (int sweep = 0; sweep < total_sweeps; ++sweep){
-        for (int step = 0; step < N; ++step){
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
+
+        for (int step = 0; step < N; ++step) {
+
             int i      = gsl_rng_uniform_int(ran, N);
             int deg_i  = neighbor_count[i];
             int random = randomNumber(ran, deg_i * P, N);
+
             Bits& S_i = Bits_Spins_Set[i];
 
             if (random >= P * deg_i) {
@@ -383,40 +392,49 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
                 continue;
             }
 
-            sum_c .SetAll(0);
+            sum_c.SetAll(0);
             sum_cg.SetAll(0);
-            for (int k = 0; k < deg_i; ++k){
+
+            for (int k = 0; k < deg_i; ++k) {
+
                 int j = neighbors[i][k];
-                UnsignedInt& g_ij = Couplings[i][k];
+
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
+
                 sum_c += &c_ij;
-                tmp  = g_ij;
+
+                tmp = Couplings[i][k];
                 tmp &= &c_ij;
                 sum_cg += &tmp;
             }
 
-            // RHS = P*deg_i + 2*sum_cg
-            RHS  = sum_cg;
+            // RHS = 2*sum_cg + P*deg_i
+            RHS = sum_cg;
             RHS.MultiplyByTwoTo();
             RHS += &P_times_Neighbor_Count[i];
 
+            // 2P*sum_c
+            sum_c.MultiplyByConstant(twoP, &sum_c_times_2P);
+
             // LHS = random + sum_g + 2P*sum_c
-            LHS  = sum_g_persist[i];   // <- lecture directe, plus de recalcul
+            LHS = sum_g_persist[i];
             LHS.AddScalar(random);
-            sum_c.Multiply(&twoP, &sum_c_times_2P);
             LHS += &sum_c_times_2P;
 
             mask = (RHS <= LHS);
             S_i ^= &mask;
         }
+
         if (save && sweep > 0 && (sweep % save_stride == 0))
             SaveSpinConfigurations(sweep);
+
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
                  << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
-    cout << "\n";
+
+    cout << endl;
 }
 
 // =====================================================

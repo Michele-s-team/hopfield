@@ -123,29 +123,45 @@ void make_dir(const string& path) {
 }
 
 
+    const int N_sweeps = 1 << 10;
+
+    vector<int> N_vals = {10 * 10, 20 * 20, 30 * 30, 50 * 50, 80 * 80
+    };
+
+    vector<double> alpha_vals = {0.05, 0.10, 0.15, 0.20};
+
+    vector<double> temperatures = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
+    };
+
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
+// TO DO :  optimzied version : several repetions, random order bit/nobits
 int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
     const int N_sweeps = 1 << 12;
 
     vector<int> N_vals = {
-        10 * 10, 15 * 15, 20 * 20, 25 * 25, 30 * 30,
-        40 * 40, 50 * 50, 60 * 60, 70 * 70, 80 * 80
+        //10 * 10, 20 * 20, 
+        30 * 30
+        //50 * 50, 80 * 80
     };
 
-    vector<double> alpha_vals = {
-        0.02, 0.05, 0.10, 0.15, 0.20
-    };
+    vector<double> alpha_vals = {//0.05, 0.10,
+         0.15
+         //, 0.20
+         };
 
-    vector<double> temperatures = {
-        0.5, 1.0, 1.5, 2.0, 2.5,
-        3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0
+    vector<double> temperatures = {// 1.0, 2.0, 3.0, 4.0, 5.0, 
+        6.0
+        //, 7.0, 8.0, 9.0, 10.0
     };
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
+    gsl_rng* ran_bits = gsl_rng_alloc(gsl_rng_gfsr4);
+    gsl_rng* ran_nobits = gsl_rng_alloc(gsl_rng_gfsr4);
+
 
     ofstream out("../results/Hopfield/speedup.csv");
 
@@ -188,8 +204,7 @@ int main(){
             HopfieldBits bits(N_spins, 1, N_sweeps, P);
             HopfieldNoBits nobits(N_spins, 1, N_sweeps, P);
 
-            for (size_t i = 0; i < temperatures.size(); ++i)
-            {
+            for (size_t i = 0; i < temperatures.size(); ++i) {
                 double T = temperatures[i];
                 double beta = 1.0 / T;
 
@@ -221,9 +236,9 @@ int main(){
                 // ----------------------------------------------
 
                 bits.fromCanonical();
-
+                gsl_rng_set(ran_bits, 42);    
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps(ran, false, 0);
+                bits.runSweeps(ran_bits, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
 
                 double t_bits =
@@ -235,9 +250,9 @@ int main(){
                 // ----------------------------------------------
                 // Classical implementation
                 // ----------------------------------------------
-
+                gsl_rng_set(ran_nobits, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.runSweepsIndependentRNG(ran, false, 0);
+                nobits.runSweepsIndependentRNG(ran_nobits, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
 
                 double t_nobits =
