@@ -188,45 +188,16 @@ This implementation method has proven efficient when dealing with discreet value
 \end{figure}
 
 \subsection{Note on the independence of the realizations}
-\subsection{Structure of the code}
+\subsection{Code structure}
+We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is present in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
 \begin{figure}[H]
 \centering
 
 \includegraphics[width=\linewidth]{architecture.pdf}
-\caption{Structure of the code}
+\caption{Code structure}
 \label{fig:architecture}
 \end{figure}
-
-The simulation of the dynamics has been entirely coded in \texttt{C++}, using an object-oriented approach to the problem.
-
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}
-
-\def\boxw{0.6} % largeur exacte de la boîte
-\def\step{\boxw} % PAS = largeur => boîtes collées
-
-% left boxes
-\foreach \i/\label in {0/0, 1/1, 2/2} {
-    \draw (\i*\step, 0) rectangle (\i*\step+\boxw, 0.6);
-    \node[font=\small] at (\i*\step+0.3, 0.3) {$b_1^\label$};
-}
-
-% ...
-\node at (3*\step+0.33, 0.3) {$\cdots$};
-
-% right boxes
-\foreach \i/\clabel in {0/62, 1/63} {
-    \draw (4*\step + \i*\step, 0)
-        rectangle (4*\step + \i*\step+\boxw, 0.6);
-    \node[font=\small] at (4*\step + \i*\step+0.3, 0.3)
-        {$b_1^{\clabel}$};
-}
-% left label
-\node at (-0.6, 0.3) {$S_1=$};
-
-\end{tikzpicture}
-\end{figure}
+The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model used to make the system evolve. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version.
 
 \subsection{Standard implementation of the Metropolis algorithm}
 \myindent We show here the standard implementation of the Metropolis, which will be broadly shared across all models.\\

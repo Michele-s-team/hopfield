@@ -1,14 +1,28 @@
 \section{The Hopfield model}
+We here present the Hopfield model, which is of interest in this internship.
 \subsection{The model}
+\label{subsec:hopfield_model}
+The Hopfield Hamiltonian resemble this of the spin glass model and is as follows:
 \begin{equation}
-  H_\text{Hopfield}=-\sum_{i,j}w_{ij}S_iS_j
+  H_\text{Hopfield}=-\sum_{i,j}w_{ij}S_iS_j,
 \end{equation}
+where in this case the weights $w_{ij}$ are not initialized randomly but rather determined by a set of states that one wants to ``encode'' in the network (this term will be explained further on):
 \begin{equation}
-  w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu
+  w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu.
 \end{equation}
+With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates. Thus, by initializing the network not far from one of the stored patters, the dynamics will make it tend to the pattern precise configuration, given that we are located in the memory phase of the model. A visual representation is shown in \Cref{fig:energy_landscape}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{energy_landscape.pdf}
+\caption{Schematic illustration of the Hopfield model, extracted from \cite{nobel2024physics}. The Hopfield network can recover stored patterns from an altered or partial version of them.}
+\label{fig:energy_landscape}
+\end{figure}
+In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern.
+\subsection{Flip condition}
 \begin{equation}
   \begin{aligned}
-  \Delta E_k&= 2\sum_{i\neq k}w_{ki}S_kS_i\\
+  \Delta E_k&= 2\sum_{i\partial k}w_{ki}S_kS_i\\
             &= \frac{2}{N}  \sum_{i \partial k}\sum_{mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
   \end{aligned}
 \end{equation}
@@ -64,6 +78,73 @@ The Metropolis condition $r \leq e^{-\beta \Delta E_k}$ is equivalent to:
 \end{equation}
 at max, $\Delta E_k N/2=PN_k$. So if $R \geq PN_k$, unconditional flip.\\
 Else, after substitution:
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Bitwise Hopfield Metropolis}
+
+\KwIn{Bit-replicated spins $\{B_i\}$, couplings $\texttt{Couplings}$, neighbor lists $\partial i$, number of patterns $P$}
+\KwOut{Updated spin configurations $\{B_i\}$}
+
+\BlankLine
+\textbf{Preallocated variables:}
+$\mathtt{Bits}\ c_{ij},\ \mathtt{mask}$\;
+$\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathrm{RHS},\ tmp$\;
+
+\BlankLine
+
+\For{$i=1$ \KwTo $N$}{
+    $\Sigma_g(i)\leftarrow 0$\;
+    \For{$j\in\partial i$}{
+        $\Sigma_g(i)\mathrel{+}=G_{ij}$
+    }
+}
+\tcp*{Precompute coupling sums}
+
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+
+        Draw a random neuron $i$\;
+
+        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$\;
+
+        \eIf{$\lfloor \rho \rfloor \geq P\,n_k$}{
+            $B_i\leftarrow\neg B_i$
+            \tcp*{Unconditional flip}
+        }{
+
+            $\Sigma_c\leftarrow0$\;
+            $\Sigma_{cg}\leftarrow0$\;
+
+            \For{$j\in\partial i$}{
+
+                $c_{ij}\leftarrow B_i\odot B_j$
+                \tcp*{Replica-wise agreement}
+
+                $\Sigma_c\mathrel{+}=c_{ij}$\;
+
+                $tmp\leftarrow G_{ij}$\;
+
+                $tmp\leftarrow tmp\land c_{ij}$\;
+
+                $\Sigma_{cg}\mathrel{+}=tmp$\;
+            }
+
+            $\mathrm{RHS}\leftarrow P\,n_i+2\,\Sigma_{cg}$\;
+
+            $\mathrm{LHS}\leftarrow \Sigma_g(i)+r+2P\,\Sigma_c$\;
+
+            $\mathtt{mask}\leftarrow(\mathrm{RHS}\le\mathrm{LHS})$
+            \tcp*{Replica-wise acceptance test}
+
+            $B_i\leftarrow B_i\oplus\mathtt{mask}$\;
+        }
+    }
+}
+\label{alg:Hopfield_bitwise}
+\end{algorithm}
 
 \subsection{Capacity of the Hopfield network}
 \subsection{Performance test}
