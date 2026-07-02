@@ -146,7 +146,7 @@ void SpinGlassNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, false, 0);
 }
 
-void SpinGlassNoBits::evolve_save(gsl_rng* ran, double freq, const std::string& filename) {
+void SpinGlassNoBits::evolve_save(gsl_rng* ran, double freq) {
 
     OpenSpinFiles();
 

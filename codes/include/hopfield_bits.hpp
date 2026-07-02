@@ -33,11 +33,11 @@ public:
     //void initRandomNumbers(gsl_rng*);                                         // initialize RNG-based thresholds
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base);    // initialize from external distribution
     //void initEvolveContext();                                                 // sync canonical ↔ bitwise + RNG prep
-    void evolve(gsl_rng*, const string& filename);                              // run simulation and save only initial and final configurations
-    void evolve_save(gsl_rng*, double freq, const string& filename);            // run simulation and save the configurations at the frequency freq (between 0 and 1)
+    void evolve(gsl_rng*);                              // run simulation and save only initial and final configurations
+    void evolve_save(gsl_rng*, double freq);            // run simulation and save the configurations at the frequency freq (between 0 and 1)
 
-    void evolve_save_bits(gsl_rng* ran, double freq, const string& filename);   
-    void evolve_bits(gsl_rng* ran, const string& filename);
+    void evolve_save_bits(gsl_rng* ran, double freq);   
+    void evolve_bits(gsl_rng* ran);
     
     void GetMagnetizations(vector<double>&) override;                           // get the n_bits magnetizations using the UnsignedInt formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
@@ -55,7 +55,7 @@ public:
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
-    void runSweeps_time_debug(gsl_rng* ran, bool save, double freq);
+    void runSweeps_time_debug(gsl_rng* ran, bool save);
     void runSweeps(gsl_rng*, bool save, double);
     void runSweeps_old(gsl_rng*, bool save, double);
 };

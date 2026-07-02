@@ -23,7 +23,7 @@ public:
 
     void evolve(gsl_rng*);
     void evolveIndependentRNG(gsl_rng*);
-    void evolve_save(gsl_rng*, double freq, const std::string& filename);
+    void evolve_save(gsl_rng*, double freq);
 
     void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
     void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);

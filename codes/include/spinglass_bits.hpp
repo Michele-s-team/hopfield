@@ -28,10 +28,10 @@ public:
     using SpinGlassModel::SpinGlassModel;
 
     void evolve(gsl_rng* ran);                                               // reference full-loop implementation
-    void evolve_save(gsl_rng* ran, double freq, const string& filename);     // run simulation and save the magnetization at the frequency freq (between 0 and 1)
+    void evolve_save(gsl_rng* ran, double freq);     // run simulation and save the magnetization at the frequency freq (between 0 and 1)
    
-    void evolve_save_bits(gsl_rng* ran, double freq, const string& filename);
-    void evolve_bits(gsl_rng* ran, const string& filename);
+    void evolve_save_bits(gsl_rng* ran, double freq);
+    void evolve_bits(gsl_rng* ran);
     void GetMagnetizations(vector<double>& magnetizations) override;         // get the n_bits magnetizations using the Bits formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 

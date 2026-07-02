@@ -239,34 +239,34 @@ void SpinGlassBits::evolve(gsl_rng* ran){
 }
 
 // Run simulation and save magnetizations at the given frequency
-void SpinGlassBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
+void SpinGlassBits::evolve_save(gsl_rng* ran, double freq){
     fromCanonical();
     OpenSpinFiles();
-    cout << "evolve_save called, opening: " << filename << endl;
+    cout << "evolve_save called" <<endl;
     runSweeps(ran, /*save=*/true, freq);
     CloseSpinFiles();
-    cout << "evolve_save called, closing: " << filename << endl;
+    cout << "evolve_save terminated" <<endl;
     toCanonical();
 }
 
 
 // Run simulation and save at given frequency — fully bitwise initialization
-void SpinGlassBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+void SpinGlassBits::evolve_save_bits(gsl_rng* ran, double freq){
     initCouplingsBits(ran);
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    cout << "evolve_save_bits called, opening: " << filename << endl;
+    cout << "evolve_save_bits called" <<endl;
     runSweeps(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_save_bits called, closing: " << filename << endl;
+    cout << "evolve_save_bits terminated" <<endl;
 }
 
 // Run simulation without saving — fully bitwise initialization
-void SpinGlassBits::evolve_bits(gsl_rng* ran, const string& filename){
+void SpinGlassBits::evolve_bits(gsl_rng* ran){
     initCouplingsBits(ran);
     initSpinsBits(ran);
 
@@ -275,5 +275,5 @@ void SpinGlassBits::evolve_bits(gsl_rng* ran, const string& filename){
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_bits called, closing: " << filename << endl;
+    cout << "evolve_bits terminated" <<endl;
 }

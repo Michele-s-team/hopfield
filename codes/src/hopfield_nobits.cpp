@@ -158,7 +158,7 @@ void HopfieldNoBits::evolveIndependentRNG(gsl_rng* ran) {
     runSweepsIndependentRNG(ran, false, 0.0);
 }
 
-void HopfieldNoBits::evolve_save(gsl_rng* ran, double freq, const string& folder) {
+void HopfieldNoBits::evolve_save(gsl_rng* ran, double freq) {
     OpenSpinFiles();
     runSweepsSharedRNG(ran, true, freq);
     CloseSpinFiles();

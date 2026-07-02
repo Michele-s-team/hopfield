@@ -37,10 +37,10 @@ public:
     void runSweeps(gsl_rng* ran, bool save, double freq, int shift);
 
     void evolve(gsl_rng* ran);
-    void evolve_save(gsl_rng* ran, double freq, const std::string& folder);
+    void evolve_save(gsl_rng* ran, double freq);
 
-    void evolve_bits(gsl_rng* ran, const string& filename);
-    void evolve_save_bits(gsl_rng* ran, double freq, const string& filename);
+    void evolve_bits(gsl_rng* ran);
+    void evolve_save_bits(gsl_rng* ran, double freq);
 };
 
 #endif

@@ -442,34 +442,34 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
 // =====================================================
 
 // Run simulation without saving (thermalization)
-void HopfieldBits::evolve(gsl_rng* ran, const string& filename){
+void HopfieldBits::evolve(gsl_rng* ran){
     fromCanonical();
     OpenSpinFiles();
     SaveSpinConfigurations(0);
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve called, closing: " << filename << endl;
+    cout << "evolve terminated"<<endl;
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
-void HopfieldBits::evolve_save(gsl_rng* ran, double freq, const string& filename){
+void HopfieldBits::evolve_save(gsl_rng* ran, double freq){
     fromCanonical();
     cout << "Bitwise conversion done"<<endl;
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    cout << "evolve_save called, opening: " << filename << endl;
+    cout << "evolve_save called"<<endl;
     runSweeps(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_save called, closing: " << filename << endl;
+    cout << "evolve_save terminated"<<endl;
     toCanonical();
 }
 
 
 // Run simulation and save at given frequency — fully bitwise initialization
-void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){  //the call to filename must be cleaned everywhere in the coe , useless
+void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){ 
     initPatternsBits(ran);
     initCouplingsBits();
     initSpinsBits(ran);
@@ -481,14 +481,14 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq, const string& fil
 
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    cout << "evolve_save_bits called, opening: " << filename << endl;
+    cout << "evolve_save_bits called"<<endl;
     runSweeps_old(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_save_bits called, closing: " << filename << endl;
+    cout << "evolve_save_bits terminated"<<endl;
 }
 // Run simulation without saving — fully bitwise initialization
-void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
+void HopfieldBits::evolve_bits(gsl_rng* ran){
     initPatternsBits(ran);
     initCouplingsBits();
     initSpinsBits(ran);
@@ -502,5 +502,5 @@ void HopfieldBits::evolve_bits(gsl_rng* ran, const string& filename){
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_bits called, closing: " << filename << endl;
+    cout << "evolve_bits terminated"<<endl;
 }

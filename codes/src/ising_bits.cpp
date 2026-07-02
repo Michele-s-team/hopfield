@@ -186,7 +186,7 @@ void IsingBits::evolve(gsl_rng* ran){
 }
 
 // Run simulation and save magnetizations at the given frequency
-void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& folder){
+void IsingBits::evolve_save(gsl_rng* ran, double freq){
     fromCanonical();
     OpenSpinFiles();  // Use base class method
     runSweeps(ran, /*save=*/true, freq);
@@ -195,21 +195,21 @@ void IsingBits::evolve_save(gsl_rng* ran, double freq, const string& folder){
 }
 
 // Run simulation and save at given frequency — fully bitwise initialization
-void IsingBits::evolve_save_bits(gsl_rng* ran, double freq, const string& filename){
+void IsingBits::evolve_save_bits(gsl_rng* ran, double freq){
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    cout << "evolve_save_bits called, opening: " << filename << endl;
+    cout << "evolve_save_bits called" << endl;
     runSweeps(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_save_bits called, closing: " << filename << endl;
+    cout << "evolve_save_bits terminated"<<endl;
 }
 
 // Run simulation without saving — fully bitwise initialization
-void IsingBits::evolve_bits(gsl_rng* ran, const string& filename){
+void IsingBits::evolve_bits(gsl_rng* ran){
     initSpinsBits(ran);
 
     OpenSpinFiles();
@@ -217,5 +217,5 @@ void IsingBits::evolve_bits(gsl_rng* ran, const string& filename){
     runSweeps(ran, /*save=*/false, 0.0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
-    cout << "evolve_bits called, closing: " << filename << endl;
+    cout << "evolve_bits terminated"<<endl;
 }
