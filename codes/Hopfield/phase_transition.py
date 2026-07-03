@@ -264,7 +264,7 @@ if __name__ == "__main__":
     # Get all alpha directories
     ALL_ALPHA_DIRS = sorted(root_dir.glob("alpha_*"))
 
-    ALPHA_SELECTION = [1,2,3]
+    ALPHA_SELECTION = None
 
     if ALPHA_SELECTION is None:
         alpha_dirs = ALL_ALPHA_DIRS
