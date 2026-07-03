@@ -11,7 +11,7 @@ where in this case the weights $w_{ij}$ are not initialized randomly but rather 
   w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu.
 \end{equation}
 With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. Each stored pattern is a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates.
-Using the definition of $m^\mu$, the energy of the systme can be re-written:
+Using the definition of $m^\mu$, the energy of the system can be re-written:
 \begin{equation}
   w_{ij}=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
 \end{equation}
@@ -25,14 +25,14 @@ By initializing the network not far from one of the stored patters, the dynamics
 \label{fig:energy_landscape}
 \end{figure}
 
-A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram} the phase diagram of the Hopfield model on a fully-connected network. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This storage load value can be regarded as the network’s capacity, as beyond this threshold, the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
+A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram} the phase diagram of the Hopfield model on a fully-connected network. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s capacity, as beyond this threshold, the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
 
 
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.45\linewidth]{phase_diagram.png}
-\caption{Phase diagram of the Hopfield model, extracted from \cite{Mezard2017}. the phase transition value at $T=0$ is signified by the arrow.}
+\caption{Phase diagram of the Hopfield model in the thermodynamic limit ($N \to \infty$), extracted from \cite{Mezard2017}. the phase transition value at $T=0$ is signified by the arrow.}
 \label{fig:phase_diagram}
 \end{figure}
 
@@ -40,7 +40,7 @@ In order to study the capacity of the network to recover stored data, we introdu
 \begin{equation}
     m^\mu = \frac{1}{N}\sum_{i=1}^N \xi_i^\mu S_i.
 \end{equation}
-This quantity defines how much the system's configuration is aligned to the pattern $\mu$.  We often particularly consider the pattern for which the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry. All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. From $m^*$ we can define the reconstruction error of the network:
+This quantity defines how much the system's configuration is aligned to the pattern $\mu$. All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. Thus, we often consider the pattern for which the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry.  From $m^*$ we can define the reconstruction error of the network:
 \begin{equation}
     \text{error}=\frac{1-m^*}{2}
 \end{equation}
