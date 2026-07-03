@@ -180,7 +180,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 }
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
-
+\subsection{Initialization from a random state}
 \subsection{Capacity of the Hopfield network}
 \subsection{Performance test}
 \myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each. Compared to the two previous models, the speedup factor strikingly decreases close to 1 in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
