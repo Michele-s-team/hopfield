@@ -148,3 +148,40 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
 \subsection{Capacity of the Hopfield network}
 \subsection{Performance test}
+\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested.
+\begin{figure}[htbp]
+\centering
+% ── Top row ───────────────────────────────────────────────────────────────
+\begin{minipage}[b]{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{speedup_curves_hopfield.pdf}
+    \subcaption{Speedup factor evolution.}
+    \label{fig:speedup_curve_hopfield}
+\end{minipage}
+\hfill
+\begin{minipage}[b]{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{time_normalized_hopfield.pdf}
+    \subcaption{Normalized time evolution.}
+    \label{fig:normalised_time_hopfield}
+\end{minipage}
+
+\vspace{0.5em}
+% ── Middle row ────────────────────────────────────────────────────────────
+\begin{minipage}[b]{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{speedup_curves_by_alpha_hopfield.pdf}
+    \subcaption{Total time grouped by values of $\alpha$, depending on the temperature.}
+    \label{fig:total_time_by_alpha_hopfield}
+\end{minipage}
+
+% ── Bottom row ────────────────────────────────────────────────────────────
+\begin{minipage}[b]{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{time_total_vs_N_hopfield.pdf}
+    \subcaption{Total time vs.\ $N$ for all temperatures.}
+    \label{fig:total_time_vs_N_hopfield}
+\end{minipage}
+\caption{Performance analysis of the bitwise and classical Hopfield Metropolis implementations. The speedup factors have been averaged over the different values of $\alpha$.}
+\label{fig:speedup_hopfield}
+\end{figure}
