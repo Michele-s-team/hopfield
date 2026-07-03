@@ -156,7 +156,7 @@ ax1.grid(True, which="major", alpha=0.25, linewidth=0.5)
 
 lines = [plt.Line2D([0],[0], color="C0",      linestyle="-",  marker="o", markersize=4),
          plt.Line2D([0],[0], color="#2ca02c",  linestyle="--", marker="s", markersize=4)]
-ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center")
+ax1.legend(lines, ["bitwise", "classic"], fontsize=8, loc="center right")
 
 fig3.tight_layout()
 fig3.subplots_adjust(bottom=BOTTOM)

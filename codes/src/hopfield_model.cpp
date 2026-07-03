@@ -77,8 +77,7 @@ void HopfieldModel::initCouplings(){
 
             auto& J = couplings[spin][i];
 
-            for (int r = 0; r < n_bits; ++r)
-            {
+            for (int r = 0; r < n_bits; ++r){
                 J[r] = 0;
 
                 for (int p = 0; p < P; ++p)

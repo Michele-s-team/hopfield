@@ -141,6 +141,7 @@ void HopfieldBits::initPatternsBits(gsl_rng* ran) {
                 Patterns[p][i].Set(r, randomBit(ran));
         }
     }
+    initCouplingsBits();
 }
 
 // Initialize Couplings directly in bit-sliced representation via Hebb rule,
@@ -471,7 +472,6 @@ void HopfieldBits::evolve_save(gsl_rng* ran, double freq){
 // Run simulation and save at given frequency — fully bitwise initialization
 void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){ 
     initPatternsBits(ran);
-    initCouplingsBits();
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
@@ -482,7 +482,7 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){
     OpenSpinFiles();
     SaveSpinConfigurations(0);
     cout << "evolve_save_bits called"<<endl;
-    runSweeps_old(ran, /*save=*/true, freq);
+    runSweeps(ran, /*save=*/true, freq);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_save_bits terminated"<<endl;

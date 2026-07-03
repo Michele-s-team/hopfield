@@ -130,16 +130,16 @@ void make_dir(const string& path) {
 int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 7;
+    const int N_sweeps = 1 << 3;
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 
-        50 * 50
+        30 * 3
         //80 * 80
     };
 
     vector<double> alpha_vals = {//
-        0.15
+        0.05
         //,     0.10,  0.15
          //, 0.20
          };
@@ -230,6 +230,7 @@ int main(){
                 // Bitwise implementation
                 // ----------------------------------------------
 
+                bits.fromCanonical();
                 cout << "bitwise evolution ready"<< endl;
                 gsl_rng_set(ran_bits, 42);    
                 clock_gettime(CLOCK_MONOTONIC, &t0);

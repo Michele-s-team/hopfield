@@ -71,13 +71,13 @@ int main() {
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 32;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
-    const int N_sweeps  = 1 << 12;       // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 13;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
 
     double step=0.01;
-    double alpha_min=0.02;
+    double alpha_min=0.01;
     double alpha_max=0.18;
 
     int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
