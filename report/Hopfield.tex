@@ -19,7 +19,14 @@ With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the n
 \label{fig:energy_landscape}
 \end{figure}
 
-A parameter of particular interest in this model is its storage capacity, define as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored.
+A parameter of particular interest in this model is its storage load, define as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989}. In order to study the capacity of the network to recover stored data, we introduce the overlap order parameter:
+\begin{equation}
+    m^\mu = \frac{1}{N}\sum_{i=1}^N \xi_i^\mu S_i.
+\end{equation}
+This quantity defines how much is the system's configuration aligned to the pattern $\mu$.  We often particularly consider the pattern for with the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We consider the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry. From $m^*$ we can define the reconstruction error of the network:
+\begin{equation}
+    \text{error}=\frac{1-m^*}{2}
+\end{equation}
 \subsection{Flip condition}
 \begin{equation}
   \begin{aligned}
@@ -188,7 +195,7 @@ Two other related causes can explain the lack of performances for dense networks
     \centering
     \includegraphics[width=\linewidth]{time_normalized_by_alpha_hopfield.pdf}
     \subcaption{Sweep time depending on the temperature for different $\alpha$ values.}
-    \label{fig:sweep_time_vs_N_hopfield}
+    \label{fig:sweep_time_vs_alpha_hopfield}
 \end{minipage}
 % ── Bottom row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.8\textwidth}
