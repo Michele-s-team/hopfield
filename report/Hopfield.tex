@@ -4,13 +4,19 @@ We here present the Hopfield model, which is of interest in this internship.
 \label{subsec:hopfield_model}
 The Hopfield Hamiltonian resemble this of the spin glass model and is as follows:
 \begin{equation}
-  H_\text{Hopfield}=-\sum_{i,j}w_{ij}S_iS_j,
+  H_\text{Hopfield}=-\frac{1}{2}\sum_{i \neq j}w_{ij}S_iS_j,
 \end{equation}
 where in this case the weights $w_{ij}$ are not initialized randomly but rather determined by a set of states that one wants to ``store'' in the network (this term will be explained further on):
 \begin{equation}
   w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu.
 \end{equation}
-With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates. Thus, by initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
+With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. Each stored pattern is a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates.
+Using the definition of $m^\mu$, the energy of the systme can be re-written:
+\begin{equation}
+  w_{ij}=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
+\end{equation}
+
+By initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
 
 \begin{figure}[H]
 \centering
@@ -25,7 +31,7 @@ A parameter of particular interest in this model is its storage load, defined as
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.5\linewidth]{phase_diagram.png}
+\includegraphics[width=0.45\linewidth]{phase_diagram.png}
 \caption{Phase diagram of the Hopfield model, extracted from \cite{Mezard2017}. the phase transition value at $T=0$ is signified by the arrow.}
 \label{fig:phase_diagram}
 \end{figure}
@@ -43,8 +49,8 @@ We show in \Cref{fig:architecture} the evolution of the error with the storage l
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.5\linewidth]{phase_transition.png}
-\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram ,the configuration is initialized near a pattern and we let the system evolve from there. When the storage load exceed $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
+\includegraphics[width=0.45\linewidth]{phase_transition.png}
+\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern and we let the system evolve from there. When the storage load exceeds $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
 \label{fig:phase_transition}
 \end{figure}
 
