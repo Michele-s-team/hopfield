@@ -288,6 +288,7 @@ if __name__ == "__main__":
     for alpha_dir in alpha_dirs:
 
         alpha = float(alpha_dir.name.split("_")[1])
+        print(alpha)
 
         mean, err = process_alpha(alpha_dir, N, beta)
         if mean is None:
