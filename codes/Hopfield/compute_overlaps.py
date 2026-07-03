@@ -9,6 +9,9 @@ For each selected alpha_* / N{N} directory:
 Output DataFrame columns: sweep | m_0 | m_1 | ... | m_{p-1}
 
 Existing files are skipped (set SKIP_EXISTING = False to overwrite).
+
+NOTE: overlap computation is fully vectorized with NumPy (no per-element
+Python loop), which is the main change vs. the original scalar version.
 """
 
 from pathlib import Path
@@ -42,28 +45,70 @@ def extract_beta_from_dir(name: str):
 
 
 # ============================================================
-# BIT-SAFE OVERLAP
+# VECTORIZED BIT-SAFE OVERLAP
 # ============================================================
 
-def overlap_binary(config_row, pattern_row, N: int) -> float:
+# 256-entry lookup table for byte-wise popcount, reused for every call
+_POPCOUNT_TABLE8 = np.array([bin(i).count("1") for i in range(256)], dtype=np.uint8)
+
+
+def popcount64(arr_u64: np.ndarray) -> np.ndarray:
+    """
+    Vectorized popcount for an array of uint64 values (any shape).
+    Views each uint64 as 8 bytes and sums looked-up byte popcounts.
+    """
+    b = arr_u64.view(np.uint8).reshape(arr_u64.shape + (8,))
+    return _POPCOUNT_TABLE8[b].sum(axis=-1, dtype=np.int64)
+
+
+def overlap_matrix(spins_arr: np.ndarray, patterns_arr: np.ndarray, N: int) -> np.ndarray:
+    """
+    spins_arr:    (n_sweeps, n_blocks)   uint64
+    patterns_arr: (n_patterns, n_blocks) uint64
+
+    Returns (n_sweeps, n_patterns) float overlap matrix, equivalent to
+    calling the original scalar overlap_binary() for every (sweep, pattern)
+    pair, but computed with a handful of vectorized NumPy operations
+    (one per 64-bit block) instead of a Python-level double loop.
+    """
     n_full    = N // 64
     remainder = N % 64
-    corr      = 0
+
+    n_sweeps   = spins_arr.shape[0]
+    n_patterns = patterns_arr.shape[0]
+    corr = np.zeros((n_sweeps, n_patterns), dtype=np.int64)
 
     for b in range(n_full):
-        s   = int(str(config_row[f"block{b}"]))
-        p   = int(str(pattern_row[f"block{b}"]))
-        xor = s ^ p
-        corr += 64 - 2 * xor.bit_count()
+        # outer XOR: shape (n_sweeps, n_patterns)
+        xor = np.bitwise_xor.outer(spins_arr[:, b], patterns_arr[:, b])
+        corr += 64 - 2 * popcount64(xor)
 
     if remainder:
-        s    = int(str(config_row[f"block{n_full}"]))
-        p    = int(str(pattern_row[f"block{n_full}"]))
-        mask = (1 << remainder) - 1
-        xor  = (s ^ p) & mask
-        corr += remainder - 2 * xor.bit_count()
+        mask = np.uint64((1 << remainder) - 1)
+        xor = np.bitwise_xor.outer(spins_arr[:, n_full], patterns_arr[:, n_full]) & mask
+        corr += remainder - 2 * popcount64(xor)
 
     return corr / N
+
+
+# ============================================================
+# CSV READING (uint64-safe, single parse pass)
+# ============================================================
+
+def read_blocks_csv(path: Path):
+    """
+    Reads a CSV with an id column (sweep or pattern index) followed by
+    block{i} columns, returning (ids, block_array) where block_array is
+    a 2D uint64 NumPy array (n_rows, n_blocks).
+    """
+    df = pd.read_csv(path, dtype=str)
+    id_col = df.columns[0]
+    block_cols = [c for c in df.columns if c != id_col]
+
+    ids = df[id_col].astype(np.int64).to_numpy()
+    block_arr = df[block_cols].to_numpy(dtype=np.uint64)
+
+    return ids, block_arr
 
 
 # ============================================================
@@ -149,7 +194,7 @@ for alpha_dir in selected:
                 if r is not None:
                     pattern_map[r] = pf
 
-            out_dir = beta_dir / f"overlaps"
+            out_dir = beta_dir / "overlaps"
             out_dir.mkdir(parents=True, exist_ok=True)
 
             print(f"\n[ALPHA] {alpha:.4f} N={N} beta={beta_str} -> {out_dir.name}")
@@ -169,29 +214,18 @@ for alpha_dir in selected:
 
                 print(f"  r={r}", end=" ... ", flush=True)
 
-                spins_df   = pd.read_csv(spin_file, dtype=str)
-                pattern_df = pd.read_csv(pattern_file, dtype=str)
+                sweep_ids, spins_arr    = read_blocks_csv(spin_file)
+                _,         patterns_arr = read_blocks_csv(pattern_file)
 
-                sweep_col  = spins_df.columns[0]
-                sweep_ids  = spins_df[sweep_col].astype(int).values
-                block_cols = [c for c in spins_df.columns if c != sweep_col]
+                M = overlap_matrix(spins_arr, patterns_arr, N)
 
-                n_sweeps   = len(spins_df)
-                n_patterns = len(pattern_df)
-
-                M = np.empty((n_sweeps, n_patterns), dtype=float)
-
-                for i, (_, spin_row) in enumerate(spins_df[block_cols].iterrows()):
-                    for j, (_, pat_row) in enumerate(pattern_df.iterrows()):
-                        M[i, j] = overlap_binary(spin_row, pat_row, N)
-
+                n_sweeps, n_patterns = M.shape
                 cols = ["sweep"] + [f"m_{i}" for i in range(n_patterns)]
 
                 df = pd.DataFrame(
                     np.column_stack([sweep_ids, M]),
                     columns=cols
                 )
-
                 df["sweep"] = df["sweep"].astype(int)
                 df.to_csv(out_file, index=False)
 
