@@ -234,3 +234,45 @@ fig5.subplots_adjust(bottom=BOTTOM)
 fig5.savefig("../results/Hopfield/speedup_curves_by_alpha_hopfield.pdf", pad_inches=0.05)
 fig5.savefig("../results/Hopfield/speedup_curves_by_alpha_hopfield.png", dpi=300)
 print("Saved: speedup_curves_by_alpha_hopfield.pdf / .png")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Figure 6 — Temps normalisé vs T pour chaque alpha, moyenné sur N
+# ════════════════════════════════════════════════════════════════════════════
+fig6, (ax_b, ax_c) = plt.subplots(1, 2, figsize=(7, 3.2), sharex=True)
+ 
+for a in alpha_vals:
+    group = (
+        df[df["alpha"] == a]
+        .groupby("T")[["t_bits_norm", "t_nobits_norm"]]
+        .mean()
+        .reset_index()
+        .sort_values("T")
+    )
+    ax_b.plot(group["T"], group["t_bits_norm"],
+              marker=marker_alpha[a], markersize=4, linewidth=1.2,
+              color=color_alpha[a], label=rf"$\alpha={a:.2f}$")
+    ax_c.plot(group["T"], group["t_nobits_norm"],
+              marker=marker_alpha[a], markersize=4, linewidth=1.2,
+              color=color_alpha[a], label=rf"$\alpha={a:.2f}$")
+ 
+for ax in (ax_b, ax_c):
+    ax.set_xlabel(r"$T\,/\,J$")
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+    ax.grid(True, which="major", alpha=0.25, linewidth=0.5)
+ 
+ax_b.set_title("bitwise", fontsize=10)
+ax_c.set_title("classic", fontsize=10)
+ax_b.set_ylabel(r"$\langle t_{\rm bits} / (N \cdot N_{\rm sweep}) \rangle$ [ns]")
+ax_c.set_ylabel(r"$\langle t_{\rm classic} / (N \cdot N_{\rm sweep}) \rangle$ [$\mu$s]")
+ 
+handles, labels = ax_b.get_legend_handles_labels()
+fig6.legend(handles, labels, loc="center right", bbox_to_anchor=(1.15, 0.5),
+            fontsize=7, frameon=False, title=r"$\alpha$", title_fontsize=8)
+ 
+fig6.tight_layout()
+fig6.savefig("../results/Hopfield/time_normalized_by_alpha_hopfield.pdf", bbox_inches="tight", pad_inches=0.05)
+fig6.savefig("../results/Hopfield/time_normalized_by_alpha_hopfield.png", bbox_inches="tight", dpi=300)
+print("Saved: time_normalized_by_alpha_hopfield.pdf / .png")
+ 
