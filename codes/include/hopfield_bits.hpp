@@ -46,8 +46,10 @@ public:
     void initPatternsBits(gsl_rng* ran);
     void initCouplingsBits();
 
-    void initSpinsFromConfigBits(vector<Bits> Config);
-    void initPatternsFromConfigBits(vector<vector<Bits>> Config);
+    void initSpinMetadataBits();
+
+    void initSpinsFromConfigBits(const vector<Bits>& Config);
+    void initPatternsFromConfigBits(const vector<vector<Bits>>& Config);
     vector<vector<Bits>> getPatternsBits();
     vector<vector<UnsignedInt>> getCouplingsConfigBits();
     vector<vector<vector<int>>> getPatternsBitsToCanonical();
@@ -56,7 +58,7 @@ public:
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
     void runSweeps_time_debug(gsl_rng* ran, bool save);
-    void runSweeps(gsl_rng*, bool save, double);
+    void runSweeps(gsl_rng*, bool save, double, int shift);
     void runSweeps_old(gsl_rng*, bool save, double);
 };
 

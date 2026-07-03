@@ -104,21 +104,29 @@ void HopfieldBits::toCanonical(){
 // Initialize spins directly in bit-sliced representation.
 // Replaces: initSpins() + fromCanonical() step 1.
 void HopfieldBits::initSpinsBits(gsl_rng* ran) {
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
-
     Bits_Spins_Set.clear();
     Bits_Spins_Set.resize(N);
+
+    for (int i = 0; i < N; ++i)
+        for (int r = 0; r < n_bits; ++r)
+            Bits_Spins_Set[i].Set(r, randomBit(ran));
+
+    initSpinMetadataBits();
+}
+
+
+void HopfieldBits::initSpinMetadataBits() {
+    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+
     Neighbor_Count.clear();
     Neighbor_Count.reserve(N);
+
     P_times_Neighbor_Count.clear();
     P_times_Neighbor_Count.reserve(N);
 
     for (int i = 0; i < N; ++i) {
-        for (int r = 0; r < n_bits; ++r)
-            Bits_Spins_Set[i].Set(r, randomBit(ran));
-
-        UnsignedInt nc_tmp((unsigned long long) max_deg);
-        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
+        UnsignedInt nc_tmp((unsigned long long)max_deg);
+        nc_tmp.SetAll((unsigned long long)neighbor_count[i]);
         Neighbor_Count.push_back(nc_tmp);
 
         UnsignedInt pnk_tmp((unsigned long long)(P * max_deg));
@@ -126,7 +134,6 @@ void HopfieldBits::initSpinsBits(gsl_rng* ran) {
         P_times_Neighbor_Count.push_back(pnk_tmp);
     }
 }
-
 
 // Initialize Patterns directly in bit-sliced representation.
 // Replaces: initPatterns() + fromCanonical() step 2.
@@ -182,13 +189,14 @@ void HopfieldBits::initCouplingsBits() {
 
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.
-void HopfieldBits::initPatternsFromConfigBits(vector<vector<Bits>> Config) {
+void HopfieldBits::initPatternsFromConfigBits(const vector<vector<Bits>>& Config) {
     Patterns = Config;
     initCouplingsBits();
 }
 
-void HopfieldBits::initSpinsFromConfigBits(vector<Bits> Config) {
+void HopfieldBits::initSpinsFromConfigBits(const vector<Bits>& Config) {
     Bits_Spins_Set = Config;
+    initSpinMetadataBits();
 }
 
 // Return a copy of the full pattern tensor
@@ -350,7 +358,7 @@ void HopfieldBits::runSweeps_old(gsl_rng* ran, bool save, double freq){
 
 #include <chrono>
 
-void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq){
+void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
     Bits c_ij, mask;
 
     const int total_sweeps    = getNSweeps();
@@ -447,7 +455,7 @@ void HopfieldBits::evolve(gsl_rng* ran){
     fromCanonical();
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    runSweeps(ran, /*save=*/false, 0.0);
+    runSweeps(ran, /*save=*/false, 0.0, 0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve terminated"<<endl;
@@ -461,7 +469,7 @@ void HopfieldBits::evolve_save(gsl_rng* ran, double freq){
     OpenSpinFiles();
     SaveSpinConfigurations(0);
     cout << "evolve_save called"<<endl;
-    runSweeps(ran, /*save=*/true, freq);
+    runSweeps(ran, /*save=*/true, freq, 0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_save terminated"<<endl;
@@ -482,7 +490,7 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){
     OpenSpinFiles();
     SaveSpinConfigurations(0);
     cout << "evolve_save_bits called"<<endl;
-    runSweeps(ran, /*save=*/true, freq);
+    runSweeps(ran, /*save=*/true, freq, 0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_save_bits terminated"<<endl;
@@ -499,7 +507,7 @@ void HopfieldBits::evolve_bits(gsl_rng* ran){
 
     OpenSpinFiles();
     SaveSpinConfigurations(0);
-    runSweeps(ran, /*save=*/false, 0.0);
+    runSweeps(ran, /*save=*/false, 0.0, 0);
     SaveSpinConfigurations(getNSweeps());
     CloseSpinFiles();
     cout << "evolve_bits terminated"<<endl;

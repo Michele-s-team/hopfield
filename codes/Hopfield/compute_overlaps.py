@@ -23,7 +23,7 @@ import re
 # CONFIGURATION
 # ============================================================
 
-root_dir = Path("../results/Hopfield")
+root_dir = Path("../results/Hopfield/init_from_pattern/")
 
 ALPHA_SELECTION = None
 SKIP_EXISTING = True

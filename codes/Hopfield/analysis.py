@@ -41,6 +41,13 @@ def load_overlaps(overlap_file):
     overlaps = df[m_cols].to_numpy(dtype=float)
     return sweeps, overlaps
 
+def format_beta(beta: float, ndigits: int = 6) -> str:
+    """
+    Return a consistent folder name for beta:
+    - avoids trailing floating artifacts
+    - matches beta folders like beta5.000000, beta0.500000, etc.
+    """
+    return f"{beta:.{ndigits}f}".rstrip("0").rstrip(".")
 
 # ============================================================
 # FIND BETA DIRECTORY (handles different beta formats)
@@ -189,6 +196,27 @@ def get_overlap_files(overlaps_dir, N, beta):
     return files
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ============================================================
 # MAIN
 # ============================================================
@@ -199,7 +227,7 @@ if __name__ == "__main__":
     # PATH STRUCTURE: alpha_*/N1024/beta5.000000/overlaps/
     # ============================================================
     
-    root_dir = Path("../results/Hopfield/")
+    root_dir = Path("../results/Hopfield/init_random/")
     output_dir = root_dir / "figures"
     output_dir.mkdir(exist_ok=True)
 
@@ -303,16 +331,19 @@ if __name__ == "__main__":
         plt.fill_between(sweeps_plot, mean_curve-std_curve, mean_curve+std_curve, alpha=0.2)
 
     plt.xscale("log")
-    plt.xlabel("Number of sweeps (log scale)", fontsize=12)
-    plt.ylabel(r"$\langle m^{\mu^*}  \rangle$", fontsize=12)
-    plt.title(f"Mean overlap vs sweeps - N={N_label}, $\\beta={beta_label}$", fontsize=14)
-    plt.legend(loc="best", fontsize=9)
+    plt.xlabel("Sweeps", fontsize=12)
+    plt.ylabel(r"$\langle m^{*}  \rangle$", fontsize=12)
+    #plt.title(f"Mean overlap vs sweeps - N={N_label}, $\\beta={beta}$", fontsize=14)
+    plt.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=9,frameon=False)
+    plt.xlim([sweeps_plot[0]*0.9, sweeps_plot[-1]*1.05])
     plt.grid(True, alpha=0.3)
 
-    fig1_path = output_dir / f"mean_overlap_N{N_label}_beta{beta_label}.png"
+    fig1_path = output_dir / f"mean_overlap_N{N_label}_beta={beta}.pdf"
     plt.savefig(fig1_path, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"FIGURE 1 (mean_overlap) saved: {fig1_path}")
+
+    '''
 
     # ============================================================
     # FIGURE 2 : Phase diagram (final overlap vs alpha)
@@ -330,13 +361,15 @@ if __name__ == "__main__":
 
     plt.xlabel(r"$\alpha$ (storage capacity)", fontsize=12)
     plt.ylabel(r"$m^{\mu^*}$ (final)", fontsize=12)
-    plt.title(f"Phase diagram - N={N_label}, $\\beta={beta_label}$", fontsize=14)
+    plt.title(f"Phase diagram - N={N_label}, $\\beta={beta}$", fontsize=14)
     plt.grid(True, alpha=0.3)
 
-    fig2_path = output_dir / f"phase_diagram_N{N_label}_beta{beta_label}.png"
+    fig2_path = output_dir / f"phase_diagram_N{N_label}_beta={beta}.pdf"
     plt.savefig(fig2_path, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"FIGURE 2 (phase_diagram) saved: {fig2_path}")
+
+    '''
 
     # ============================================================
     # FIGURE 3 : All mu components for a single run with mu* highlighted
@@ -344,7 +377,9 @@ if __name__ == "__main__":
 
     n_alpha = 2
     alpha_dir = ALL_ALPHA_DIRS[n_alpha]
-    
+    alpha = float(alpha_dir.name.split("_")[1])
+    alpha_label = f"{alpha:.3f}"
+
     # Find the overlaps directory
     overlaps_dir = find_overlaps_dir(alpha_dir, N, beta)
 
@@ -381,18 +416,23 @@ if __name__ == "__main__":
             # Find and highlight mu* (pattern with maximum final overlap)
             mu_star = np.argmax(np.abs(overlaps[-1]))
             plt.plot(sweeps_plot, overlaps[:, mu_star], linewidth=2,
-                    label=f"$m^{{\\mu^*}}$ ($\\mu^*={mu_star}$)")
+                    label=f"$m^{{*}}$ ($\\mu^*={mu_star}$)")
             
-            plt.xlabel("Number of sweeps", fontsize=12)
+            plt.xlabel("Sweeps", fontsize=12)
             plt.ylabel("$m^\\mu$", fontsize=12)
-            plt.title(f"All overlap components - N={N_label}, $\\beta={beta_label}$, r={r_target}", fontsize=14)
+            #plt.title(f"All overlap components - N={N_label}, $\\beta={beta}$, "                      f"$\\alpha={alpha_label}$, r={r_target}", fontsize=14)
             plt.grid(True, alpha=0.3)
+            plt.xscale('log')
+            plt.xlim([sweeps_plot[0]*0.9, sweeps_plot[-1]*1.05])
             plt.legend(loc="best", fontsize=10)
 
-            fig3_path = output_dir / f"all_mu_single_run_N{N_label}_beta{beta_label}.png"
+            fig3_path = output_dir / f"all_mu_single_run_N{N_label}_beta={beta}_alpha{alpha_label}.pdf"
             plt.savefig(fig3_path, dpi=300, bbox_inches="tight")
             plt.close()
             print(f"FIGURE 3 (all_mu_single_run) saved: {fig3_path}")
+
+
+            '''
 
             # ============================================================
             # FIGURE 4 : Heatmap of overlaps for a single run
@@ -403,12 +443,15 @@ if __name__ == "__main__":
             plt.colorbar(im, label="$m^\\mu$")
             plt.xlabel("Sweeps", fontsize=12)
             plt.ylabel("Pattern index $\\mu$", fontsize=12)
-            plt.title(f"Heatmap of overlaps - N={N_label}, $\\beta={beta_label}$, r={r_target}", fontsize=14)
+            plt.title(f"Heatmap of overlaps - N={N_label}, $\\beta={beta}$, "
+                      f"$\\alpha={alpha_label}$, r={r_target}", fontsize=14)
 
-            fig4_path = output_dir / f"heatmap_N{N_label}_beta{beta_label}.png"
+            fig4_path = output_dir / f"heatmap_N{N_label}_beta={beta}_alpha{alpha_label}.pdf"
             plt.savefig(fig4_path, dpi=300, bbox_inches="tight")
             plt.close()
             print(f"FIGURE 4 (heatmap) saved: {fig4_path}")
+
+            '''
 
             # ============================================================
             # FIGURE 5 : mu* (maximum overlap component) for all runs
@@ -425,24 +468,13 @@ if __name__ == "__main__":
                 sweeps_plot = fix_sweeps(sweeps)
                 plt.plot(sweeps_plot, ov[:, mu_star], alpha=0.4, linewidth=1)
 
-            plt.xlabel("Number of sweeps", fontsize=12)
-            plt.ylabel(r"$m^{\mu^*}$", fontsize=12)
-            plt.title(f"Evolution of $\\mu^*$ for all runs - N={N_label}, $\\beta={beta_label}$", fontsize=14)
+            plt.xlabel("Sweeps", fontsize=12)
+            plt.ylabel(r"$m^{*}$", fontsize=12)
+            #plt.title(f"Evolution of $\\mu^*$ for all runs - N={N_label}, $\\beta={beta}$, "   f"$\\alpha={alpha_label}$", fontsize=14)
             plt.grid(True, alpha=0.3)
             plt.xscale('log')
-
-            fig5_path = output_dir / f"mu_star_all_runs_N{N_label}_beta{beta_label}.png"
+            plt.xlim([sweeps_plot[0]*0.9, sweeps_plot[-1]*1.05])
+            fig5_path = output_dir / f"mu_star_all_runs_N{N_label}_beta={beta}_alpha{alpha_label}.pdf"
             plt.savefig(fig5_path, dpi=300, bbox_inches="tight")
             plt.close()
             print(f"FIGURE 5 (mu_star_all_runs) saved: {fig5_path}")
-
-    print("\n" + "="*60)
-    print("All figures have been successfully generated!")
-    print(f"Output directory: {output_dir.resolve()}")
-    print("\nList of figures generated:")
-    print("  FIGURE 1: mean_overlap - Average overlap for each alpha")
-    print("  FIGURE 2: phase_diagram - Final overlap vs alpha")
-    print("  FIGURE 3: all_mu_single_run - All overlap components with mu* highlighted")
-    print("  FIGURE 4: heatmap - Heatmap of overlaps")
-    print("  FIGURE 5: mu_star_all_runs - Evolution of mu* for all runs")
-    print("="*60)

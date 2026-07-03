@@ -78,7 +78,7 @@ int main() {
 
     double step=0.01;
     double alpha_min=0.01;
-    double alpha_max=0.18;
+    double alpha_max=0.2;
 
     int n_steps = static_cast<int>(round((alpha_max - alpha_min) / step)); // computed from step and alpha_max
 
@@ -95,7 +95,7 @@ int main() {
 
         HopfieldBits bits(L * L, beta, N_sweeps, P);
 
-        folder_name << "../results/Hopfield/alpha_"
+        folder_name << "../results/Hopfield/phase_transition/init_from_pattern/alpha_"
                     << std::fixed << std::setprecision(3)
                     << alpha
                     << "/N"
@@ -124,7 +124,25 @@ int main() {
         // ── Evolution: HopfieldBits ──────────────────────────────────────────
         gsl_rng_set(ran, 42);  // fixed seed for the dynamics
         clock_t start_bits = clock();
-        bits.evolve_save_bits(ran, 1);
+        bits.initPatternsBits(ran);
+        auto Patterns = bits.getPatternsBits();
+        int mu = gsl_rng_uniform_int(ran, P);
+        bits.initSpinsFromConfigBits(Patterns[mu]);
+        cout << "Bitwise initialization done" << endl;
+
+        vector<vector<vector<int>>> patterns = bits.getPatternsBitsToCanonical();
+        bits.SavePatterns(patterns);
+        cout << "Patterns saved" << endl;
+
+        bits.OpenSpinFiles();
+        //bits.SaveSpinConfigurations(0);
+        cout << "evolve_save_bits called"<<endl;
+        bits.runSweeps(ran, /*save=*/false, 0, 0);
+        bits.setNSweeps(N_sweeps);
+        bits.runSweeps(ran, /*save=*/true, 1, N_sweeps);
+        bits.SaveSpinConfigurations(bits.getNSweeps());
+        bits.CloseSpinFiles();
+        cout << "evolve_save_bits terminated"<<endl;
         clock_t end_bits = clock();
         double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
         cout << "\nHopfieldBits done for alpha = " << alpha
