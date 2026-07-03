@@ -8,6 +8,55 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 import mplcursors
 import os
+import matplotlib as mpl
+from matplotlib.ticker import AutoMinorLocator
+
+mpl.rcParams.update({
+    # LaTeX
+    "text.usetex": True,
+    "text.latex.preamble": r"\usepackage{amsmath}",
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
+
+    # Fonts
+    "font.size": 10,
+    "axes.labelsize": 11,
+    "axes.titlesize": 11,
+    "xtick.labelsize": 9,
+    "ytick.labelsize": 9,
+    "legend.fontsize": 9,
+
+    # Axes
+    "axes.linewidth": 0.8,
+    "axes.spines.top": True,
+    "axes.spines.right": True,
+
+    # Ticks
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.top": True,
+    "ytick.right": True,
+    "xtick.major.size": 5,
+    "ytick.major.size": 5,
+    "xtick.minor.size": 3,
+    "ytick.minor.size": 3,
+    "xtick.major.width": 0.8,
+    "ytick.major.width": 0.8,
+    "xtick.minor.visible": True,
+    "ytick.minor.visible": True,
+
+    # Lines
+    "lines.linewidth": 1.4,
+    "lines.markersize": 5,
+
+    # Legend
+    "legend.frameon": False,
+    "legend.handlelength": 2.0,
+
+    # Savefig
+    "savefig.bbox": "tight",
+    "savefig.dpi": 300,
+})
 
 
 # ============================================================
@@ -215,13 +264,16 @@ if __name__ == "__main__":
     # Get all alpha directories
     ALL_ALPHA_DIRS = sorted(root_dir.glob("alpha_*"))
 
-    ALPHA_SELECTION = list(range(1, 19))
+    ALPHA_SELECTION = [1,2,3]
 
-    alpha_dirs = [
-        ALL_ALPHA_DIRS[i - 1]
-        for i in ALPHA_SELECTION
-        if 1 <= i <= len(ALL_ALPHA_DIRS)
-    ]
+    if ALPHA_SELECTION is None:
+        alpha_dirs = ALL_ALPHA_DIRS
+    else:
+        alpha_dirs = [
+            ALL_ALPHA_DIRS[i - 1]
+            for i in ALPHA_SELECTION
+            if 1 <= i <= len(ALL_ALPHA_DIRS)
+        ]
 
     print("\nSelected alpha folders:")
     for d in alpha_dirs:
@@ -311,45 +363,50 @@ errors = np.array(errors)[order]
 # PLOT 1: OVERLAP MAX vs ALPHA
 # ============================================================
 
-plt.figure()
+plt.figure(figsize=(4.5, 3.5))
 
 plt.errorbar(
     alphas,
     means,
     yerr=errors,
-    fmt='o-',
-    capsize=4
+    fmt="o-",
+    capsize=3,
 )
-
+plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
-plt.ylabel(r"$\langle m^{\mu^*} \rangle$")
-plt.title(f"Max overlap vs alpha (N={N}, beta={beta})")
-plt.grid(True)
-plt.ylim([-0.01,1])
+plt.ylabel(r"$\langle m^*\rangle$")
+plt.ylim(-0.01, 1.01)
+plt.grid(alpha=0.3)
+
 plt.tight_layout()
-plt.savefig(output_dir / "overlap_max_vs_alpha.png", dpi=300)
+plt.savefig(output_dir / "overlap_max_vs_alpha.pdf")
+plt.savefig(output_dir / "overlap_max_vs_alpha.png")
 plt.close()
 
 # ============================================================
-# PLOT 2: ERROR vs ALPHA
+# PLOT 2: Reconstruction error vs alpha
 # ============================================================
 
-plt.figure()
+reconstruction_error = (1 - means) / 2
+reconstruction_error_err = errors / 2
 
-plt.plot(
+plt.figure(figsize=(4.5, 3.5))
+
+plt.errorbar(
     alphas,
-    errors,
-    'o-'
+    reconstruction_error,
+    yerr=reconstruction_error_err,
+    fmt="o-",
+    capsize=3,
 )
 
+plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
-plt.ylabel("Standard error")
-plt.title(f"Error on overlap vs alpha (N={N}, beta={beta})")
-plt.ylim([-0.01,1])
-plt.grid(True)
+plt.ylabel("Reconstruction error")
+plt.ylim(-0.01, 0.55)
+plt.grid(alpha=0.3)
 
 plt.tight_layout()
-plt.savefig(output_dir / "overlap_error_vs_alpha.png", dpi=300)
+plt.savefig(output_dir / "reconstruction_error_vs_alpha.pdf")
+plt.savefig(output_dir / "reconstruction_error_vs_alpha.png")
 plt.close()
-
-print("\nPlots saved in:", output_dir)
