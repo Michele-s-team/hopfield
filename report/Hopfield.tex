@@ -148,18 +148,26 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
 \subsection{Capacity of the Hopfield network}
 \subsection{Performance test}
-\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested.
+\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each. Compared to the two previous models, the speedup factor strikingly decreases close to 1 in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
+
+The main explanation for this drop in efficiency of the bitwise implementation is the topology and the structure of the interactions in the case of the Hopfield model. Indeed, the Hopfield network is most commonly defined as a dense (fully connected) network, meaning that every neuron interacts with every other neuron in the network. This contrasts with the two previous models, in which each spin interacted with only four neighbors; in the Hopfield network, each neuron interacts with all $N-1$ remaining neurons. Thus, if the loop over neighbors at each spin update is not perfectly optimized in the bitwise implementation, the loss in performance can become considerable for dense networks, as observed here. The loss in performance is however much more discreet in the case of the Ising and spin glass models, for which we only sum on the 4 closed neighbors each time.
+
+This hypothesis is confirmed by the decrease of the speedup factor with the lattice size, impacting the number of neighbors to sum over. Also, when testing the code on a sparse Hopfield model, the obtained speedup is very comparable to that of the other models. Conversely, when initialized on a dense network, the Ising model bitwise implementation also yields a significantly reduced speedup factor, confirming again our hypothesis. This is also reassuring, as it shows that the issue does not stem from the generalized use of \UnsignedInt in this new bitwise implementation, but rather a common lack of optimization in all models, that finds its sources in the coding of the base classes \Bits and \UnsignedInt.
+
+The main reason for this lack of efficiency in the neighbors loop is the creation of temporary \texttt{Bits} objects over the summations, killing the code performance when done hundreds of thousands of times ($\sim N^2$) per sweep.
+
+Two other related causes can explain the lack of performances for dense networks. The first one is the data structure and the other one is the memory access. The structure has indeed initially been built for sparse networks, with the use of lists of neighbors instead of direct interaction matrices. This implementation is effective when the network is sparse but becomes inefficient in the case of a dense network: instead of storing a fully filled $N \times N$ triangular interaction matrix containing $N \left(N-1\right)/2$ values (taking advantage of the symmetry), we store twice as many values in $N$ lists of $N-1$ components, thus increasing the memory usage, and potentially reducing the performance if the memory overflows the available RAM.
 \begin{figure}[htbp]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
-\begin{minipage}[b]{0.49\textwidth}
+\begin{minipage}[b]{0.4\textwidth}
     \centering
     \includegraphics[width=\linewidth]{speedup_curves_hopfield.pdf}
     \subcaption{Speedup factor evolution.}
     \label{fig:speedup_curve_hopfield}
 \end{minipage}
 \hfill
-\begin{minipage}[b]{0.49\textwidth}
+\begin{minipage}[b]{0.4\textwidth}
     \centering
     \includegraphics[width=\linewidth]{time_normalized_hopfield.pdf}
     \subcaption{Normalized time evolution.}
@@ -168,20 +176,26 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
 \vspace{0.5em}
 % ── Middle row ────────────────────────────────────────────────────────────
-\begin{minipage}[b]{0.49\textwidth}
+\begin{minipage}[b]{0.4\textwidth}
     \centering
     \includegraphics[width=\linewidth]{speedup_curves_by_alpha_hopfield.pdf}
-    \subcaption{Total time grouped by values of $\alpha$, depending on the temperature.}
-    \label{fig:total_time_by_alpha_hopfield}
+    \subcaption{Speedup factor depending on the temperature for different $\alpha$ values.}
+    \label{fig:speedup_by_alpha_hopfield}
 \end{minipage}
 
+\begin{minipage}[b]{0.8\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{time_normalized_by_alpha_hopfield.pdf}
+    \subcaption{Sweep time depending on the temperature for different $\alpha$ values.}
+    \label{fig:sweep_time_vs_N_hopfield}
+\end{minipage}
 % ── Bottom row ────────────────────────────────────────────────────────────
-\begin{minipage}[b]{\textwidth}
+\begin{minipage}[b]{0.8\textwidth}
     \centering
     \includegraphics[width=\linewidth]{time_total_vs_N_hopfield.pdf}
-    \subcaption{Total time vs.\ $N$ for all temperatures.}
-    \label{fig:total_time_vs_N_hopfield}
+    \subcaption{Sweep time depending on the lattice size for all temperatures.}
+    \label{fig:sweep_time_vs_N_hopfield}
 \end{minipage}
-\caption{Performance analysis of the bitwise and classical Hopfield Metropolis implementations. The speedup factors have been averaged over the different values of $\alpha$.}
+\caption{Performance analysis of the bitwise and classical Hopfield Metropolis implementations.In Subfigures~(\subref{fig:speedup_curve_hopfield}), (\subref{fig:normalised_time_hopfield}) and (\subref{fig:sweep_time_vs_N_hopfield}), the data has been averaged over the different values of $\alpha$.}
 \label{fig:speedup_hopfield}
 \end{figure}
