@@ -22,12 +22,12 @@ where $i \in \partial k$ denotes the summation over the neighbors of $k$.
 We now need to implement the flip condition $\lfloor \rho \rfloor \geq \Lambda_k$ in a bitwise formalism in order to properly parallelize the evolutions.
 \subsection{Bitwise Implementation}
 Remembering that $S_i$ is actually an array containing $64$ replicas of the same spin, we write $S_i = -1 + 2B_i$, with $B_i$ a \Bits. The sum hence becomes:
-\begin{equation}
+\begin{equation*}
 \begin{aligned}
   \sum_{i \in \partial k}S_k S_i&=\sum_{i \in \partial k} (-1+2B_k)(-1+2B_i)\\
                           &=\sum_{i \in \partial k} 1-2 (B_k+B_i) +4 B_k.B_i,\\
 \end{aligned}
-\end{equation}
+\end{equation*}
 We show in Table~\ref{tab:XNOR} that the term in the sum can be re-written using the XNOR ($\odot$) logical operator.
 \begin{table}[h]
 \centering
@@ -44,16 +44,16 @@ $b_k$ & $b_i$ & $1- 2 (b_k+b_i) +4 b_k.b_i$ &  ${b_k \odot b_i}$ & $2{b_k \odot 
 \caption{The summed term can be simplified using a XNOR operator.}
 \label{tab:XNOR}
 \end{table}
-Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odot$ denotes the bitwise XNOR operation applied to the corresponding bits of each \Bits. The sum thus becomes:
-\begin{equation}
+Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odot$ denotes the bitwise XNOR operation applied to the corresponding bits of each \Bits. The sum can thus be written:
+\begin{equation*}
   \sum_{i \in \partial k}S_k S_i=2\sum_{i \in \partial k} C_{ki} - n_k,
-\end{equation}
+\end{equation*}
 with $C_{ki}=2{B_k \odot B_i}$ and $n_k$ is the number of neighbor of the spin $k$. The bitwise flip condition is then:
 \begin{equation}
   \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
   \label{eq:flip_ising_bitwise}
 \end{equation}
- Moreover, the integer flip condition \eqref{eq:flip_escape_condition} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively (with $\max \Lambda_k = n_k$). This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
+ Moreover, the integer flip condition \eqref{eq:flip_escape_condition} constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively (with $\max \Lambda_k = n_k$ in the case of the Ising network). This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.\\
 
 The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
 
@@ -111,8 +111,8 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \begin{figure}[htbp]
 \centering
 
-\includegraphics[height=8cm]{pictures/magnetizations_multiN.pdf}
-\caption{Phase diagram of the Ising model for several sizes of square lattices. The network is built with Periodic Boundary Conditions (PBC). The black line corresponds to the exact analytical solution found by Onsager in the case of an infinite square lattice \cite{Onsager1944}: $m(T)=0$ for $T\geq T_c$ and $m(T)_\pm= \pm \left[ 1 - \sinh^{-4}(2K) \right]^{1/8}$ for $T \leq T_c$, with $ K=J/T$ and $ T_c=2J/\log\left(1+\sqrt 2\right)\approx 2.269$.}
+\includegraphics[height=9cm]{pictures/magnetizations_multiN.pdf}
+\caption{Phase diagram of the Ising model for several sizes of square lattices. The network is built with Periodic Boundary Conditions (PBC). The black line corresponds to the exact analytical solution found by Onsager in the case of an infinite square lattice \cite{Onsager1944}: $m(T)=0$ for $T\geq T_c$ and $m(T)_\pm= \pm \left[ 1 - \sinh^{-4}(2K) \right]^{1/8}$ for $T \leq T_c$, with $ K=J/T$ and $ T_c/J=2/\log\left(1+\sqrt 2\right)\approx 2.269$.}
 \label{fig:magnetizations_multiN}
 \end{figure}
 Qualitatively, it appears that the magnetization curve get closer to the exact solution when the lattice size is increased. This was to be expected as we gradually get closer to the infinite size case when increasing the lattice size. We also notice an excellent agreement between the exact analytical magnetization and the obtained ones in the ferromagnetic part of the phase diagram. Thus, the obtained phase diagram is in excellent agreement with the expected phase diagram, taking into account that we work on finite size lattices. In this plot, each point corresponds to the mean over the $n_\text{bits}=64$ independent realizations. We show in Figure~\ref{fig:evolution_ising} the trajectories over time of the magnetizations for those 64 realizations.
@@ -120,11 +120,11 @@ Qualitatively, it appears that the magnetization curve get closer to the exact s
 \begin{figure}[htbp]
 \centering
 
-\includegraphics[height=4.5cm]{pictures/evolution_ising_T1.5_L100.pdf}
+\includegraphics[height=5cm]{pictures/evolution_ising_T1.5_L100.pdf}
 \caption{Trajectories of the 64 magnetizations over time for $L=100$ and $T/J=1.5$. All those trajectories have been obtained from the same simulation. While some realizations quickly collapse into the equilibrium attractors $m_\pm = \pm 0.953$, some require $\sim 10^2$ times more sweeps to reach the same equilibrium.}
 \label{fig:evolution_ising}
 \end{figure}
-In order to make sure that the phase transition of our network is well at $T_c=2.269$ for all lattice sizes, we plot the Binder $U_L$, defined as:
+In order to make sure that the phase transition of the network indeed occurs at $T_c=2.269$ for all lattice sizes, we plot the Binder $U_L$, defined as:
 \begin{equation}
   U_L = 1-\frac{\langle m^4 \rangle_L}{3\langle m^2 \rangle_L^2}
 \end{equation}
@@ -132,7 +132,7 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[height=8cm]{pictures/binder_multiN.pdf}
+\includegraphics[height=9cm]{pictures/binder_multiN.pdf}
 \caption{Binder cumulant for the different lattice sizes. The curves approach the two asymptotic limits and intersect at $\left(T_c,\,U^*\right)$, as expected. Insets show the zoomed region around the critical point.}
 \label{fig:binder}
 \end{figure}
@@ -168,5 +168,5 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \label{fig:speedup_ising}
 \end{figure}
 The speedup factor lies between 20 and 45, which is a substantial increase. We notice that this speedup factor consistently increases with the temperature. As shown in (\subref{fig:sweep_time_vs_N_ising}), the early increase is mostly the effect of the ordering of the configurations at low temperature: before the phase transition, the state collapses into an ordered phase where all spins are aligned. This makes the unconditional flip condition $\Delta E_k \leq 0$ more frequent in the classical implementation, which is computationally cheaper, thus making it faster. This unconditional flip condition however becomes less probable when we increase the temperature, making the normalised time of the classic implementation and the speedup factor increase (especially near the phase transition temperature $T_c$) up to a certain value where the normalised time stops increasing, probably as the unconditional flip condition is never met anymore. We also notice that the unconditional flip condition in the bitwise implementation ($\lfloor \rho \rfloor \geq n_k$) becomes more and more probable with the increasing temperature, making the bitwise implementation faster. These two effects combined explain the overall shape of the speedup factor evolution, where the first increase is coming from the classical implementation and the second one is the effect of the bitwise. It should be noted that this overall tendency is also expected in the case of a comparison with the standard Metropolis algorithm, as both argument still hold. The increase seems to be uncorrelated with the size of the system. In theory, the speedup factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
-The Subfigure~(\subref{fig:sweep_time_vs_N_ising}) shows that the time required grows proportionally to the system size for both implementation. The complexity of the bitwise implementation thus seems to be $\mathcal{O}\left(N\cdot N_\text{sweeps}\right)$ while that of the naive classic implementation should be about $\mathcal{O}\left(n_\text{bits} \cdot N\cdot N_\text{sweeps}\right)$ .
+The Subfigure~(\subref{fig:sweep_time_vs_N_ising}) shows that the time required grows proportionally to the system size for both implementation. The complexity of the bitwise implementation thus seems to be $\mathcal{O}\left(N_\text{sweeps}  N \cdot \langle n_\text{neighbor} \rangle \right)$.
 It must be noted that, while we here measure an increase in the speed of the code for a fixed number of outputs, the true advantage of the bitwise implementation is to produce more independent results within the same computational time.

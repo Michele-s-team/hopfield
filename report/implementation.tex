@@ -189,7 +189,7 @@ This implementation method has proven efficient when dealing with discreet value
 
 \subsection{Note on the independence of the realizations}
 \subsection{Code structure}
-We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is present in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
+We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
 \begin{figure}[H]
 \centering
 
@@ -197,7 +197,7 @@ We here present the structure of the code. It has been entirely written in \text
 \caption{Code structure}
 \label{fig:architecture}
 \end{figure}
-The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model used to make the system evolve. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version.
+The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model used to make the system evolve. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version. This code can be found at \cite{hopfield_code}.
 
 \subsection{Standard implementation of the Metropolis algorithm}
 \myindent We show here the standard implementation of the Metropolis, which will be broadly shared across all models.\\
@@ -209,16 +209,27 @@ If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^
 \end{aligned}
 \label{eq:flip_condition}
 \end{equation}
-With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus $-(2\beta J)^{-1}\log r=\rho \sim \mathcal{E}(2\beta J)$. The left-hand side is a random variable of probability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
-The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
+With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus:
 \begin{equation}
-  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}S_i= \Lambda_k.
+   \rho \equiv -\frac{1}{2\beta J}\log r  \sim \mathcal{E}(2\beta J).
+\end{equation}
+ The left-hand side of \Cref{eq:flip_condition} is a random variable of positiveprobability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
+The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
+\begin{equation}
+  \lfloor \rho \rfloor \geq \Lambda_k,
   \label{eq:flip_int}
 \end{equation}
+
+with:
+\begin{equation*}
+  \Lambda_k \equiv S_k  \sum_{i \in \partial k}S_i.
+  \label{eq:def_lambda}
+\end{equation*}
+
 A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number. A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
-\begin{equation}
+\begin{equation*}
  -\max\Lambda_k \leq \Lambda_k \leq \max\Lambda_k ,
-\end{equation}
+\end{equation*}
 where $\max\Lambda_k $ only depend on the topology of the network.
 Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
 \begin{equation}
@@ -226,7 +237,7 @@ Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
  \label{eq:flip_escape_condition}
 \end{equation}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime.\\
-We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition} to be adapted to each model.
+We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition} to be adapted to each model.\\
 \vspace{1em}
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -258,3 +269,4 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \end{algorithm}
 \vspace{1em}
 This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared among all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used.
+The complexity of this algorithm on a given network is $\mathcal{O}\left(N_\text{sweeps}\cdot N \cdot \langle n_\text{neighbor} \rangle \cdot n_\text{bits} \right)$.

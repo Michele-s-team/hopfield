@@ -5,6 +5,7 @@ We here present the Hopfield model, which is of interest in this internship.
 The Hopfield Hamiltonian resemble this of the spin glass model and is as follows:
 \begin{equation}
   H_\text{Hopfield}=-\frac{1}{2}\sum_{i \neq j}w_{ij}S_iS_j,
+  \label{eq:Hopfield}
 \end{equation}
 where in this case the weights $w_{ij}$ are not initialized randomly but rather determined by a set of states that one wants to ``store'' in the network (this term will be explained further on):
 \begin{equation}
@@ -13,14 +14,14 @@ where in this case the weights $w_{ij}$ are not initialized randomly but rather 
 With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. Each stored pattern is a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates.
 Using the definition of $m^\mu$, the energy of the system can be re-written:
 \begin{equation}
-  w_{ij}=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
+  E=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
 \end{equation}
 
 By initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{energy_landscape.pdf}
+\includegraphics[width=0.75\linewidth]{energy_landscape.pdf}
 \caption{Schematic illustration of the Hopfield model, extracted from \cite{nobel2024physics}. The Hopfield network can recover stored patterns from an altered or partial version of them.}
 \label{fig:energy_landscape}
 \end{figure}
@@ -31,7 +32,7 @@ A parameter of particular interest in this model is its storage load, defined as
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.45\linewidth]{phase_diagram.png}
+\includegraphics[width=0.4\linewidth]{phase_diagram.png}
 \caption{Phase diagram of the Hopfield model in the thermodynamic limit ($N \to \infty$), extracted from \cite{Mezard2017}. the phase transition value at $T=0$ is signified by the arrow.}
 \label{fig:phase_diagram}
 \end{figure}
@@ -49,12 +50,13 @@ We show in \Cref{fig:architecture} the evolution of the error with the storage l
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.45\linewidth]{phase_transition.png}
-\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern and we let the system evolve from there. When the storage load exceeds $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
+\includegraphics[width=0.4\linewidth]{phase_transition.png}
+\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
 \label{fig:phase_transition}
 \end{figure}
 
 \subsection{Flip condition}
+Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the neuron $S_k$ is:
 \begin{equation}
   \begin{aligned}
   \Delta E_k&= 2\sum_{i\partial k}w_{ki}S_kS_i\\
@@ -63,13 +65,14 @@ We show in \Cref{fig:architecture} the evolution of the error with the storage l
 \end{equation}
 \subsection{Bitwise Implementation}
 We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variables. Thus:
-\begin{equation}
-    \frac{\Delta E_k N}{2} = \sum_{i \partial k} G_{ki} S_i S_k, \qquad \text{with} \quad G_{ki} \in [-p, p]
-\end{equation}
+\begin{equation*}
+    \frac{\Delta E_k N}{2} = \sum_{i \partial k} G_{ki} S_i S_k \qquad \text{with} \quad G_{ki} \in [-p, p].
+\end{equation*}
 
 And the flip condition becomes:
 \begin{equation}
   \lfloor \rho \rfloor \geq \sum_{i \partial k }G_{ki}S_kS_i,
+  \label{eq:flip_condition_hopfield}
 \end{equation}
 with $\rho =-\frac{N}{2\beta} \log r$.
 \subsubsection{Naive implementation}
@@ -77,17 +80,17 @@ A first naive implementation would be to unfold $G_{ki}$ into its pattern compon
 
 \begin{equation}
   \lfloor \rho \rfloor \geq \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
-\end{equation}
+\end{equation}condition
 As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
-However, this method requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times.
+However, this method requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
 
 \subsubsection{Optimized implementation}
-A more efficient way to go would be to stay with the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki} \in [0, 2p]$, in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
-\begin{equation}
+A more efficient way to go would be to keep the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
+\begin{equation*}
     \sum_{i \partial k} G_{ki} S_i S_k = \sum_{i \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
     = -\sum_{i \partial k} \tilde{G}_{ki} + 2\sum_{i \partial k}
      C_{ik}(\tilde{G}_{ki}-p) + n_k p,
-\end{equation}
+\end{equation*}
 with $C_{ki}= B_k \odot B_i$.
 The bitwise flip test is then:
 \begin{equation}
@@ -95,24 +98,16 @@ The bitwise flip test is then:
     2\sum_{i \partial k} C_{ki}\, \oplus \tilde{G}_{ki}
 \end{equation}
 Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{ki}$ and every \Bits composing the \UnsignedInt $\tilde{G}_{ki}$:
-\begin{equation}
+\begin{equation*}
   \left(C_{ki}\, \oplus \tilde{G}_{ki}\right)_l = C_{ki} \oplus \left(\tilde{G}_{ki}\right)_l,
-\end{equation}
+\end{equation*}
 where $l$ denotes the $l$-th \Bits (associated with the power $2^l$).
-This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave the other ones untouched.
-Maximum value of $R$: $pN_{k}$\\
-Maximum value of $\sum_{<k,i>}g_{ik}$: $2pN_{k}$\\
-Maximum value of $2p\sum_{<k,i>}c_{ik}$: $2pN_{k}$\\
-
-\noindent Maximum value left-hand side: $5pN_{k}$\\
-Maximum value right-hand side: $pN_{k}(1+2\cdot2)=5pN_{k}$
-
-The Metropolis condition $r \leq e^{-\beta \Delta E_k}$ is equivalent to:
+This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave the other ones untouched. This method thus requires the creation of several \UnsignedInt objects, whose sizes are fixed throughout the evolution of the system. Also, $\tilde{G}_{ki}$ is simply determined by the pattern initialization of the system and does not depend on the spin configuration. It can thus be computed once before letting the system evolve, saving significant computation time. Looking at \Cref{eq:flip_condition_hopfield}, the escape condition that enables us to flip all replicas of the spin without considering each configuration becomes:
 \begin{equation}
-    R := \frac{-N}{2\beta}\log r \geq \frac{\Delta E_k N}{2}
+    \lfloor \rho \rfloor \geq p\,n_k
+    \label{eq:escape_condition_hopfield_bitwise}
 \end{equation}
-at max, $\Delta E_k N/2=PN_k$. So if $R \geq PN_k$, unconditional flip.\\
-Else, after substitution:
+We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -145,7 +140,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
         Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$\;
 
-        \eIf{$\lfloor \rho \rfloor \geq P\,n_k$}{
+        \eIf{$\lfloor \rho \rfloor \geq p\,n_k$}{
             $B_i\leftarrow\neg B_i$
             \tcp*{Unconditional flip}
         }{
@@ -180,8 +175,9 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 }
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
-\subsection{Initialization from a random state}
-\subsection{Capacity of the Hopfield network}
+\subsection{Capacity of the network}
+\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. We let the system evolve for $2^1$ sweeps, averaging on the second half of the evolution.
+\subsection{Dynamics visualization: initialization from a random state}
 \subsection{Performance test}
 \myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each. Compared to the two previous models, the speedup factor strikingly decreases close to 1 in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
 
@@ -192,6 +188,8 @@ This hypothesis is confirmed by the decrease of the speedup factor with the latt
 The main reason for this lack of efficiency in the neighbors loop is the creation of temporary \texttt{Bits} objects over the summations, killing the code performance when done hundreds of thousands of times ($\sim N^2$) per sweep.
 
 Two other related causes can explain the lack of performances for dense networks. The first one is the data structure and the other one is the memory access. The structure has indeed initially been built for sparse networks, with the use of lists of neighbors instead of direct interaction matrices. This implementation is effective when the network is sparse but becomes inefficient in the case of a dense network: instead of storing a fully filled $N \times N$ triangular interaction matrix containing $N \left(N-1\right)/2$ values (taking advantage of the symmetry), we store twice as many values in $N$ lists of $N-1$ components, thus increasing the memory usage, and potentially reducing the performance if the memory overflows the available RAM.
+
+Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 \begin{figure}[htbp]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────

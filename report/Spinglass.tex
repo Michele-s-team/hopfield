@@ -20,12 +20,12 @@ The structure being really similar to that of \eqref{eq:DeltaE_ising}, we can pe
 with this time $\rho \sim \mathcal{E}(2\beta)$.
 \subsection{Bitwise Implementation}
 \myindent We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in the previous section, the product $S_kS_i$ can be re-written $(-1+2B_k)(-1+2B_i)=-1+2 C_{ki}$ with $C_{ki}= B_k \odot B_i$. Thus, by writing $J_{ki}=-1+2K_{ki}$ with $K_{ki}$ a \Bits, we have:
-\begin{equation}
+\begin{equation*}
   \begin{aligned}
   J_{ik}S_kS_i =& (-1+2K_{ki})(-1+2 C_{ki})\\
                =& -1 + 2D_{ki},\\
   \end{aligned}
-\end{equation}
+\end{equation*}
 with $D_{ki}=K_{ki}\odot C_{ki}= K_{ki} \odot B_k \odot B_i =  K_{ki} \oplus B_k \oplus B_i$. As in the previous section, the flip condition is then:
 \begin{equation}
   \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}D_{ki}.
