@@ -11,37 +11,37 @@ where in this case the weights $w_{ij}$ are not initialized randomly but rather 
 \begin{equation}
   w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu.
 \end{equation}
-With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of states to be memorized by the network. Each stored pattern is a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minimum at each pattern coordinates.
-Using the definition of $m^\mu$, the energy of the system can be re-written:
-\begin{equation}
-  E=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
-\end{equation}
+With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of patterns to be memorized by the network, each pattern being a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minima at each pattern coordinates.
 
 By initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.75\linewidth]{energy_landscape.pdf}
+\includegraphics[width=0.7\linewidth]{energy_landscape.pdf}
 \caption{Schematic illustration of the Hopfield model, extracted from \cite{nobel2024physics}. The Hopfield network can recover stored patterns from an altered or partial version of them.}
 \label{fig:energy_landscape}
 \end{figure}
 
-A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram} the phase diagram of the Hopfield model on a fully-connected network. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s capacity, as beyond this threshold, the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
-
-
+A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram_hopfield} the phase diagram of the Hopfield model on a fully-connected network, which is the reference topology of the model. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s storage capacity, as beyond this threshold the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.4\linewidth]{phase_diagram.png}
-\caption{Phase diagram of the Hopfield model in the thermodynamic limit ($N \to \infty$), extracted from \cite{Mezard2017}. the phase transition value at $T=0$ is signified by the arrow.}
-\label{fig:phase_diagram}
+\caption{Phase diagram of the Hopfield model in the thermodynamic limit ($N \to \infty$), extracted from \cite{Mezard2017}. The phase transition value at $T=0$ is indicated by the arrow.}
+\label{fig:phase_diagram_hopfield}
 \end{figure}
 
 In order to study the capacity of the network to recover stored data, we introduce the overlap order parameter:
 \begin{equation}
     m^\mu = \frac{1}{N}\sum_{i=1}^N \xi_i^\mu S_i.
 \end{equation}
-This quantity defines how much the system's configuration is aligned to the pattern $\mu$. All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. Thus, we often consider the pattern for which the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry.  From $m^*$ we can define the reconstruction error of the network:
+This quantity measures how much the system's configuration is aligned with the pattern $\mu$.
+Using the definition of $m^\mu$, the energy of the system can be re-written:
+\begin{equation}
+  E=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
+\end{equation}
+
+All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. Thus, we often consider the pattern for which the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry.  From $m^*$ we can define the reconstruction error of the network:
 \begin{equation}
     \text{error}=\frac{1-m^*}{2}
 \end{equation}
@@ -50,12 +50,12 @@ We show in \Cref{fig:architecture} the evolution of the error with the storage l
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.4\linewidth]{phase_transition.png}
+\includegraphics[width=0.38\linewidth]{phase_transition.png}
 \caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
 \label{fig:phase_transition}
 \end{figure}
 
-\subsection{Flip condition}
+\subsection{Bitwise Implementation}
 Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the neuron $S_k$ is:
 \begin{equation}
   \begin{aligned}
@@ -63,7 +63,6 @@ Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the ne
             &= \frac{2}{N}  \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
   \end{aligned}
 \end{equation}
-\subsection{Bitwise Implementation}
 We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variables. Thus:
 \begin{equation*}
     \frac{\Delta E_k N}{2} = \sum_{i \partial k} G_{ki} S_i S_k \qquad \text{with} \quad G_{ki} \in [-p, p].
@@ -79,13 +78,13 @@ with $\rho =-\frac{N}{2\beta} \log r$.
 A first naive implementation would be to unfold $G_{ki}$ into its pattern components in order to deal with \Bits only objects. The flip condition would then be:
 
 \begin{equation}
-  \lfloor \rho \rfloor \geq \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
-\end{equation}condition
+  \lfloor \rho \rfloor \geq \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i.
+\end{equation}
 As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
-However, this method requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
+However, it requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
 
 \subsubsection{Optimized implementation}
-A more efficient way to go would be to keep the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
+A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
 \begin{equation*}
     \sum_{i \partial k} G_{ki} S_i S_k = \sum_{i \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
     = -\sum_{i \partial k} \tilde{G}_{ki} + 2\sum_{i \partial k}
@@ -101,7 +100,7 @@ Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{
 \begin{equation*}
   \left(C_{ki}\, \oplus \tilde{G}_{ki}\right)_l = C_{ki} \oplus \left(\tilde{G}_{ki}\right)_l,
 \end{equation*}
-where $l$ denotes the $l$-th \Bits (associated with the power $2^l$).
+where $l$ denotes the $l$-th \Bits of $\tilde{G}_{ki}$ (associated with the power $2^l$).
 This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave the other ones untouched. This method thus requires the creation of several \UnsignedInt objects, whose sizes are fixed throughout the evolution of the system. Also, $\tilde{G}_{ki}$ is simply determined by the pattern initialization of the system and does not depend on the spin configuration. It can thus be computed once before letting the system evolve, saving significant computation time. Looking at \Cref{eq:flip_condition_hopfield}, the escape condition that enables us to flip all replicas of the spin without considering each configuration becomes:
 \begin{equation}
     \lfloor \rho \rfloor \geq p\,n_k
@@ -176,18 +175,18 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
 \subsection{Capacity of the network}
-\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
+\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.6\linewidth]{reconstruction_error_vs_alpha.pdf}
-\caption{Evolution of the reconstruction error with the storage load. For this diagram, the configuration is initialized on a pattern.}
+\caption{Evolution of the reconstruction error with the storage load. For this diagram, the configuration is initialized on one of the stored patterns.}
 \label{fig:reconstruction_error}
 \end{figure}
 We observe the expected evolution, with a null reconstruction error for the lowest $\alpha$ and an increase before a plateau, where the system fails to retain the memory of the initially stored pattern. However, we do not observe the sudden jump around $\alpha_c$. This can be explained by finite size effects, which smooth the transition. Also, the plateau is not located around $\text{error}=0.5$ as expected but rather out $0.4$. Two explanations exist. The first one is that initializing the network on the exact pattern favors better retrieval. The second is that the system did not evolve for long enough before we start averaging over what we believe to be equilibrium configurations, thus underestimating the obtained error as the first averaged configurations are still correlated with the initial one.
 
 \subsection{Dynamics visualization: initialization from a random state}
-We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ of all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
+We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ for all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
 
 \begin{figure}[htbp]
 \centering
@@ -195,7 +194,7 @@ We now aim at visualizing the evolution of the configurations when initializing 
 \caption{Evolution of $m^\mu$ for all pattern for the replica 16 of $\alpha=0.03$.}
 \label{fig:all_mu_single_replica}
 \end{figure}
-At the beginning, the state is roughly uncorrelated with the pattern. As the system evolve, it starts correlating with some patterns, before it eventually aligns perfectly ($m^\mu=-1$) with one of them. When it does so, the overlaps with the other patterns collapse to 0, with a noise of standard deviation $1/32$. This configuration looks stable (as we can see small fluctuations around it), which was expected has it corresponds to a local minimum of energy.\\
+At the beginning, the state is roughly uncorrelated with  any of the patterns. As the system evolves, it starts correlating with some patterns, before it eventually aligns perfectly ($m^\mu=-1$) with one of them. When it does so, the overlaps with the other patterns collapse to 0, with a noise of standard deviation $1/32$. This configuration looks stable (as we can see small fluctuations around it), which was expected has it corresponds to a local minimum of energy.\\
 We can also look at the evolution of the maximum overlap $m^*$ for all replicas at a given value of the storage load, as shown in \Cref{fig:mu_star_all_replica}.
 \begin{figure}[htbp]
 \centering
@@ -211,21 +210,23 @@ Lastly, we can plot the evolution of the mean of maximum overlaps across all rep
 \caption{Evolution $\langle m^* \rangle$ with the storage load. }
 \label{fig:mean_mu_star}
 \end{figure}
-As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly increases to $\langle m^* \rangle \approx 1$ and remains stable. The plateau value decreases as the storage load increases: it is less and less likely for the system to end up in a completely pattern-aligned configuration when initialized at random when the number of spurious states increases.
+As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly increases to $\langle m^* \rangle \approx 1$ and remains stable. The plateau value decreases as the storage load increases: it is less and less likely for the system to end up in a completely pattern-aligned configuration from a random initialization when the number of spurious states increases.
 
 
 \subsection{Performance test}
-\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each. Compared to the two previous models, the speedup factor strikingly decreases close to 1 in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
+\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
+Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 
-The main explanation for this drop in efficiency of the bitwise implementation is the topology and the structure of the interactions in the case of the Hopfield model. Indeed, the Hopfield network is most commonly defined as a dense (fully connected) network, meaning that every neuron interacts with every other neuron in the network. This contrasts with the two previous models, in which each spin interacted with only four neighbors; in the Hopfield network, each neuron interacts with all $N-1$ remaining neurons. Thus, if the loop over neighbors at each spin update is not perfectly optimized in the bitwise implementation, the loss in performance can become considerable for dense networks, as observed here. The loss in performance is however much more discreet in the case of the Ising and spin glass models, for which we only sum on the 4 closed neighbors each time.
+Compared to the two previous models, the speedup factor strikingly decreases close to 1 (and in some cases even below) in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
+
+The main explanation for this drop in efficiency of the bitwise implementation is the topology and the structure of the interactions in the case of the Hopfield model. Indeed, the Hopfield network is most commonly defined as a dense (fully connected) network, meaning that every neuron interacts with every other neuron in the network. This contrasts with the two previous models, in which each spin interacted with only four neighbors; in the Hopfield network, each neuron interacts with all $N-1$ remaining neurons. Thus, if the loop over neighbors at each spin update is not perfectly optimized in the bitwise implementation, the loss in performance can become considerable for dense networks, as observed here. The loss in performance is however much more discrete in the case of the Ising and spin glass models, for which we only sum on the 4 closest neighbors each time.
 
 This hypothesis is confirmed by the decrease of the speedup factor with the lattice size, impacting the number of neighbors to sum over. Also, when testing the code on a sparse Hopfield model, the obtained speedup is very comparable to that of the other models. Conversely, when initialized on a dense network, the Ising model bitwise implementation also yields a significantly reduced speedup factor, confirming again our hypothesis. This is also reassuring, as it shows that the issue does not stem from the generalized use of \UnsignedInt in this new bitwise implementation, but rather a common lack of optimization in all models, that finds its sources in the coding of the base classes \Bits and \UnsignedInt.
 
-The main reason for this lack of efficiency in the neighbors loop is the creation of temporary \texttt{Bits} objects over the summations, killing the code performance when done hundreds of thousands of times ($\sim N^2$) per sweep.
+The main reason for this lack of efficiency in the neighbors loop might the creation of temporary \texttt{Bits} objects over the summations, killing the code performance when done hundreds of thousands ($\sim N^2$) times per sweep.
 
 Two other related causes can explain the lack of performances for dense networks. The first one is the data structure and the other one is the memory access. The structure has indeed initially been built for sparse networks, with the use of lists of neighbors instead of direct interaction matrices. This implementation is effective when the network is sparse but becomes inefficient in the case of a dense network: instead of storing a fully filled $N \times N$ triangular interaction matrix containing $N \left(N-1\right)/2$ values (taking advantage of the symmetry), we store twice as many values in $N$ lists of $N-1$ components, thus increasing the memory usage, and potentially reducing the performance if the memory overflows the available RAM.
 
-Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 \begin{figure}[htbp]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────

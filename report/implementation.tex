@@ -54,20 +54,20 @@ This algorithm however becomes computationally demanding when one attempts to sa
     node[midway, below=6pt] {64 bits $\leftrightarrow$ 64 replicas};
 
 \end{tikzpicture}
-\caption{A \Bits $W$ encoding 64 parallel replicas. Each bit $b_i$ carries the state of replica $i$.}
+\caption{A \Bits $W$ encoding 64 parallel replicas. Each bit $b^k$ carries the state of replica $k$.}
 \label{fig:Bits}
 \end{figure}
 
-This structure is very convenient to represent binary variable such as the spins of the system. The boolean representation $b_i \in \{0,1\}$ of a spin $s_i \in \{-1,+1\}$ is given by $b_i = (s_i+1)/2$. In that way, we are able to implement several replicas of the full spin system in a set of \Bits $\{S_i\}$, each encoding the replicas of the associated spin, as shown in Figure~\ref{fig:spins_Bits}.
+This structure is very convenient to represent binary variable such as the spins of the system. The boolean representation $b^k \in \{0,1\}$ of a spin $s^k \in \{-1,+1\}$ is given by $b^k = (s^k+1)/2$. In that way, we are able to implement several replicas of the full spin system in a set of \Bits $\{S_i\}$, each encoding the replicas of the associated spin, as shown in Figure~\ref{fig:spins_Bits}.
 
 \begin{figure}[H]
 \centering
 \def\svgwidth{0.28\linewidth}
 \input{pictures/spins_Bits.pdf_tex}
-\caption{Bitwise implementation of a spin system. Each replica of the system is obtained by selecting the corresponding replica in each spin.}
+\caption{Bitwise implementation of a spin system. Each replica of the entire system is obtained by selecting the corresponding replica in each spin.}
 \label{fig:spins_Bits}
 \end{figure}
-Storing all replicas in a single \Bits object allows us to manipulate and update them simultaneously using a single bitwise operator. This is an instance of SWAR (SIMD Within A Register) parallelism, where SIMD stands for Single Instruction, Multiple Data: all 64 replicas are updated by a single bitwise instruction. The restriction to $n_\text{bits} = 64$ reflects the native word size of modern 64-bit CPUs \cite{intel2023sdm}. This could in principle be extended to 512 bits using AVX-512 SIMD instructions, at the cost of introducing a new register type in the implementation. This will be left for further discussion.\\
+Storing all replicas in a single \Bits object allows us to manipulate and update them simultaneously using a single bitwise operator. This is an instance of SWAR (SIMD Within A Register) parallelism, where SIMD stands for Single Instruction, Multiple Data: all 64 replicas are updated by a single bitwise instruction. The restriction to $n_\text{bits} = 64$ reflects the native word size of modern 64-bit CPUs \cite{intel2023sdm}. This could in principle be extended to 512 bits using AVX-512 SIMD instructions, at the cost of introducing a new register type in the implementation.\\
 The convention used for what follows is presented in the Table \ref{tab:notation}:
 \begin{table}[h]
 \centering
@@ -75,10 +75,9 @@ The convention used for what follows is presented in the Table \ref{tab:notation
 \hline
 Object & Notation \\
 \hline
-Scalar spin & $s_i \in \{-1,+1\}$ \\
-Scalar bit & $b_i \in \{0,1\}$ \\
-64 replicas of spin i & $S_i \in \{-1,1\}^{64}$ \\
-64-bit word (\Bits) & $B_i \in \{0,1\}^{64}$ \\
+
+$n_\text{bits}$ replicas of spin i & $S_i \in \{-1,1\}^{n_\text{bits}}$ \\
+$n_\text{bits}$-bit word (\Bits) & $B_i \in \{0,1\}^{n_\text{bits}}$ \\
 Replica $k$ of spin $i$ & $s_i^{(k)} \in \{-1,+1\}$ \\
 Replica $k$ of bit $i$ & $b_i^{(k)} \in \{0,1\}$ \\
 \hline
@@ -174,7 +173,7 @@ node[midway,below=7pt] {64 replicas};
 \label{fig:UnsignedInt}
 \end{figure}
 In the same way as for \Bits, the \UnsignedInt data structure enables us to add, subtract or even multiply two sets of 64 integers with just the cost of one operation.\\
-This implementation method has proven efficient when dealing with discreet values models such as the Ising \cite{HFreund_1988} or the Spin Glass \cite{palassini1999} models, but it has not yet been employed to study the Hopfield network.
+This implementation method has proven efficient when dealing with discrete-value models such as the Ising \cite{HFreund_1988} or the spin glass \cite{palassini1999} models, but it has not yet been employed to study the Hopfield network.
 
 \subsection{Second Optimization: Shared random numbers}
 \myindent The bitwise implementation is a structural optimization of the data representation. On top of this structural optimization can be added a physical one which consists in having all replicas share the same sequence of random numbers, fully parallelizing their evolution. This turns out to be central: random number generation is often the simulation bottleneck, as it involves costly operations such as multiplications and is called at every step of the hot loop. A schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}. Using the same random number among all evolutions raises the questions of the independence of the realizations, this will be the subject of the next subsection.
@@ -183,12 +182,12 @@ This implementation method has proven efficient when dealing with discreet value
 \centering
 
 \includegraphics[height=5cm]{pictures/random_number.pdf}
-\caption{All 64 replicas of the system share the same random number at each step.}
+\caption{All 64 replicas of a given spin share the same random number at each step.}
 \label{fig:shared_rng}
 \end{figure}
 
 \subsection{Note on the independence of the realizations}
-\myindent Because all replicas share the same sequence of random number, it is not obvious that their evolutions are independent. This is in fact guaranteed by two facts. The first one is that each replica is initialized independently of the others. The second one is that the shape of the enrgy landscape in each realization is also shaped independently of the others. Thus,the shared random number yields different outcome in each replica. A schematic view of this mechanism is shown in \Cref{fig:replica_independence}.
+\myindent Because all replicas share the same sequence of random number, it is not obvious that their evolutions are independent. This is in fact guaranteed by two facts. The first one is that each replica is initialized independently of the others. The second one is that the shape of the energy landscape in each realization is also shaped independently of the others. Thus, the shared random number yields different outcome in each replica. A schematic view of this mechanism is shown in \Cref{fig:replica_independence}.
 
 \begin{figure}[H]
 \centering
@@ -201,7 +200,7 @@ This implementation method has proven efficient when dealing with discreet value
 In a further analysis, one would be tempted to share the energy landscape across all replicas (this happens for instance if all replicas share the same patterns to be stored in the case of the Hopfield model, see subsection \ref{subsec:hopfield_model}). In this case, the realizations would be correlated through this shared energy landscape.
 
 \subsection{Code structure}
-We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
+\myindent We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
 \begin{figure}[H]
 \centering
 
@@ -209,34 +208,34 @@ We here present the structure of the code. It has been entirely written in \text
 \caption{Code structure}
 \label{fig:architecture}
 \end{figure}
-The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model used to make the system evolve. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version. This code can be found at \cite{hopfield_code}.
+The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model considered. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version. This code can be found in \cite{hopfield_code}.
 
 \subsection{Standard implementation of the Metropolis algorithm}
-\myindent We show here the standard implementation of the Metropolis, which will be broadly shared across all models.\\
+\myindent We show here the standard implementation of the Metropolis algorithm, which will be broadly shared across all models.\\
 If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^{-\beta \Delta E_k}$, yields:
 \begin{equation}
 \begin{aligned}
   \frac{-1}{\beta}\log r &\geq \Delta E_k\\
-  \frac{-1}{2\beta J}\log r &\geq S_k  \sum_{i \in \partial k}S_i.\\
+  \frac{-1}{\beta \kappa}\log r &\geq \Lambda_k,\\
 \end{aligned}
 \label{eq:flip_condition}
 \end{equation}
-With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$  \cite{} \noteBastien{(source?)}, thus:
+with
 \begin{equation}
-   \rho \equiv -\frac{1}{2\beta J}\log r  \sim \mathcal{E}(2\beta J).
+  \Lambda_k \equiv \frac{\Delta E_k}{\kappa}.
+  \label{eq:def_lambda}
 \end{equation}
- The left-hand side of \Cref{eq:flip_condition} is a random variable of positiveprobability density $p(\rho)=2\beta J e^{-2\beta J \rho}$ and mean $(2\beta J)^{-1}$.
+where  $\kappa$ corresponds to the constants of the model (\textit{i.e.} $2J$ in the case of the Hopfield model).
+With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$ , thus:
+\begin{equation}
+   \rho \equiv -\frac{1}{\beta \kappa}\log r  \sim \mathcal{E}(\beta \kappa).
+\end{equation}
+ The left-hand side of \Cref{eq:flip_condition} is a random variable of probability density $p(\rho)=\beta  \kappa e^{-\beta  \kappa \rho}$ and mean $(\beta  \kappa)^{-1}$.
 The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
 \begin{equation}
   \lfloor \rho \rfloor \geq \Lambda_k,
   \label{eq:flip_int}
 \end{equation}
-
-with:
-\begin{equation*}
-  \Lambda_k \equiv S_k  \sum_{i \in \partial k}S_i.
-  \label{eq:def_lambda}
-\end{equation*}
 
 A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number. A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
 \begin{equation*}
@@ -248,8 +247,8 @@ Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
  \lfloor \rho \rfloor \geq \max\Lambda_k
  \label{eq:flip_escape_condition}
 \end{equation}
-When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica bitwise test. This first escape is useful, as it avoids the bitwise flipping test calculations for each replica, even when done in parallel. Instead, a simple integer comparison suffices. This condition is typically met in the high-temperature regime.\\
-We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, given a change in the threshold in~\eqref{eq:flip_escape_condition} to be adapted to each model.\\
+When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test. This condition is typically met in the high-temperature regime, where $\rho$ is more likely to be large\\
+We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, provided that the definition of $\kappa$ is adapted to each model.\\
 \vspace{1em}
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -260,7 +259,7 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \BlankLine
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$k = 1$ \KwTo $N$}{
-      Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$\;
+      Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(\beta \kappa)$\;
       \eIf{$\lfloor \rho \rfloor \geq \max\Lambda_k$}{
         \For{$r = 1$ \KwTo $n_\text{bits}$}{
             $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
