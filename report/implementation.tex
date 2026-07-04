@@ -188,6 +188,18 @@ This implementation method has proven efficient when dealing with discreet value
 \end{figure}
 
 \subsection{Note on the independence of the realizations}
+\myindent Because all replicas share the same sequence of random number, it is not obvious that their evolutions are independent. This is in fact guaranteed by two facts. The first one is that each replica is initialized independently of the others. The second one is that the shape of the enrgy landscape in each realization is also shaped independently of the others. Thus,the shared random number yields different outcome in each replica. A schematic view of this mechanism is shown in \Cref{fig:replica_independence}.
+
+\begin{figure}[H]
+\centering
+
+\includegraphics[width=\linewidth]{replica_independence.png}
+\caption{Schematic view of the independence of the realizations evolving from the same sequence of random numbers. Because of the unique energy landscape in every replica, and the independent initializations, the same random number yields independent evolutions.}
+\label{fig:replica_independence}
+\end{figure}
+
+In a further analysis, one would be tempted to share the energy landscape across all replicas (this happens for instance if all replicas share the same patterns to be stored in the case of the Hopfield model, see subsection \ref{subsec:hopfield_model}). In this case, the realizations would be correlated through this shared energy landscape.
+
 \subsection{Code structure}
 We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
 \begin{figure}[H]
