@@ -176,8 +176,44 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
 \subsection{Capacity of the network}
-\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. We let the system evolve for $2^1$ sweeps, averaging on the second half of the evolution.
+\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\linewidth]{reconstruction_error_vs_alpha.pdf}
+\caption{Evolution of the reconstruction error with the storage load. For this diagram, the configuration is initialized on a pattern.}
+\label{fig:reconstruction_error}
+\end{figure}
+We observe the expected evolution, with a null reconstruction error for the lowest $\alpha$ and an increase before a plateau, where the system fails to retain the memory of the initially stored pattern. However, we do not observe the sudden jump around $\alpha_c$. This can be explained by finite size effects, which smooth the transition. Also, the plateau is not located around $\text{error}=0.5$ as expected but rather out $0.4$. Two explanations exist. The first one is that initializing the network on the exact pattern favors better retrieval. The second is that the system did not evolve for long enough before we start averaging over what we believe to be equilibrium configurations, thus underestimating the obtained error as the first averaged configurations are still correlated with the initial one.
+
 \subsection{Dynamics visualization: initialization from a random state}
+We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ of all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\linewidth]{all_mu_single_run_N1024_beta=5.0_alpha0.030.pdf}
+\caption{Evolution of $m^\mu$ for all pattern for the replica 16 of $\alpha=0.03$.}
+\label{fig:all_mu_single_replica}
+\end{figure}
+At the beginning, the state is roughly uncorrelated with the pattern. As the system evolve, it starts correlating with some patterns, before it eventually aligns perfectly ($m^\mu=-1$) with one of them. When it does so, the overlaps with the other patterns collapse to 0, with a noise of standard deviation $1/32$. This configuration looks stable (as we can see small fluctuations around it), which was expected has it corresponds to a local minimum of energy.\\
+We can also look at the evolution of the maximum overlap $m^*$ for all replicas at a given value of the storage load, as shown in \Cref{fig:mu_star_all_replica}.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\linewidth]{mu_star_all_runs_N1024_beta=5.0_alpha0.030.pdf}
+\caption{Evolution of the maximum overlap of each replica for $\alpha=0.03$.}
+\label{fig:mu_star_all_replica}
+\end{figure}
+While in some case the state quickly falls into a stable minimum of energy corresponding to a specific pattern, some others seem to fluctuate around spurious states, for which the overlap is nor 1 or 0. While most configurations remain stuck in those spurious states (for the evolution time considered here), some others eventually escape those states to align with a specific pattern. The evolution obtain can be seen as the analogy of \Cref{fig:evolution_ising} in the case of the Hopfield network.\\
+Lastly, we can plot the evolution of the mean of maximum overlaps across all replicas $\langle m^* \rangle$ depending on the storage load, see \Cref{fig:mean_mu_star}.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\linewidth]{mean_overlap_N1024_beta=5.0.pdf}
+\caption{Evolution $\langle m^* \rangle$ with the storage load. }
+\label{fig:mean_mu_star}
+\end{figure}
+As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly increases to $\langle m^* \rangle \approx 1$ and remains stable. The plateau value decreases as the storage load increases: it is less and less likely for the system to end up in a completely pattern-aligned configuration when initialized at random when the number of spurious states increases.
+
+
 \subsection{Performance test}
 \myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each. Compared to the two previous models, the speedup factor strikingly decreases close to 1 in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
 
