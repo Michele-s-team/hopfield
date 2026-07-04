@@ -359,6 +359,8 @@ alphas = np.array(alphas)[order]
 means  = np.array(means)[order]
 errors = np.array(errors)[order]
 
+alpha_c = 0.138
+
 # ============================================================
 # PLOT 1: OVERLAP MAX vs ALPHA
 # ============================================================
@@ -375,8 +377,15 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel(r"$\langle m^*\rangle$")
-plt.ylim(-0.01, 1.01)
+plt.ylim(-0.05, 1.05)
 plt.grid(alpha=0.3)
+
+plt.axvline(alpha_c, linestyle="--", color="black", linewidth=1.0, zorder=0)
+ax = plt.gca()
+secax = ax.secondary_xaxis('top')
+secax.set_xticks([alpha_c])
+secax.set_xticklabels([r"$\alpha_c$"])
+secax.tick_params(direction="in", length=4)
 
 plt.tight_layout()
 plt.savefig(output_dir / "overlap_max_vs_alpha.pdf")
@@ -403,8 +412,15 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel("Reconstruction error")
-plt.ylim(-0.01, 0.55)
+plt.ylim(-0.05, 0.55)
 plt.grid(alpha=0.3)
+
+plt.axvline(alpha_c, linestyle="--", color="black", linewidth=1.0, zorder=0)
+ax = plt.gca()
+secax = ax.secondary_xaxis('top')
+secax.set_xticks([alpha_c])
+secax.set_xticklabels([r"$\alpha_c$"])
+secax.tick_params(direction="in", length=4)
 
 plt.tight_layout()
 plt.savefig(output_dir / "reconstruction_error_vs_alpha.pdf")
