@@ -134,7 +134,7 @@ def process_N(N_dir):
 
     for alpha_dir in ALL_ALPHA_DIRS:
         alpha = float(alpha_dir.name.split("_")[1])
-        print(rf"   processing alpha={alpha}")
+        print(f"   processing alpha = {alpha}")
         mean, err = process_alpha(alpha_dir)
         if mean is None:
             continue
@@ -204,22 +204,57 @@ if __name__ == "__main__":
     for d in ALL_N_DIRS:
         print("  ", d.name)
 
-    alpha_c = 0.138
+    alpha_c = 0.12256598472304177
 
     # ============================================================
-    # COMPUTE mu* PER (N, ALPHA)
+    # CSV CACHE: N / alpha / mean / err, stored directly in the beta folder
     # ============================================================
+
+    csv_path = beta_dir / "phase_transition_data.csv"
 
     results = {}  # N -> (alphas, means, errors)
 
-    for N_dir in ALL_N_DIRS:
-        N = extract_N(N_dir.name)
-        print(f"processing N{N}")
-        alphas, means, errors = process_N(N_dir)
-        if alphas is None:
-            print(f"  [SKIP] {N_dir.name}: no usable data")
-            continue
-        results[N] = (alphas, means, errors)
+    if csv_path.exists():
+        print(f"\n[CACHE] Found existing data file: {csv_path}")
+        print("[CACHE] Loading values directly instead of recomputing.")
+
+        df_cache = pd.read_csv(csv_path)
+        for N, group in df_cache.groupby("N"):
+            group = group.sort_values("alpha")
+            results[int(N)] = (
+                group["alpha"].to_numpy(dtype=float),
+                group["mean_overlap"].to_numpy(dtype=float),
+                group["error"].to_numpy(dtype=float),
+            )
+
+    else:
+        print(f"\n[CACHE] No data file found at {csv_path}")
+        print("[CACHE] Computing values from raw overlap files...")
+
+        # ============================================================
+        # COMPUTE mu* PER (N, ALPHA)
+        # ============================================================
+
+        for N_dir in ALL_N_DIRS:
+            N = extract_N(N_dir.name)
+            print(f"processing N{N}")
+            alphas, means, errors = process_N(N_dir)
+            if alphas is None:
+                print(f"  [SKIP] {N_dir.name}: no usable data")
+                continue
+            results[N] = (alphas, means, errors)
+
+        if not results:
+            raise ValueError("No data found for any N.")
+
+        # ── Save to CSV for reuse next time ──
+        rows = []
+        for N, (alphas, means, errors) in results.items():
+            for a, m, e in zip(alphas, means, errors):
+                rows.append({"N": N, "alpha": a, "mean_overlap": m, "error": e})
+        df_out = pd.DataFrame(rows).sort_values(["N", "alpha"])
+        df_out.to_csv(csv_path, index=False)
+        print(f"[CACHE] Saved data to: {csv_path}")
 
     if not results:
         raise ValueError("No data found for any N.")
@@ -264,12 +299,13 @@ if __name__ == "__main__":
     ax1_top.xaxis.set_minor_locator(ticker.NullLocator())
 
     ax1.xaxis.set_minor_locator(AutoMinorLocator(2))
-    ax1.set_ylim(-0.05, 1.05)
+    ax1.set_ylim(0.2, 1.05)
     ax1_top.set_xlim(ax1.get_xlim())
     ax1.set_xlabel(r"$\alpha$")
     ax1.set_ylabel(r"$\langle m^*\rangle$")
 
-    ax1.legend(loc="best", ncol=2, columnspacing=0.8, fontsize=6)
+    ax1.legend(loc="center left", ncol=1, columnspacing=0.8, fontsize=8)
+
     plt.tight_layout(pad=0.3)
     fig1.savefig(output_dir / "overlap_max_vs_alpha.pdf", bbox_inches="tight")
     fig1.savefig(output_dir / "overlap_max_vs_alpha.png", bbox_inches="tight")
@@ -297,12 +333,12 @@ if __name__ == "__main__":
     ax2_top.xaxis.set_minor_locator(ticker.NullLocator())
 
     ax2.xaxis.set_minor_locator(AutoMinorLocator(2))
-    ax2.set_ylim(-0.05, 0.45)
+    ax2.set_ylim(-0.03, 0.42)
     ax2_top.set_xlim(ax2.get_xlim())
     ax2.set_xlabel(r"$\alpha$")
     ax2.set_ylabel("Reconstruction error")
 
-    ax2.legend(loc="best", ncol=2, columnspacing=0.8, fontsize=6)
+    ax2.legend(loc="center left", ncol=1, columnspacing=0.8, fontsize=8)
 
     plt.tight_layout(pad=0.3)
     fig2.savefig(output_dir / "reconstruction_error_vs_alpha.pdf", bbox_inches="tight")

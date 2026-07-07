@@ -54,6 +54,9 @@ public:
     vector<vector<UnsignedInt>> getCouplingsConfigBits();
     vector<vector<vector<int>>> getPatternsBitsToCanonical();
 
+    vector<Bits> corruptPattern(const vector<Bits>& pattern, double flip_fraction, gsl_rng* ran) const; // Corrupt a single pattern by flipping each bit independently with
+                                                                                                                      // probability flip_fraction.
+
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation

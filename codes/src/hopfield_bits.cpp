@@ -151,6 +151,52 @@ void HopfieldBits::initPatternsBits(gsl_rng* ran) {
     initCouplingsBits();
 }
 
+
+// Corrupt a single pattern by flipping each bit independently with
+// probability flip_fraction. Input is one column of Patterns (i.e.
+// Patterns[p]), a vector<Bits> of size N, where each Bits word packs
+// n_bits independent replicas.
+//
+// By default each replica r gets its own independent random flip mask
+// (i.e. flip_fraction is the *expected* fraction of flipped spins per
+// replica, but which spins get flipped differs from one replica to the
+// next). This lets you run n_bits independent noise realizations for
+// the same flip_fraction in a single bitwise pass.
+//
+// If you instead want all replicas to share the exact same corrupted
+// pattern (same flipped sites for every replica), draw the flip mask
+// once per spin i (outside the r loop) and apply it to all r — see the
+// commented alternative below.
+
+vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& pattern,
+                                           double flip_fraction,
+                                           gsl_rng* ran) const {
+
+    vector<Bits> corrupted = pattern; // copy, size N
+
+    for (int i = 0; i < N; ++i) {
+
+        // --- Option 1 (default): independent noise per replica ---
+        for (int r = 0; r < n_bits; ++r) {
+            if (gsl_rng_uniform(ran) < flip_fraction) {
+                int bit = corrupted[i].Get(r);
+                corrupted[i].Set(r, 1 - bit);
+            }
+        }
+
+        // --- Option 2: same flip mask shared across all replicas ---
+        // if (gsl_rng_uniform(ran) < flip_fraction) {
+        //     for (int r = 0; r < n_bits; ++r) {
+        //         int bit = corrupted[i].Get(r);
+        //         corrupted[i].Set(r, 1 - bit);
+        //     }
+        // }
+    }
+
+    return corrupted;
+}
+
+
 // Initialize Couplings directly in bit-sliced representation via Hebb rule,
 // without ever building the scalar couplings[][][] tensor.
 // g_ij^r = P + sum_mu xi_i^mu^r * xi_j^mu^r  in [0, 2P]
