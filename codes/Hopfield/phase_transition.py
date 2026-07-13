@@ -359,9 +359,6 @@ alphas = np.array(alphas)[order]
 means  = np.array(means)[order]
 errors = np.array(errors)[order]
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 alpha_c = 0.138
 
 =======
@@ -386,9 +383,8 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel(r"$\langle m^*\rangle$")
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
+
 plt.ylim(-0.05, 1.05)
 plt.grid(alpha=0.3)
 
@@ -439,9 +435,7 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel("Reconstruction error")
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
 plt.ylim(-0.05, 0.55)
 plt.grid(alpha=0.3)
 
