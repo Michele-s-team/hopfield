@@ -33,6 +33,7 @@ static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
 
 inline Bits Bits_one(~0ULL);
 inline Bits Bits_zero(0ULL);
+inline UnsignedInt UnsignedInt_one;
 extern BitSet BitSet_one;
 
 

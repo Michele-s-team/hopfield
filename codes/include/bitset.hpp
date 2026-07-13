@@ -20,56 +20,52 @@ class UnsignedInt;
 
 
 
-class BitSet{
-    
+class BitSet {
+
 private:
-    //b[i] is the i-th bit of the BitSet
+
+    // b[i] is the i-th bit of the BitSet.
     vector<Bits> b;
-    
+
 public:
-    
+
     BitSet();
     BitSet(unsigned long long int);
-    
+
     void Clear(void);
     void Swap(BitSet*, Bits&, Bits*);
-    void Normalize(void);
-    void Normalize(unsigned int);
+    void Normalize(void), Normalize(unsigned int);
     void Resize(unsigned long long int);
     unsigned int GetSize(void) const;
-    void SetRandom(gsl_rng*);
-    void SetRandom(unsigned int);
-    void SetAll(unsigned long long int);
-    void SetAllToSize(unsigned long long int);
-    void SetAll(Bits&);
+
+    void SetRandom(gsl_rng*), SetRandom(unsigned int);
+    void SetAll(unsigned long long int), SetAllToSize(unsigned long long int), SetAll(Bits&);
     void SetAllFromDoubleMantissa(double, vector<bool>*);
     void Set(BitSet*);
-    void SetFromDoubleMantissa(unsigned int, double,  vector<bool>);
+    void SetFromDoubleMantissa(unsigned int, double, vector<bool>&);
     void ComplementTo(void);
-    void ComplementTo(unsigned int);
+
     void ResizeAndSetAll(unsigned long long int);
     UnsignedInt PositionOfFirstSignificantBit(void);
     void RemoveFirstSignificantBit(void);
     unsigned long long int Get(unsigned int);
-    void Print(string);
-    void Print(ostream&);
 
-    //bitwise sum and substraction
-    void AddTo(BitSet*, Bits*), AddTo(Bits*, Bits*), SubstractTo(BitSet*, Bits*), SubstractTo(Bits*, Bits*), Multiply(UnsignedInt*, UnsignedInt*), MultiplyByInteger(unsigned long long int n, UnsignedInt* result);
-    void MultiplyByTwoTo(void), DivideByTwoTo(void), AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
-    BitSet operator + (BitSet*), operator - (BitSet*), operator << (Bits*), Add(BitSet*, Bits*), Substract(BitSet*, Bits*);
-    void operator += (BitSet*), operator -= (BitSet*), operator *= (BitSet*), operator ^= (Bits*);
-    Bits& operator [] (const unsigned int&);
-    void operator += (Bits*);
-    Bits operator == (BitSet&), operator < (const BitSet&), operator <= (BitSet&); 
-    void operator >>= (UnsignedInt*), operator <<= (UnsignedInt*), operator >>= (Bits*), operator <<= (Bits*), operator &= (Bits*);
+    void Print(string), Print(ostream&);
+
+    // Bitwise operators.
+    
+    BitSet operator<<(Bits* m);
+    Bits& operator[](const unsigned int&);
+    void AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
+    Bits operator==(BitSet&);
+
+    void operator^=(Bits*), operator=(BitSet), operator>>=(UnsignedInt*), operator<<=(UnsignedInt*);
+    void operator>>=(Bits*), operator<<=(Bits*), operator&=(Bits*);
 
     friend class UnsignedInt;
     friend class Double;
     friend class Fraction;
     friend class SystemBits;
-    
-    
 };
 
 #endif
