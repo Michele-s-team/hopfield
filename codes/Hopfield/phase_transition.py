@@ -359,8 +359,11 @@ alphas = np.array(alphas)[order]
 means  = np.array(means)[order]
 errors = np.array(errors)[order]
 
+<<<<<<< Updated upstream
 alpha_c = 0.138
 
+=======
+>>>>>>> Stashed changes
 # ============================================================
 # PLOT 1: OVERLAP MAX vs ALPHA
 # ============================================================
@@ -377,6 +380,7 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel(r"$\langle m^*\rangle$")
+<<<<<<< Updated upstream
 plt.ylim(-0.05, 1.05)
 plt.grid(alpha=0.3)
 
@@ -387,6 +391,11 @@ secax.set_xticks([alpha_c])
 secax.set_xticklabels([r"$\alpha_c$"])
 secax.tick_params(direction="in", length=4)
 
+=======
+plt.ylim(-0.01, 1.01)
+plt.grid(alpha=0.3)
+
+>>>>>>> Stashed changes
 plt.tight_layout()
 plt.savefig(output_dir / "overlap_max_vs_alpha.pdf")
 plt.savefig(output_dir / "overlap_max_vs_alpha.png")
@@ -412,6 +421,7 @@ plt.errorbar(
 plt.gca().xaxis.set_minor_locator(AutoMinorLocator(2))
 plt.xlabel(r"$\alpha$")
 plt.ylabel("Reconstruction error")
+<<<<<<< Updated upstream
 plt.ylim(-0.05, 0.55)
 plt.grid(alpha=0.3)
 
@@ -422,6 +432,11 @@ secax.set_xticks([alpha_c])
 secax.set_xticklabels([r"$\alpha_c$"])
 secax.tick_params(direction="in", length=4)
 
+=======
+plt.ylim(-0.01, 0.55)
+plt.grid(alpha=0.3)
+
+>>>>>>> Stashed changes
 plt.tight_layout()
 plt.savefig(output_dir / "reconstruction_error_vs_alpha.pdf")
 plt.savefig(output_dir / "reconstruction_error_vs_alpha.png")
