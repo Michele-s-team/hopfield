@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-For each selected beta{beta} / N{N} / alpha_* directory:
-  - reads patterns/patterns_r{r}.csv
-  - reads spins/spins_r{r}.csv
+For each selected alpha_* / N{N} directory:
+  - reads pattern/patterns_r{r}.csv
+  - reads beta{beta}_spin/spins_r{r}.csv
   - computes the bit-safe overlap of every sweep with every pattern
-  - saves to alpha_*/overlaps/overlaps_r{r}.csv
+  - saves to N{N}/overlaps_beta{beta}/overlaps_r{r}.csv
 
 Output DataFrame columns: sweep | m_0 | m_1 | ... | m_{p-1}
 
@@ -23,13 +23,10 @@ import re
 # CONFIGURATION
 # ============================================================
 
-root_dir = Path("../results/Hopfield/phase_transition_multiN_init_from_pattern/")
+root_dir = Path("../results/Hopfield/phase_transition/init_from_pattern/")
 
 ALPHA_SELECTION = None
 SKIP_EXISTING = True
-
-print(f"[INFO] cwd      : {Path.cwd()}")
-print(f"[INFO] root_dir : {root_dir.resolve()}")
 
 
 # ============================================================
@@ -39,6 +36,12 @@ print(f"[INFO] root_dir : {root_dir.resolve()}")
 def extract_r(name: str):
     m = re.search(r"_r(\d+)\.csv$", name)
     return int(m.group(1)) if m else None
+
+
+# beta5.000000 -> "5.000000"
+def extract_beta_from_dir(name: str):
+    m = re.search(r"^beta([\d.]+)$", name)
+    return m.group(1) if m else None
 
 
 # ============================================================
@@ -109,16 +112,29 @@ def read_blocks_csv(path: Path):
 
 
 # ============================================================
-# RESOLVE BETA DIRECTORIES
+# RESOLVE ALPHA SELECTION
 # ============================================================
 
-ALL_BETA_DIRS = sorted(
-    root_dir.glob("beta*"),
-    key=lambda p: float(p.name.replace("beta", ""))
+ALL_ALPHA_DIRS = sorted(
+    root_dir.glob("alpha_*"),
+    key=lambda p: float(p.name.split("_")[1])
 )
 
-print(f"\n[INFO] {len(ALL_BETA_DIRS)} beta folder(s) found:")
-for d in ALL_BETA_DIRS:
+print(f"\n[INFO] {len(ALL_ALPHA_DIRS)} alpha folder(s) found:")
+for i, d in enumerate(ALL_ALPHA_DIRS, start=1):
+    print(f"  [{i}] {d.name}")
+
+if ALPHA_SELECTION:
+    selected = [
+        ALL_ALPHA_DIRS[i - 1]
+        for i in ALPHA_SELECTION
+        if 1 <= i <= len(ALL_ALPHA_DIRS)
+    ]
+else:
+    selected = ALL_ALPHA_DIRS
+
+print(f"\n[INFO] Processing {len(selected)} alpha folder(s):")
+for d in selected:
     print(f"  {d.name}")
 
 
@@ -126,17 +142,17 @@ for d in ALL_BETA_DIRS:
 # MAIN LOOP
 # ============================================================
 
-for beta_dir in ALL_BETA_DIRS:
+for alpha_dir in selected:
 
-    beta_str = beta_dir.name.replace("beta", "")
+    alpha = float(alpha_dir.name.split("_")[1])
 
     N_dirs = sorted(
-        beta_dir.glob("N*"),
+        alpha_dir.glob("N*"),
         key=lambda p: int(re.search(r"N(\d+)$", p.name).group(1))
     )
 
     if not N_dirs:
-        print(f"\n[SKIP] {beta_dir.name}: no N* folder found")
+        print(f"\n[SKIP] {alpha_dir.name}: no N* folder found")
         continue
 
     for N_dir in N_dirs:
@@ -148,34 +164,28 @@ for beta_dir in ALL_BETA_DIRS:
 
         N = int(m_N.group(1))
 
-        alpha_dirs = sorted(
-            N_dir.glob("alpha_*"),
-            key=lambda p: float(p.name.split("_")[1])
+        beta_dirs = sorted(
+            N_dir.glob("beta*"),
+            key=lambda p: float(p.name.split("beta")[1])
         )
 
-        if not alpha_dirs:
-            print(f"\n[SKIP] {N_dir.name}: no alpha_* folder found")
+        if not beta_dirs:
+            print(f"\n[SKIP] {N_dir.name}: no beta* folder found")
             continue
 
-        if ALPHA_SELECTION:
-            alpha_dirs = [
-                d for d in alpha_dirs
-                if float(d.name.split("_")[1]) in ALPHA_SELECTION
-            ]
+        for beta_dir in beta_dirs:
 
-        for alpha_dir in alpha_dirs:
+            beta_str = beta_dir.name.replace("beta", "")
 
-            alpha = float(alpha_dir.name.split("_")[1])
-
-            pattern_dir = alpha_dir / "patterns"
-            spin_dir    = alpha_dir / "spins"
+            pattern_dir = beta_dir / "patterns"
+            spin_dir    = beta_dir / "spins"
 
             if not pattern_dir.exists():
-                print(f"\n[SKIP] {alpha_dir.name}: missing patterns/")
+                print(f"  [SKIP] missing patterns/ in {beta_dir.name}")
                 continue
 
             if not spin_dir.exists():
-                print(f"\n[SKIP] {alpha_dir.name}: missing spins/")
+                print(f"  [SKIP] missing spins/ in {beta_dir.name}")
                 continue
 
             pattern_map = {}
@@ -184,10 +194,10 @@ for beta_dir in ALL_BETA_DIRS:
                 if r is not None:
                     pattern_map[r] = pf
 
-            out_dir = alpha_dir / "overlaps"
+            out_dir = beta_dir / "overlaps"
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            print(f"\n[BETA] {beta_str} N={N} alpha={alpha:.4f} -> {out_dir.name}")
+            print(f"\n[ALPHA] {alpha:.4f} N={N} beta={beta_str} -> {out_dir.name}")
 
             for spin_file in sorted(spin_dir.glob("spins_r*.csv")):
 
@@ -219,4 +229,5 @@ for beta_dir in ALL_BETA_DIRS:
                 df["sweep"] = df["sweep"].astype(int)
                 df.to_csv(out_file, index=False)
 
+                print("saved")
                 print(f"saved ({n_sweeps} sweeps x {n_patterns} patterns)")
