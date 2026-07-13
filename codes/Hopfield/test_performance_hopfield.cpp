@@ -233,7 +233,7 @@ int main(){
                 cout << "bitwise evolution ready"<< endl;
                 gsl_rng_set(ran_bits, 42);    
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps(ran_bits, false, 0);
+                bits.runSweeps(ran_bits, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
 
                 double t_bits =
