@@ -53,11 +53,6 @@ void Bits::Set(unsigned int s, bool bit){
     }else{
         n &= ~(ullong_1 << s);     // sets bit s to 0
     }
-<<<<<<< Updated upstream
-    n = result;
-    
-=======
->>>>>>> Stashed changes
 }
 
 
