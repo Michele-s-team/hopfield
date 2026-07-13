@@ -44,7 +44,7 @@ public:
     void SetAll(Bits&);
     void SetAllFromDoubleMantissa(double, vector<bool>*);
     void Set(BitSet*);
-    void SetFromDoubleMantissa(unsigned int, double);
+    void SetFromDoubleMantissa(unsigned int, double,  vector<bool>);
     void ComplementTo(void);
     void ComplementTo(unsigned int);
     void ResizeAndSetAll(unsigned long long int);

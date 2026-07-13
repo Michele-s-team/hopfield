@@ -188,9 +188,8 @@ void BitSet::SetAllFromDoubleMantissa(double x, vector<bool>* work_space){
 
 
 //set the s-th bit entry of *this equal to the entries stored (in IEEE754 format) in the mantissa of x. This requires b to be properly sized
-void BitSet::SetFromDoubleMantissa(unsigned int s, double x){
+void BitSet::SetFromDoubleMantissa(unsigned int s, double x, vector<bool>& v){
     
-    vector<bool> v;
     
     GetMantissaFromDouble(&v, x);
     

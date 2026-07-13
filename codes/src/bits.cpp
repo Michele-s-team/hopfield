@@ -21,7 +21,7 @@ Bits::Bits(unsigned long long int n_in){
 
 //class setter
 //inline 
-void Bits::Set(const unsigned long long int& m){
+void Bits::Set(const unsigned long long int m){
     
     n = m;
     
@@ -48,28 +48,16 @@ unsigned long long int Bits::Get(void){
 
 //set the s-th bit of *this equal to bit
 void Bits::Set(unsigned int s, bool bit){
-    
-    unsigned int p;
-    unsigned long long int result;
-    
-    result = 0;
-    for(p=0; p<n_bits; p++){
-        
-        if(p!=s){
-            
-            result |= (((n >> p) & ullong_1) << p);
-            
-        }else{
-            
-            if(bit){
-                result |= (ullong_1 << s);
-            }
-            
-        }
-        
+    if(bit){
+        n |= (ullong_1 << s);      // sets bit s to 1
+    }else{
+        n &= ~(ullong_1 << s);     // sets bit s to 0
     }
+<<<<<<< Updated upstream
     n = result;
     
+=======
+>>>>>>> Stashed changes
 }
 
 
@@ -124,9 +112,7 @@ void Bits::SetRandom(unsigned int seed){
 //set *this randomly with random number generator ran
 void Bits::SetRandom(gsl_rng* ran){
     
-    unsigned int s;
-    
-    for(s=0; s<n_bits; s++){
+    for(unsigned int s=0; s<n_bits; s++){
         Set(s, (bool)(gsl_rng_uniform_int(ran, 2)));
     }
     

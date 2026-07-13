@@ -37,7 +37,7 @@ public:
     void Swap(Double*, Bits&, Bits*);
     void SetAll_IEEE754(double);
     void SetAll(bool, unsigned long long int, double);
-    void Set(unsigned int, bool, unsigned long long int, double);
+    void Set(unsigned int, bool, unsigned long long int, double, vector<bool>&);
     void SetAll(bool, unsigned long long int, BitSet&);
     void SetRandom(gsl_rng*);
     void SetRandom(unsigned int);

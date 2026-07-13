@@ -223,13 +223,13 @@ void Double::SetAll(bool sign, unsigned long long int exponent,  double mantissa
 
 
 //set the p-th bit entry of s equal to sign, the p-th entry of e equal to exponent, and the p-th entry of b from the IEEE754 entries of mantissa
-void Double::Set(unsigned int p, bool sign, unsigned long long int exponent,  double x){
+void Double::Set(unsigned int p, bool sign, unsigned long long int exponent,  double x, vector<bool>& v){
     
     if(exponent < two_pow(n_bits_exponent+1)){
         
         s.Set(p, sign);
         e.Set(p, exponent);
-        b.SetFromDoubleMantissa(p, x);
+        b.SetFromDoubleMantissa(p, x, v);
         
     }else{
         
