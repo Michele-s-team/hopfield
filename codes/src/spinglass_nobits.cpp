@@ -5,7 +5,7 @@
 //  Created by Bastien on 12/05/2026.
 //
 #include "spinglass_nobits.hpp"
-#include "lib.hpp"
+
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"

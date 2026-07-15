@@ -5,7 +5,7 @@
 //  Created by Bastien on 22/04/2026.
 //
 #include "spin_system.hpp"
-#include "lib.hpp"
+
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"

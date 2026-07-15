@@ -6,7 +6,7 @@
 //
 
 #include "hopfield_nobits.hpp"
-#include "lib.hpp"
+
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"

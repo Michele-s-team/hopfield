@@ -9,9 +9,7 @@
 #define bitset_hpp
 
 #include <iostream>
-
 #include "bits.hpp"
-
 #include <vector>
 
 using namespace std;
@@ -28,7 +26,7 @@ private:
     vector<Bits> b;
 
 public:
-
+    unsigned int bits(unsigned long long int);
     BitSet();
     BitSet(unsigned long long int);
 
@@ -59,7 +57,8 @@ public:
     void AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
     Bits operator==(BitSet&);
 
-    void operator^=(Bits*), operator=(BitSet), operator>>=(UnsignedInt*), operator<<=(UnsignedInt*);
+    void operator^=(Bits*),operator>>=(UnsignedInt*), operator<<=(UnsignedInt*);
+    BitSet& operator=(const BitSet&);
     void operator>>=(Bits*), operator<<=(Bits*), operator&=(Bits*);
 
     friend class UnsignedInt;

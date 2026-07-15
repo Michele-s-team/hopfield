@@ -74,10 +74,10 @@ int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const double beta       = 5;          // inverse temperature
-    int          N_sweeps    = 1 << 14;    // default / base number of sweeps
+    int          N_sweeps    = 1 << 10;    // default / base number of sweeps
 
     // ── Lattice sizes (N = L*L, fully-connected Hopfield) ────────────────────
-    vector<int> N_vals = {100, 200, 400, 600, 1000, 1500, 2000, 4000, 8000, 10000};
+    vector<int> N_vals = {1000, 1500, 2000, 4000, 8000, 10000};
 
     // ── Alpha grid, refined around alpha_c ≈ 0.138 (AGS critical capacity) ──
     const double alpha_c   = 0.138;
@@ -152,7 +152,7 @@ int main() {
             ostringstream alpha_str;
             alpha_str << fixed << setprecision(4) << alpha;
 
-            string root_dir   = "../results/Hopfield/phase_transition_multiN_init_from_pattern";
+            string root_dir   = "../results/Hopfield/test";
             string N_dir      = root_dir  + "/beta" + SimulationBase::format_beta(beta)+ "/N" + to_string(N);
             string alpha_dir  = N_dir     + "/alpha_" + alpha_str.str();
             string base_folder = alpha_dir;

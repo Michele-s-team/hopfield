@@ -71,7 +71,7 @@ int main() {
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 32;           // lattice size (L×L spins)
     const double beta   = 5;           // inverse temperature
-    const int N_sweeps  = 1 << 13;       // number of Metropolis sweeps
+    const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng_set(ran, 123);  // fixed seed for reproducibility
@@ -95,7 +95,7 @@ int main() {
 
         HopfieldBits bits(L * L, beta, N_sweeps, P);
 
-        folder_name << "../results/Hopfield/phase_transition/init_from_pattern/alpha_"
+        folder_name << "../results/Hopfield/test/alpha_"
                     << std::fixed << std::setprecision(3)
                     << alpha
                     << "/N"

@@ -7,9 +7,43 @@
 
 #include "bitset.hpp"
 #include "gsl_math.h"
-#include "lib.hpp"
 #include "main.hpp"
 #include <vector>
+#include <stdint.h>
+
+
+unsigned long long int two_pow(unsigned long long int i){
+    return 1ULL << i;
+}
+
+//return the number of bits necessary to write n in base 2
+unsigned int BitSet::bits(unsigned long long int n){
+    if (n == 0) return 1;
+    return 64 - __builtin_clzll(n);  // count leading zeros, disponible sur GCC/Clang
+}
+
+
+//write the mantissa of x into *result by resizing *result properly. This method requires that result->size() = n_bits_mantissa
+void GetMantissaFromDouble(vector<bool>* result, double x){
+    
+    uint64_t *pointer = (uint64_t*)&x;
+    uint64_t byte;
+    unsigned int p;
+    
+    
+    byte = pointer[0];
+    
+    for(p=0; (p < 64) && (p < result->size());  p++){
+        //run through the part of x which is the mantissa
+        
+        (*result)[p] = ((bool)(byte & 1));
+        
+        byte >>= 1;
+        
+    }
+    
+}
+
 
 // ============================================================================
 // Constructors & Lifecycle Management
@@ -29,14 +63,17 @@ BitSet::BitSet(unsigned long long int N) {
 
 // Resets all elements in the BitSet container to zero.
 void BitSet::Clear() {
-    for (unsigned int s = 0; s < b.size(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s].Set(0);
     }
 }
 
+
 // Swaps bits with another BitSet condition-by-condition using a workspace buffer.
 void BitSet::Swap(BitSet* a, Bits& check, Bits* work_space) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s].Swap(&((a->b)[s]), check, work_space);
     }
 }
@@ -83,13 +120,13 @@ unsigned int BitSet::GetSize() const {
 // Fills all internal bits randomly using an active GSL random number generator instance.
 void BitSet::SetRandom(gsl_rng* ran) {
     unsigned int s, p;
-    for (s = 0; s < b.size(); s++) {
+    const unsigned int n = static_cast<unsigned int>(b.size());
+    for (s = 0; s < n; s++) {
         for (p = 0; p < n_bits; p++) {
             b[s].Set(p, static_cast<bool>(gsl_rng_uniform_int(ran, 2)));
         }
     }
 }
-
 // Allocates a temporary GSL random engine using a seed to randomize the BitSet.
 void BitSet::SetRandom(unsigned int seed) {
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
@@ -103,31 +140,34 @@ void BitSet::SetRandom(unsigned int seed) {
 // Maps an unsigned integer's individual bits across the elements of this BitSet.
 void BitSet::SetAll(unsigned long long int i) {
     Bits m(i);
-    unsigned int n = bits(m.Get()); // Computed once to avoid overhead
+    unsigned int n = bits(m.Get());
 
     if (GetSize() < n) {
         std::cerr << "BitSet too small\n";
         abort();
     }
 
+    const unsigned int size = GetSize();  // cache separately from 'n'
     for (unsigned int s = 0; s < n; s++) {
         b[s].SetAll(m.Get(s));
     }
-    for (unsigned int s = n; s < GetSize(); s++) {
+    for (unsigned int s = n; s < size; s++) {
         b[s].SetAll(false);
     }
 }
 
 // Distributes the bits of 'i' sequentially across the vector up to current size.
 void BitSet::SetAllToSize(unsigned long long int i) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s].SetAll((i >> s) & ullong_1);
     }
 }
 
 // Broadcasts and copies a single Bits element into every slot of this BitSet.
 void BitSet::SetAll(Bits& m) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s] = m;
     }
 }
@@ -135,36 +175,39 @@ void BitSet::SetAll(Bits& m) {
 // Extracts a double's mantissa bytes and saves them across all elements.
 void BitSet::SetAllFromDoubleMantissa(double x, vector<bool>* work_space) {
     GetMantissaFromDouble(work_space, x);
-    
-    for (unsigned int p = 0; p < GetSize(); p++) {
+    const unsigned int n = GetSize();
+    for (unsigned int p = 0; p < n; p++) {
         b[p].SetAll((*work_space)[p]);
-    }
-}
-
-// Copies another BitSet's entries into this one, padding the remainder with zeros.
-void BitSet::Set(BitSet* m) {
-    unsigned int s;
-    for (s = 0; s < m->GetSize(); s++) {
-        b[s] = (m->b)[s];
-    }
-    for (; s < GetSize(); s++) {
-        b[s].SetAll(false);
     }
 }
 
 // Sets a single specific bit column index using an extracted double mantissa.
 void BitSet::SetFromDoubleMantissa(unsigned int s, double x, vector<bool>& v) {
     GetMantissaFromDouble(&v, x);
-    
-    for (unsigned int p = 0; p < GetSize(); p++) {
+    const unsigned int n = GetSize();
+    for (unsigned int p = 0; p < n; p++) {
         b[p].Set(s, v[p]);
     }
     v.clear();
 }
 
+// Copies another BitSet's entries into this one, padding the remainder with zeros.
+void BitSet::Set(BitSet* m) {
+    unsigned int s;
+    const unsigned int m_size = m->GetSize();
+    const unsigned int this_size = GetSize();
+    for (s = 0; s < m_size; s++) {
+        b[s] = (m->b)[s];
+    }
+    for (; s < this_size; s++) {
+        b[s].SetAll(false);
+    }
+}
+
 // Inverts every bit inside the entire BitSet (performs a bitwise NOT/one-complement).
 void BitSet::ComplementTo() {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s].ComplementTo();
     }
 }
@@ -212,10 +255,10 @@ void BitSet::RemoveFirstSignificantBit() {
 unsigned long long int BitSet::Get(unsigned int p) {
     unsigned int s;
     unsigned long long int result;
+    const unsigned int n = GetSize();
     
-    for (result = 0, s = 0; s < GetSize(); s++) {
-        result += two_pow(s) * (b[s].Get(p));
-    }
+    for (result = 0, s = 0; s < n; s++)
+        result |= (static_cast<unsigned long long int>(b[s].Get(p)) << s);
     
     return result;
 }
@@ -227,9 +270,10 @@ unsigned long long int BitSet::Get(unsigned int p) {
 // Prints the entire BitSet to standard console output decorated with a custom title.
 void BitSet::Print(string title) {
     cout << title << endl;
-    for (unsigned int s = 0; s < b.size(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         cout << "[" << s << "] = ";
-        if (s < 10) { cout << " "; } // Extra space for neat alignment
+        if (s < 10) { cout << " "; }
         b[s].Print("");
     }
     cout << endl;
@@ -237,7 +281,8 @@ void BitSet::Print(string title) {
 
 // Streams raw BitSet content tab-separated directly into an active output stream.
 void BitSet::Print(ostream& output_stream) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s].Print(output_stream);
         output_stream << "\t";
     }
@@ -268,7 +313,8 @@ void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end) {
 
 // Runs a bitwise AND across all elements, putting output values into a target BitSet.
 void BitSet::And(Bits* m, BitSet* result) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         (result->b)[s] = (b[s] & (*m));
     }
 }
@@ -279,12 +325,11 @@ Bits BitSet::operator==(BitSet& m) {
     Bits result;
     
     if (GetSize() == m.GetSize()) {
-        // Same size -> check if they are equal element by element
-        for (p = 0, result.SetAll(true); p < GetSize(); p++) {
+        const unsigned int n = GetSize();
+        for (p = 0, result.SetAll(true); p < n; p++) {
             result &= (b[p] == ((m.b)[p]));
         }
     } else {
-        // Different sizes -> automatically false
         result.SetAll(false);
     }
     
@@ -293,34 +338,37 @@ Bits BitSet::operator==(BitSet& m) {
 
 // Applies an in-place bitwise XOR across all storage entries using mask 'm'.
 void BitSet::operator^=(Bits* m) {
-    for (unsigned int s = 0; s < GetSize(); s++) {
+    const unsigned int n = GetSize();
+    for (unsigned int s = 0; s < n; s++) {
         b[s] ^= m;
     }
 }
 
 // Standard copy assignment operator replicating container data arrays.
-void BitSet::operator=(BitSet m) {
+BitSet& BitSet::operator=(const BitSet& m) {
     b = m.b;
+    return *this;
 }
 
 // Shifts entries down to the right dynamically by a factor scaling with binary powers.
 void BitSet::operator>>=(UnsignedInt* e) {
+    const unsigned int e_size = e->GetSize();       // cache #1: e is not modified during the loop
+    const int size = static_cast<int>(GetSize());   // cache #2: this is not resized during the loop
     unsigned int n;
     int m;
     Bits zero;
-    
     zero.SetAll(false);
     
-    for (n = 0; n < e->GetSize(); n++) {
-        int shift_dist = gsl_pow_int(2, n);
+    for (n = 0; n < e_size; n++) {
+        int shift_dist = 1 << n;   // 2^n via integer shift instead of float pow
         
         // First chunk: shift valid elements to the right
-        for (m = 0; m < static_cast<int>(GetSize()) - shift_dist; m++) {
+        for (m = 0; m < size - shift_dist; m++) {
             b[m].Replace(&(b[m + shift_dist]), &((e->b)[n]));
         }
         
         // Second chunk: fill remaining overflow spaces with zeros
-        for (m = max(static_cast<int>(GetSize()) - shift_dist, 0); m < static_cast<int>(GetSize()); m++) {
+        for (m = max(size - shift_dist, 0); m < size; m++) {
             b[m].Replace(&zero, &((e->b)[n]));
         }
     }
@@ -328,22 +376,23 @@ void BitSet::operator>>=(UnsignedInt* e) {
 
 // Shifts entries up to the left dynamically by a factor scaling with binary powers.
 void BitSet::operator<<=(UnsignedInt* e) {
+    const unsigned int e_size = e->GetSize();       // cache #1: e is not modified during the loop
+    const int size = static_cast<int>(GetSize());   // cache #2: this is not resized during the loop
     unsigned int n;
     int m;
     Bits zero;
-    
     zero.SetAll(false);
     
-    for (n = 0; n < e->GetSize(); n++) {
-        int shift_dist = gsl_pow_int(2, n);
+    for (n = 0; n < e_size; n++) {
+        int shift_dist = 1 << n;   // 2^n via integer shift instead of float pow, see note below
         
         // First chunk: shift valid elements to the left
-        for (m = GetSize() - 1; m >= shift_dist; m--) {
+        for (m = size - 1; m >= shift_dist; m--) {
             b[m].Replace(&(b[m - shift_dist]), &((e->b)[n]));
         }
         
         // Second chunk: fill remaining overflow spaces with zeros
-        for (m = min(static_cast<int>(GetSize()) - 1, shift_dist - 1); m >= 0; m--) {
+        for (m = min(size - 1, shift_dist - 1); m >= 0; m--) {
             b[m].Replace(&zero, &((e->b)[n]));
         }
     }
@@ -351,8 +400,9 @@ void BitSet::operator<<=(UnsignedInt* e) {
 
 // Shifts elements down towards the right by one position, dropping the first element.
 void BitSet::operator>>=(Bits* l) {
+    const int n = static_cast<int>(GetSize());
     int m;
-    for (m = 0; m < static_cast<int>(GetSize()) - 1; m++) {
+    for (m = 0; m < n - 1; m++) {
         b[m].Replace(b.data() + (m + 1), l);
     }
     b.back().Replace(&Bits_zero, l);
@@ -360,8 +410,9 @@ void BitSet::operator>>=(Bits* l) {
 
 // Shifts elements up towards the left by one position, clearing out the bottom slot.
 void BitSet::operator<<=(Bits* l) {
+    const int n = static_cast<int>(GetSize());
     int m;
-    for (m = GetSize() - 1; m > 0; m--) {
+    for (m = n - 1; m > 0; m--) {
         b[m].Replace(b.data() + (m - 1), l);
     }
     b.front().Replace(&Bits_zero, l);
