@@ -146,6 +146,7 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
 
     std::cout << "\n";
 }
+
 // =====================================================
 // PUBLIC API
 // =====================================================

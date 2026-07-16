@@ -382,7 +382,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
 
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
-                sum_c.AddTo(&c_ij, &carry); //assumes that the carry won't overflow the sie of "sum_c"
+                sum_c.AddTo(&c_ij, &carry); //assumes that the carry won't overflow the size of "sum_c"
                 sum_cg.AddAnd(&Couplings[spin][k], &c_ij);
             }
 

@@ -218,27 +218,6 @@ void BitSet::ResizeAndSetAll(unsigned long long int i) {
     SetAll(i);
 }
 
-// Identifies the index location of the most significant bit that contains a 1.
-UnsignedInt BitSet::PositionOfFirstSignificantBit() {
-    int s;
-    Bits check_old, check_new, t, carry;
-    // Result must be large enough to host an unsigned int equal to GetSize()
-    UnsignedInt result(GetSize());
-    
-    check_old.SetAll(0);
-    result.SetAll(0);
-    
-    for (s = GetSize() - 1; s >= 0; s--) {
-        check_new = check_old | (*this)[s];
-        t = (~check_new);
-        result.AddTo(&t, &carry);
-        
-        check_old = check_new;
-    }
-    
-    return result;
-}
-
 // Locates the first active significant bit starting from the end and flips it to 0.
 void BitSet::RemoveFirstSignificantBit() {
     int s;

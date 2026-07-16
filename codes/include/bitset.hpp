@@ -44,7 +44,6 @@ public:
     void ComplementTo(void);
 
     void ResizeAndSetAll(unsigned long long int);
-    UnsignedInt PositionOfFirstSignificantBit(void);
     void RemoveFirstSignificantBit(void);
     unsigned long long int Get(unsigned int);
 
