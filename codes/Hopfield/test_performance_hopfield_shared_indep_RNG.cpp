@@ -86,66 +86,73 @@ int main(){
     const int N_sweeps = 1 << 5;
 
     vector<int> N_vals = {
-        //10 * 10, 20 * 20, 
         32 * 32
-        //80 * 80
     };
 
-    vector<double> alpha_vals = {//
+    vector<double> alpha_vals = {
         0.15
-        //,     0.10,  0.15
-         //, 0.20
-         };
+    };
 
-    vector<double> temperatures = {1.0,2.0, 3.0, 4.0, 5.0, 6.0,  7.0, 8.0, 9.0, 10.0};
+    vector<double> temperatures = {
+        1.0,2.0,3.0,4.0,5.0,
+        6.0,7.0,8.0,9.0,10.0
+    };
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng* ran_evolve = gsl_rng_alloc(gsl_rng_gfsr4);
 
-
     ofstream out("../results/Hopfield/test_speedup/speedup.csv");
 
-    out << "N,P,alpha,T,t_bits,t_nobits,ratio\n";
+    out << "N,P,alpha,T,"
+           "t_bits,"
+           "t_nobits_indep,"
+           "t_nobits_shared,"
+           "speedup_indep,"
+           "speedup_shared,"
+           "ratio_indep_shared\n";
+
     out << fixed << setprecision(6);
 
     clock_gettime(CLOCK_MONOTONIC, &t_init);
 
-    // ============================================================
-    // GLOBAL COUNTER (AJOUT)
-    // ============================================================
     double total_time_global = 0.0;
 
     for (int N_spins : N_vals){
+
         clock_gettime(CLOCK_MONOTONIC, &t_start);
 
-        // ============================================================
-        // N COUNTER (AJOUT)
-        // ============================================================
         double total_time_N = 0.0;
 
         cout << "\n==================================================\n";
         cout << "Lattice size : N = " << N_spins << '\n';
         cout << "==================================================\n";
 
-        for (double alpha : alpha_vals)  {
+        for (double alpha : alpha_vals) {
+
             int P = max(1, static_cast<int>(round(alpha * N_spins)));
 
-            // ============================================================
-            // ALPHA COUNTER (AJOUT)
-            // ============================================================
             double total_time_alpha = 0.0;
 
             cout << "\n------------------------------------------\n";
             cout << "alpha = " << alpha
-                      << "   P = " << P << '\n';
+                 << "   P = " << P << '\n';
             cout << "------------------------------------------\n";
 
             HopfieldBits bits(N_spins, 1, N_sweeps, P);
             HopfieldNoBits nobits(N_spins, 1, N_sweeps, P);
 
             for (size_t i = 0; i < temperatures.size(); ++i) {
+
                 double T = temperatures[i];
                 double beta = 1.0 / T;
+
+                cout
+                    << "\nN = " << N_spins
+                    << " | alpha = " << alpha
+                    << " | T = " << T
+                    << " | " << i+1 << "/" << temperatures.size()
+                    <<"\n"
+                    << endl;
 
                 bits.initNetworkFullyConnected();
                 nobits.initNetworkFullyConnected();
@@ -156,13 +163,13 @@ int main(){
 
                 bits.initSpinsBits(ran);
                 bits.toCanonical();
+
                 auto initial_config_bits = bits.getSpinsConfig();
                 nobits.initSpinsFromConfig(initial_config_bits);
-                auto initial_config_nobits= nobits.getSpinsConfig();
-
-                IO.check_equality_configs(initial_config_bits, initial_config_nobits, initial_config_bits, N_spins);
 
                 cout << "Initial Configuration initialized" <<endl;
+
+                IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), initial_config_bits, N_spins);
 
                 bits.initPatternsBits(ran);
                 auto patterns = bits.getPatternsBitsToCanonical();
@@ -171,91 +178,130 @@ int main(){
                 cout << "Patterns initialized" <<endl;
 
                 bits.setBeta(beta);
-
                 nobits.setBeta(beta);
 
-                cout
-                    << "N = " << N_spins
-                    << " | alpha = " << alpha
-                    << " | T = " << T
-                    << " | " << i + 1 << "/" << temperatures.size()
-                    << endl;
+                // =====================================================
+                // BITWISE
+                // =====================================================
 
-                // ----------------------------------------------
-                // Bitwise implementation
-                // ----------------------------------------------
-
-                cout << "bitwise evolution ready"<< endl;
-                gsl_rng_set(ran_evolve, 42);    
+                gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
                 bits.runSweeps(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
-                auto final_config_bits = bits.getSpinsConfig();
-
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
-                cout << "   bitwise   : " << t_bits << " s\n";
+                cout << "   bitwise          : "
+                     << t_bits << " s\n";
 
-                // ----------------------------------------------
-                // Classical implementation
-                // ----------------------------------------------
+                // =====================================================
+                // CLASSICAL SHARED RNG
+                // =====================================================
+
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
                 nobits.runSweepsSharedRNG(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
-                auto final_config_nobits = nobits.getSpinsConfig();
-
-                double t_nobits =
+                
+                double t_nobits_shared =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
-                // ----------------------------------------------
-                // Check equality
-                // ----------------------------------------------
+                cout
+                    << "   nobits shared      : "
+                    << t_nobits_shared << " s\n";
 
-                IO.check_equality_configs(initial_config_bits, final_config_nobits, final_config_bits, N_spins);
+                cout << "Comparison bits/nobits with Shared RNG: "<<endl;
 
-                // ----------------------------------------------
-                // Compute speedup
-                // ----------------------------------------------
+                IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), bits.getSpinsConfig(), N_spins);
 
-                double ratio =
-                    (t_bits > 0.0) ? t_nobits / t_bits : 0.0;
+                // =====================================================
+                // CLASSICAL INDEPENDENT RNG
+                // =====================================================
+
+                // Reinitialisation pour comparer les mêmes conditions
+                nobits.initSpinsFromConfig(initial_config_bits);
+
+                gsl_rng_set(ran_evolve, 42);
+                clock_gettime(CLOCK_MONOTONIC, &t0);
+                nobits.runSweepsIndependentRNG(ran_evolve, false, 0);
+                clock_gettime(CLOCK_MONOTONIC, &t1);
+
+                double t_nobits_indep =
+                    (t1.tv_sec - t0.tv_sec) +
+                    (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+
+                cout << "   nobits independent : "
+                     << t_nobits_indep << " s\n";
+
+               
+                // =====================================================
+                // SPEEDUPS
+                // =====================================================
+
+                double speedup_indep =
+                    (t_bits > 0.0)
+                    ? t_nobits_indep / t_bits
+                    : 0.0;
+
+                double speedup_shared =
+                    (t_bits > 0.0)
+                    ? t_nobits_shared / t_bits
+                    : 0.0;
+
+                double ratio_indep_shared =
+                    (t_nobits_shared > 0.0)
+                    ? t_nobits_indep / t_nobits_shared
+                    : 0.0;
 
                 cout
-                    << "   classical : " << t_nobits << " s\n"
-                    << "   speedup   : " << ratio << '\n';
+                    << "   speedup indep     : "
+                    << speedup_indep << '\n'
+                    << "   speedup shared    : "
+                    << speedup_shared << '\n'
+                    << "   indep/shared      : "
+                   << ratio_indep_shared << "\n\n\n";
 
-                out << N_spins << ","
+                // =====================================================
+                // CSV
+                // =====================================================
+
+                out
+                    << N_spins << ","
                     << P << ","
                     << alpha << ","
                     << T << ","
                     << t_bits << ","
-                    << t_nobits << ","
-                    << ratio << "\n";
+                    << t_nobits_indep << ","
+                    << t_nobits_shared << ","
+                    << speedup_indep << ","
+                    << speedup_shared << ","
+                    << ratio_indep_shared
+                    << "\n";
+
 
                 out.flush();
 
-                // ============================================================
-                // TIME ACCUMULATION (AJOUT)
-                // ============================================================
-                double t_total = t_bits + t_nobits;
+                double t_total =
+                    t_bits +
+                    t_nobits_indep +
+                    t_nobits_shared;
+
+
                 total_time_alpha += t_total;
                 total_time_N += t_total;
                 total_time_global += t_total;
+
             }
 
-            // ============================================================
-            // PRINT ALPHA TIME (AJOUT)
-            // ============================================================
-            cout << "\n[alpha timing] alpha = "
-                 << alpha
-                 << " | total time = "
-                 << total_time_alpha
-                 << " s\n";
+            cout
+                << "\n[alpha timing] alpha = "
+                << alpha
+                << " | total time = "
+                << total_time_alpha
+                << " s\n";
         }
 
         clock_gettime(CLOCK_MONOTONIC, &t_end);
@@ -264,17 +310,20 @@ int main(){
             (t_end.tv_sec - t_start.tv_sec) +
             (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
 
-        cout << "\n[N timing] N = "
-             << N_spins
-             << " | accumulated = "
-             << total_time_N
-             << " s\n";
+        cout
+            << "\n[N timing] N = "
+            << N_spins
+            << " | accumulated = "
+            << total_time_N
+            << " s\n";
 
-        cout << "Finished N = "
-             << N_spins
-             << " in "
-             << elapsed_N
-             << " s\n";
+
+        cout
+            << "Finished N = "
+            << N_spins
+            << " in "
+            << elapsed_N
+            << " s\n";
     }
 
     clock_gettime(CLOCK_MONOTONIC, &t_final);
@@ -285,8 +334,8 @@ int main(){
 
     cout << "\n=========================================\n";
     cout << "Total execution time : "
-              << elapsed
-              << " s\n";
+         << elapsed
+         << " s\n";
 
     cout << "Total accumulated compute time : "
          << total_time_global
@@ -295,8 +344,10 @@ int main(){
     cout << "=========================================\n";
 
     out.close();
+
     gsl_rng_free(ran);
     gsl_rng_free(ran_evolve);
+
 
     return 0;
 }
