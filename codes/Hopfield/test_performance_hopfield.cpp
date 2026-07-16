@@ -77,13 +77,13 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
-
+// TO DO :  optimzied version : several repetions, random order bit/nobits
 int main(){
 
     SimulationIO IO;
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 5;
+    const int N_sweeps = 1 << 7;
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 

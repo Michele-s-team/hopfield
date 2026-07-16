@@ -334,13 +334,14 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
 
     int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
-    Bits c_ij, mask;
+    Bits c_ij, mask, carry;
 
     UnsignedInt sum_c          ((unsigned long long) max_deg);
     UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
     UnsignedInt sum_c_times_2P ((unsigned long long) 2 * max_deg * P);
     UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
+    UnsignedInt tmp          ((unsigned long long) max_deg * P);
     
     const unsigned long long twoP = 2 * P;
 
@@ -375,12 +376,13 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
             RHS.SetAll(0);
 
             for (int k = 0; k < deg_spin; ++k) {
+                carry.Set(0);
 
                 int j = neighbors[spin][k];
 
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
-                sum_c += &c_ij;
+                sum_c.AddTo(&c_ij, &carry); //assumes that the carry won't overflow the sie of "sum_c"
                 sum_cg.AddAnd(&Couplings[spin][k], &c_ij);
             }
 
@@ -394,7 +396,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
 
             // LHS = random + sum_g + 2P*sum_c
             LHS.CopyValues(sum_g_persist[spin]);
-            LHS.AddScalar(random);
+            LHS.AddScalar(random, tmp);
             LHS += &sum_c_times_2P;
 
             mask = (RHS <= LHS);
@@ -433,6 +435,7 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
     UnsignedInt sum_c_times_2P((unsigned long long) 2 * max_deg * P);
     UnsignedInt LHS((unsigned long long) 5 * max_deg * P);
     UnsignedInt RHS((unsigned long long) 5 * max_deg * P);
+    UnsignedInt tmp           ((unsigned long long) max_deg * P);
     const unsigned long long twoP = 2 * P;
     
     // ============================================================
@@ -486,10 +489,13 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
                 t_spin_update.add(duration<double>(high_resolution_clock::now() - start).count());
                 continue;
             }
-            
+
             sum_c.SetAll(0);
             sum_cg.SetAll(0);
-            
+            LHS.SetAll(0);
+            RHS.SetAll(0);
+            tmp.SetAll(0);
+
             // ====================================================
             // Neighbor loop
             // ====================================================
@@ -548,7 +554,7 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
             t_lhs_copy.add(duration<double>(high_resolution_clock::now() - lhs_copy_start).count());
             
             auto lhs_scalar_start = high_resolution_clock::now();
-            LHS.AddScalar(random);
+            LHS.AddScalar(random, tmp);
             t_lhs_scalar.add(duration<double>(high_resolution_clock::now() - lhs_scalar_start).count());
             
             auto lhs_add_start = high_resolution_clock::now();

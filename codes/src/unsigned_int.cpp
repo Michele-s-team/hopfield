@@ -121,8 +121,8 @@ void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
 // ============================================================================
 
 // Broadcasts an absolute scalar constant sum operation uniformly over the object tracks.
-void UnsignedInt::AddScalar(unsigned long long int val) {
-    UnsignedInt tmp(val);
+//tmp should be sized to receive val
+void UnsignedInt::AddScalar(unsigned long long int val, UnsignedInt& tmp) {
     tmp.SetAll(val);
     (*this) += &tmp;
 }
@@ -304,18 +304,19 @@ void UnsignedInt::AddTo(UnsignedInt* addend, Bits* carry){
 // Combines a standalone bit entry incrementing data with low-level carry ripples.
 //add bit-by-bit addend (which here is either 1 or 0) to *this and store the result in *this and the carry in *carry. This method requires this->GetSize() to be > 1
 //inline 
-void UnsignedInt::AddTo(Bits* addend, Bits* carry){
+void UnsignedInt::AddTo(const Bits* addend, Bits* carry)
+{
     Bits t;
-    unsigned int p;
     const unsigned int size = GetSize();
 
-    carry->Set((*addend) & (b[0]));
-    (b[0]).Set((b[0]) ^ (*addend));
+    carry->Set((*addend) & b[0]);
+    b[0].Set(b[0] ^ (*addend));
 
-    for(p=1; p<size && carry->Get()!=0; p++){
-        t.Set((b[p]) ^ (*carry));
-        carry->Set((b[p]) & (*carry));
-        (b[p]).Set(t);
+    for (unsigned int p = 1; p < size && carry->Get() != 0; p++)
+    {
+        t.Set(b[p] ^ (*carry));
+        carry->Set(b[p] & (*carry));
+        b[p].Set(t);
     }
 }
 
@@ -430,13 +431,6 @@ void UnsignedInt::Multiply(UnsignedInt* multiplicand, UnsignedInt* result){
         if (idx < result_size)
             ((result->b)[idx]).Set(carry);
     }
-}
-
-// Multiplies structures using temporary layouts acting as broadcast variables.
-void UnsignedInt::MultiplyByInteger(unsigned long long int n, UnsignedInt* result) {
-    UnsignedInt multiplicand(n);
-    multiplicand.SetAll(n);  
-    Multiply(&multiplicand, result);
 }
 
 // Multiplies the underlying values by shifting layouts leftwards.
@@ -583,7 +577,7 @@ void UnsignedInt::operator *= (UnsignedInt* multiplicand){
 // add addend to *this, and store the result in *this.
 // This method requires this->GetSize() to be >= addend->GetSize()
 void UnsignedInt::operator += (Bits* addend){
-    Bits carry, t;
+    Bits carry;
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
@@ -664,29 +658,19 @@ UnsignedInt UnsignedInt::operator - (UnsignedInt* addend) {
 }
 
 // Builds calculated results keeping internal structures immutable.
-//return *this + *addend and write the carry in *carry
-UnsignedInt UnsignedInt::Add(UnsignedInt* addend, Bits* carry) {
-    
-    UnsignedInt a;
-    
-    a = (*this);
-    a.AddTo(addend, carry);
+// return *this + *addend and write the carry in *carry
+void UnsignedInt::Add(UnsignedInt* addend, UnsignedInt* result, Bits* carry) {
 
-    return a;
-
+    *result = (*this);
+    result->AddTo(addend, carry);
 }
 
 // Outputs differential configurations computing borrow dependencies externally.
-//return *this - *subrahend and write the borrow in *borrow
-UnsignedInt UnsignedInt::Substract(UnsignedInt* subtrahend, Bits* borrow) {
-    
-    UnsignedInt t;
-    
-    t = (*this);
-    t.SubstractTo(subtrahend, borrow);
+// return *this - *subtrahend and write the borrow in *borrow
+void UnsignedInt::Substract(UnsignedInt* subtrahend, UnsignedInt* result, Bits* borrow) {
 
-    return t;
-
+    *result = (*this);
+    result->SubstractTo(subtrahend, borrow);
 }
 
 // Adds the bitwise AND of a and mask to this UnsignedInt without creating temporary objects.
@@ -725,4 +709,26 @@ void UnsignedInt::IncrementMaskedFast(UnsignedInt& counter, Bits mask) {
         counter[p] ^= &carry;
         carry = new_carry;
     }
+}
+
+
+// Identifies the index location of the most significant bit that contains a 1.
+UnsignedInt UnsignedInt::PositionOfFirstSignificantBit() {
+    int s;
+    Bits check_old, check_new, t, carry;
+    // Result must be large enough to host an unsigned int equal to GetSize()
+    UnsignedInt result(GetSize());
+    
+    check_old.SetAll(0);
+    result.SetAll(0);
+    
+    for (s = GetSize() - 1; s >= 0; s--) {
+        check_new = check_old | (*this)[s];
+        t = (~check_new);
+        result.AddTo(&t, &carry);
+        
+        check_old = check_new;
+    }
+    
+    return result;
 }

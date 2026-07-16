@@ -36,10 +36,10 @@ public:
     void SetFromVector(const vector<unsigned long long>*);
 
 
-    void AddScalar(unsigned long long int val);
+    void AddScalar(unsigned long long int val, UnsignedInt& tmp);
     void ComplementTo(unsigned int);
 
-
+    UnsignedInt PositionOfFirstSignificantBit(void);
     void Increment(Bits* mask);
     void Decrement(Bits* mask);
 
@@ -47,12 +47,12 @@ public:
     void SubtractMasked(UnsignedInt* val, Bits* mask);
     void MultiplyByConstant(unsigned long long int constant, UnsignedInt* result);
 
-    void AddTo(UnsignedInt*, Bits*), AddTo(Bits*, Bits*), SubstractTo(UnsignedInt*, Bits*), SubstractTo(Bits*, Bits*);
-    void Multiply(UnsignedInt*, UnsignedInt*), MultiplyByInteger(unsigned long long int n, UnsignedInt* result), MultiplyByTwoTo(void), DivideByTwoTo(void);
+    void AddTo(UnsignedInt*, Bits*), AddTo(const Bits*, Bits*), SubstractTo(UnsignedInt*, Bits*), SubstractTo(Bits*, Bits*);
+    void Multiply(UnsignedInt*, UnsignedInt*), MultiplyByTwoTo(void), DivideByTwoTo(void);
     void operator += (UnsignedInt*), operator -= (UnsignedInt*), operator *= (UnsignedInt*), operator += (Bits*);
     Bits operator < (const UnsignedInt&), operator <= (UnsignedInt&); 
     UnsignedInt operator + (UnsignedInt*), operator - (UnsignedInt*);
-    UnsignedInt Add(UnsignedInt*, Bits*), Substract(UnsignedInt*, Bits*);    
+    void Add(UnsignedInt*, UnsignedInt*, Bits*), Substract(UnsignedInt*, UnsignedInt*, Bits*);    
     void AddAnd(UnsignedInt*, Bits*);
     void IncrementMaskedFast(UnsignedInt& counter, Bits mask);
 };
