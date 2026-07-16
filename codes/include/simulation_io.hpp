@@ -37,6 +37,12 @@ string m_base_folder;
     void SaveSpinConfigurations(int sweep, const vector<vector<uint64_t>>& configs);
     void SavePatterns(const string& folder,const vector<vector<vector<int>>>& patterns, int N);
 
+
+    void check_equality_configs(const vector<int>& neurons_before,
+                   const vector<int>& neurons_nobits,
+                   const vector<int>& neurons_bits,
+                   int N_neurons, int prefix_width=12, int col_width=3);
+
 private:
     static inline int num_blocks(int N);
     static uint64_t PackBlock(const int* data, int start, int end);

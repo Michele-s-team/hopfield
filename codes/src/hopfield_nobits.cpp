@@ -61,11 +61,11 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
         for (int step = 0; step < N; ++step) {
 
             const int spin = gsl_rng_uniform_int(ran, N);
-            const int threshold = P * neighbor_count[spin];
-            const int rng = randomNumber(ran, threshold, N);
+            int deg_spin  = neighbor_count[spin];
+            int rng = randomNumber(ran, P * deg_spin, N);
 
             // Branch 1: unconditional flip
-            if (rng >= threshold) {
+            if (rng >= P * deg_spin) {
 
                 for (int r = 0; r < n_bits; ++r)
                     spins_set[r * N + spin] *= -1;

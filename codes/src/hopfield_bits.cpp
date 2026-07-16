@@ -37,20 +37,20 @@ void HopfieldBits::fromCanonical() {
     P_times_Neighbor_Count.clear();
     P_times_Neighbor_Count.reserve(N);
 
-    for (int i = 0; i < N; ++i) {
+    for (int spin = 0; spin < N; ++spin) {
         Bits spin_tmp;
         for (int r = 0; r < n_bits; ++r) {
-            int spin = (spins_set[r * N + i] + 1) / 2;
+            int spin = (spins_set[r * N + spin] + 1) / 2;
             spin_tmp.Set(r, spin);
         }
         Bits_Spins_Set.push_back(spin_tmp);
 
         UnsignedInt nc_tmp((unsigned long long)max_deg);
-        nc_tmp.SetAll((unsigned long long)neighbor_count[i]);
+        nc_tmp.SetAll((unsigned long long)neighbor_count[spin]);
         Neighbor_Count.push_back(nc_tmp);
 
         UnsignedInt pnk_tmp((unsigned long long)(P * max_deg));
-        pnk_tmp.SetAll((unsigned long long)(P * neighbor_count[i]));
+        pnk_tmp.SetAll((unsigned long long)(P * neighbor_count[spin]));
         P_times_Neighbor_Count.push_back(pnk_tmp);
     }
 
@@ -61,12 +61,12 @@ void HopfieldBits::fromCanonical() {
     Patterns.resize(P);
     for (int p = 0; p < P; ++p) {
         Patterns[p].resize(N);
-        for (int i = 0; i < N; ++i) {
+        for (int spin = 0; spin < N; ++spin) {
             Bits pat_tmp;
             for (int r = 0; r < n_bits; ++r) {
-                pat_tmp.Set(r, (patterns[p][i][r] + 1) / 2);
+                pat_tmp.Set(r, (patterns[p][spin][r] + 1) / 2);
             }
-            Patterns[p][i] = pat_tmp;
+            Patterns[p][spin] = pat_tmp;
         }
     }
 
@@ -75,16 +75,16 @@ void HopfieldBits::fromCanonical() {
     // =====================================================
     Couplings.clear();
     Couplings.resize(N);
-    for (int i = 0; i < N; ++i) {
-        Couplings[i].clear();
-        Couplings[i].reserve(couplings[i].size());
-        for (int j = 0; j < (int)couplings[i].size(); ++j) {
+    for (int spin = 0; spin < N; ++spin) {
+        Couplings[spin].clear();
+        Couplings[spin].reserve(couplings[spin].size());
+        for (int j = 0; j < (int)couplings[spin].size(); ++j) {
             UnsignedInt coupling_tmp((unsigned long long)2 * P);
             for (int r = 0; r < n_bits; ++r) {
-                int val = couplings[i][j][r] + P;
+                int val = couplings[spin][j][r] + P;
                 coupling_tmp.Set(r, val);
             }
-            Couplings[i].push_back(coupling_tmp);
+            Couplings[spin].push_back(coupling_tmp);
         }
     }
 }
@@ -92,8 +92,8 @@ void HopfieldBits::fromCanonical() {
 // bit representation {0,1} -> canonical spins {-1,+1}
 void HopfieldBits::toCanonical(){
     for (int r = 0; r < n_bits; ++r)
-        for (int i = 0; i < N; ++i)
-            spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
+        for (int spin = 0; spin < N; ++spin)
+            spins_set[r*N+spin] = -1 + 2 * Bits_Spins_Set[spin].Get(r);
 }
 
 // =====================================================
@@ -107,9 +107,9 @@ void HopfieldBits::initSpinsBits(gsl_rng* ran) {
     Bits_Spins_Set.clear();
     Bits_Spins_Set.resize(N);
 
-    for (int i = 0; i < N; ++i)
+    for (int spin = 0; spin < N; ++spin)
         for (int r = 0; r < n_bits; ++r)
-            Bits_Spins_Set[i].Set(r, randomBit(ran));
+            Bits_Spins_Set[spin].Set(r, randomBit(ran));
 
     initSpinMetadataBits();
 }
@@ -124,28 +124,28 @@ void HopfieldBits::initSpinMetadataBits() {
     P_times_Neighbor_Count.clear();
     P_times_Neighbor_Count.reserve(N);
 
-    for (int i = 0; i < N; ++i) {
+    for (int spin = 0; spin < N; ++spin) {
         UnsignedInt nc_tmp((unsigned long long)max_deg);
-        nc_tmp.SetAll((unsigned long long)neighbor_count[i]);
+        nc_tmp.SetAll((unsigned long long)neighbor_count[spin]);
         Neighbor_Count.push_back(nc_tmp);
 
         UnsignedInt pnk_tmp((unsigned long long)(P * max_deg));
-        pnk_tmp.SetAll((unsigned long long)(P * neighbor_count[i]));
+        pnk_tmp.SetAll((unsigned long long)(P * neighbor_count[spin]));
         P_times_Neighbor_Count.push_back(pnk_tmp);
     }
 }
 
 // Initialize Patterns directly in bit-sliced representation.
 // Replaces: initPatterns() + fromCanonical() step 2.
-// patterns[p][i] is a Bits word: bit r = (xi^p_i^r + 1) / 2 in {0,1}
+// patterns[p][spin] is a Bits word: bit r = (xi^p_i^r + 1) / 2 in {0,1}
 void HopfieldBits::initPatternsBits(gsl_rng* ran) {
     Patterns.clear();
     Patterns.resize(P);
     for (int p = 0; p < P; ++p) {
         Patterns[p].resize(N);
-        for (int i = 0; i < N; ++i) {
+        for (int spin = 0; spin < N; ++spin) {
             for (int r = 0; r < n_bits; ++r)
-                Patterns[p][i].Set(r, randomBit(ran));
+                Patterns[p][spin].Set(r, randomBit(ran));
         }
     }
     initCouplingsBits();
@@ -153,19 +153,19 @@ void HopfieldBits::initPatternsBits(gsl_rng* ran) {
 
 
 // Corrupt a single pattern by flipping each bit independently with
-// probability flip_fraction. Input is one column of Patterns (i.e.
+// probability flip_fraction. Input is one column of Patterns (spin.e.
 // Patterns[p]), a vector<Bits> of size N, where each Bits word packs
 // n_bits independent replicas.
 //
 // By default each replica r gets its own independent random flip mask
-// (i.e. flip_fraction is the *expected* fraction of flipped spins per
+// (spin.e. flip_fraction is the *expected* fraction of flipped spins per
 // replica, but which spins get flipped differs from one replica to the
 // next). This lets you run n_bits independent noise realizations for
 // the same flip_fraction in a single bitwise pass.
 //
 // If you instead want all replicas to share the exact same corrupted
 // pattern (same flipped sites for every replica), draw the flip mask
-// once per spin i (outside the r loop) and apply it to all r — see the
+// once per spin spin (outside the r loop) and apply it to all r — see the
 // commented alternative below.
 
 vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& pattern,
@@ -174,21 +174,21 @@ vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& pattern,
 
     vector<Bits> corrupted = pattern; // copy, size N
 
-    for (int i = 0; i < N; ++i) {
+    for (int spin = 0; spin < N; ++spin) {
 
         // --- Option 1 (default): independent noise per replica ---
         for (int r = 0; r < n_bits; ++r) {
             if (gsl_rng_uniform(ran) < flip_fraction) {
-                int bit = corrupted[i].Get(r);
-                corrupted[i].Set(r, 1 - bit);
+                int bit = corrupted[spin].Get(r);
+                corrupted[spin].Set(r, 1 - bit);
             }
         }
 
         // --- Option 2: same flip mask shared across all replicas ---
         // if (gsl_rng_uniform(ran) < flip_fraction) {
         //     for (int r = 0; r < n_bits; ++r) {
-        //         int bit = corrupted[i].Get(r);
-        //         corrupted[i].Set(r, 1 - bit);
+        //         int bit = corrupted[spin].Get(r);
+        //         corrupted[spin].Set(r, 1 - bit);
         //     }
         // }
     }
@@ -204,30 +204,30 @@ vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& pattern,
 void HopfieldBits::initCouplingsBits() {
     Couplings.clear();
     Couplings.resize(N);
-    for (int i = 0; i < N; ++i) {
-        Couplings[i].clear();
-        Couplings[i].reserve(neighbors[i].size());
-        for (int k = 0; k < (int)neighbors[i].size(); ++k)
-            Couplings[i].emplace_back((unsigned long long) 2 * P);
+    for (int spin = 0; spin < N; ++spin) {
+        Couplings[spin].clear();
+        Couplings[spin].reserve(neighbors[spin].size());
+        for (int k = 0; k < (int)neighbors[spin].size(); ++k)
+            Couplings[spin].emplace_back((unsigned long long) 2 * P);
     }
 
-    // Hebb rule: compute once for i < j, then mirror
-    for (int i = 0; i < N; ++i) {
-        for (int k = 0; k < (int)neighbors[i].size(); ++k) {
-            int j = neighbors[i][k];
-            if (j <= i) continue;
+    // Hebb rule: compute once for spin < j, then mirror
+    for (int spin = 0; spin < N; ++spin) {
+        for (int k = 0; k < (int)neighbors[spin].size(); ++k) {
+            int j = neighbors[spin][k];
+            if (j <= spin) continue;
 
-            Couplings[i][k].SetAll((unsigned long long) 0);
+            Couplings[spin][k].SetAll((unsigned long long) 0);
 
             for (int mu = 0; mu < P; ++mu) {
-                Bits prod = ~(Patterns[mu][i] ^ Patterns[mu][j]);
-                Couplings[i][k] += &prod;
+                Bits prod = ~(Patterns[mu][spin] ^ Patterns[mu][j]);
+                Couplings[spin][k] += &prod;
             }
-            Couplings[i][k].MultiplyByTwoTo();
+            Couplings[spin][k].MultiplyByTwoTo();
 
             // Mirror onto j
-            int k_mirror = neighbor_index(j, i);
-            Couplings[j][k_mirror] = Couplings[i][k];
+            int k_mirror = neighbor_index(j, spin);
+            Couplings[j][k_mirror] = Couplings[spin][k];
             
         }
     }
@@ -264,9 +264,9 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations){
     magnetizations.resize(n_bits);
     vector<int> ones(n_bits, 0);
 
-    for (int i = 0; i < N; ++i)
+    for (int spin = 0; spin < N; ++spin)
         for (int r = 0; r < n_bits; ++r)
-            ones[r] += Bits_Spins_Set[i].Get(r);
+            ones[r] += Bits_Spins_Set[spin].Get(r);
 
     for (int r = 0; r < n_bits; ++r)
         magnetizations[r] = (2.0 * ones[r] - N) / N;
@@ -283,22 +283,22 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
         int start = b * BITS_PER_BLOCK;
         int end   = min(N, start + BITS_PER_BLOCK);
 
-        for (int i = start; i < end; ++i){
+        for (int spin = start; spin < end; ++spin){
             for (int r = 0; r < n_bits; ++r){
                 configs[r][b] <<= 1;
-                if (Bits_Spins_Set[i].Get(r))
+                if (Bits_Spins_Set[spin].Get(r))
                     configs[r][b] |= 1ULL;
             }
         }
     }
 }
-// Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[p][i][r] in {-1,+1}
+// Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[p][spin][r] in {-1,+1}
 vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
     vector<vector<vector<int>>> result(P, vector<vector<int>>(N, vector<int>(n_bits, 0)));
     for (int p = 0; p < P; ++p)
-        for (int i = 0; i < N; ++i)
+        for (int spin = 0; spin < N; ++spin)
             for (int r = 0; r < n_bits; ++r)
-                result[p][i][r] = -1 + 2 * Patterns[p][i].Get(r);
+                result[p][spin][r] = -1 + 2 * Patterns[p][spin].Get(r);
     return result;
 }
 
@@ -316,12 +316,12 @@ vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
 //
 // where:
 //   LHS = random + sum_j g_ij + 2P * sum_j c_ij
-//   RHS = P * deg_i + 2 * sum_j c_ij * g_ij
+//   RHS = P * deg_spin + 2 * sum_j c_ij * g_ij
 //
 // with:
 //   g_ij = P + G_ij  in [0, 2P],  G_ij = sum_mu xi_i^mu xi_j^mu  (precomputed)
 //   c_ij = [S_i == S_j]           (1 if same spin, 0 otherwise)
-//   random in [0, P * deg_i)      (scaled log-uniform random number)
+//   random in [0, P * deg_spin)      (scaled log-uniform random number)
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
@@ -346,52 +346,54 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
 
     // Precompute Σ_j g_ij once
     vector<UnsignedInt> sum_g_persist(N);
-    for (int i = 0; i < N; ++i) {
-        sum_g_persist[i] = UnsignedInt((unsigned long long)2 * max_deg * P);
-        sum_g_persist[i].SetAll(0);
+    for (int spin = 0; spin < N; ++spin) {
+        sum_g_persist[spin] = UnsignedInt((unsigned long long)2 * max_deg * P);
+        sum_g_persist[spin].SetAll(0);
 
-        for (int k = 0; k < neighbor_count[i]; ++k)
-            sum_g_persist[i] += &Couplings[i][k];
+        for (int k = 0; k < neighbor_count[spin]; ++k)
+            sum_g_persist[spin] += &Couplings[spin][k];
     }
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
 
-            int i      = gsl_rng_uniform_int(ran, N);
-            int deg_i  = neighbor_count[i];
-            int random = randomNumber(ran, deg_i * P, N);
+            int spin      = gsl_rng_uniform_int(ran, N);
+            int deg_spin  = neighbor_count[spin];
+            int random = randomNumber(ran, deg_spin * P, N);
 
-            Bits& S_i = Bits_Spins_Set[i];
+            Bits& S_i = Bits_Spins_Set[spin];
 
-            if (random >= P * deg_i) {
+            if (random >= P * deg_spin) {
                 S_i.ComplementTo();
                 continue;
             }
 
             sum_c.SetAll(0);
             sum_cg.SetAll(0);
+            LHS.SetAll(0);
+            RHS.SetAll(0);
 
-            for (int k = 0; k < deg_i; ++k) {
+            for (int k = 0; k < deg_spin; ++k) {
 
-                int j = neighbors[i][k];
+                int j = neighbors[spin][k];
 
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
                 sum_c += &c_ij;
-                sum_cg.AddAnd(&Couplings[i][k], &c_ij);
+                sum_cg.AddAnd(&Couplings[spin][k], &c_ij);
             }
 
-            // RHS = 2*sum_cg + P*deg_i
+            // RHS = 2*sum_cg + P*deg_spin
             RHS.CopyValues(sum_cg);
             RHS.MultiplyByTwoTo();
-            RHS += &P_times_Neighbor_Count[i];
+            RHS += &P_times_Neighbor_Count[spin];
 
             // 2P*sum_c
             sum_c.MultiplyByConstant(twoP, &sum_c_times_2P);
 
             // LHS = random + sum_g + 2P*sum_c
-            LHS.CopyValues(sum_g_persist[i]);
+            LHS.CopyValues(sum_g_persist[spin]);
             LHS.AddScalar(random);
             LHS += &sum_c_times_2P;
 
@@ -457,12 +459,12 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
     auto pre_start = high_resolution_clock::now();
     vector<UnsignedInt> sum_g_persist(N);
     
-    for (int i = 0; i < N; ++i) {
-        sum_g_persist[i] = UnsignedInt((unsigned long long)2 * max_deg * P);
-        sum_g_persist[i].SetAll(0);
+    for (int spin = 0; spin < N; ++spin) {
+        sum_g_persist[spin] = UnsignedInt((unsigned long long)2 * max_deg * P);
+        sum_g_persist[spin].SetAll(0);
         
-        for (int k = 0; k < neighbor_count[i]; ++k)
-            sum_g_persist[i] += &Couplings[i][k];
+        for (int k = 0; k < neighbor_count[spin]; ++k)
+            sum_g_persist[spin] += &Couplings[spin][k];
     }
     
     t_precompute.add(duration<double>(high_resolution_clock::now() - pre_start).count());
@@ -472,13 +474,13 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
     // ============================================================
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
-            int i = gsl_rng_uniform_int(ran, N);
-            int deg_i = neighbor_count[i];
-            int random = randomNumber(ran, deg_i * P, N);
-            Bits& S_i = Bits_Spins_Set[i];
+            int spin = gsl_rng_uniform_int(ran, N);
+            int deg_spin = neighbor_count[spin];
+            int random = randomNumber(ran, deg_spin * P, N);
+            Bits& S_i = Bits_Spins_Set[spin];
             
             // Random spin flip without neighbor calculation
-            if (random >= P * deg_i) {
+            if (random >= P * deg_spin) {
                 auto start = high_resolution_clock::now();
                 S_i.ComplementTo();
                 t_spin_update.add(duration<double>(high_resolution_clock::now() - start).count());
@@ -491,8 +493,8 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
             // ====================================================
             // Neighbor loop
             // ====================================================
-            for (int k = 0; k < deg_i; ++k) {
-                int j = neighbors[i][k];
+            for (int k = 0; k < deg_spin; ++k) {
+                int j = neighbors[spin][k];
                 volatile unsigned long long sink = 0;
                 
                 // Compute c_ij = ~(S_i ^ S_j)
@@ -515,12 +517,12 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
                 
                 // Accumulate sum_cg
                 auto add_start = high_resolution_clock::now();
-                sum_cg.AddAnd(&Couplings[i][k], &c_ij);
+                sum_cg.AddAnd(&Couplings[spin][k], &c_ij);
                 t_addand.add(duration<double>(high_resolution_clock::now() - add_start).count());
             }
             
             // ====================================================
-            // RHS calculation: RHS = (2 * sum_cg) + P_times_Neighbor_Count[i]
+            // RHS calculation: RHS = (2 * sum_cg) + P_times_Neighbor_Count[spin]
             // ====================================================
             auto rhs_copy_start = high_resolution_clock::now();
             RHS.CopyValues(sum_cg);
@@ -531,18 +533,18 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
             t_rhs_mult.add(duration<double>(high_resolution_clock::now() - rhs_mult_start).count());
             
             auto rhs_add_start = high_resolution_clock::now();
-            RHS += &P_times_Neighbor_Count[i];
+            RHS += &P_times_Neighbor_Count[spin];
             t_rhs_add.add(duration<double>(high_resolution_clock::now() - rhs_add_start).count());
             
             // ====================================================
-            // LHS calculation: LHS = sum_g_persist[i] + random + (2P * sum_c)
+            // LHS calculation: LHS = sum_g_persist[spin] + random + (2P * sum_c)
             // ====================================================
             auto mult_start = high_resolution_clock::now();
             sum_c.MultiplyByConstant(twoP, &sum_c_times_2P);
             t_multiply.add(duration<double>(high_resolution_clock::now() - mult_start).count());
             
             auto lhs_copy_start = high_resolution_clock::now();
-            LHS.CopyValues(sum_g_persist[i]);
+            LHS.CopyValues(sum_g_persist[spin]);
             t_lhs_copy.add(duration<double>(high_resolution_clock::now() - lhs_copy_start).count());
             
             auto lhs_scalar_start = high_resolution_clock::now();

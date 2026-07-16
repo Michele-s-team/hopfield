@@ -58,14 +58,14 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // =============================================================================
 
 // ──────────────────────────────────────────────────────────────────────────────
-// print_neurons
+// check_equality_configs
 //
 // Compare the spin configurations of the classic and bitwise models, replica
 // by replica and site by site. Reports the first mismatch found, or confirms
 // that both configurations are identical.
 // ──────────────────────────────────────────────────────────────────────────────
-void print_neurons(const vector<int>& neurons_before,
-                   const vector<int>& neurons_classic,
+void check_equality_configs(const vector<int>& neurons_before,
+                   const vector<int>& neurons_nobits,
                    const vector<int>& neurons_bits,
                    int N) {
 
@@ -74,7 +74,7 @@ void print_neurons(const vector<int>& neurons_before,
     for (int r = 0; r < n_bits; r++) {
         // Site-by-site comparison for this replica
         for (int i = 0; i < N; i++) {
-            if (neurons_classic[r * N + i] != neurons_bits[r * N + i]) {
+            if (neurons_nobits[r * N + i] != neurons_bits[r * N + i]) {
                 all_equal = false;
                 cout << "Mismatch at r=" << r << " i=" << i << endl;
             }
@@ -138,7 +138,7 @@ int main() {
     cout << "Spin configurations initialized and shared\n";
 
     // Verify that both models start from the same spin state before evolving
-    //print_neurons(initial_config, nobits.getSpinsConfig(),bits.getSpinsConfig(), L*L);
+    //check_equality_configs(initial_config, nobits.getSpinsConfig(),bits.getSpinsConfig(), L*L);
 
     // ── Evolution: HopfieldBits ──────────────────────────────────────────────
     gsl_rng_set(ran, 42);  // fixed seed for RNG comparison

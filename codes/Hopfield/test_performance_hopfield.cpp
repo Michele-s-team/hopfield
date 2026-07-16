@@ -69,55 +69,6 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
 // =============================================================================
 
-
-// ──────────────────────────────────────────────
-// Print and compare spin configurations across realizations
-// ──────────────────────────────────────────────
-void print_neurons(const vector<int>& neurons_before,
-                   const vector<int>& neurons_classic,
-                   const vector<int>& neurons_bits,
-                   int N_neurons, int prefix_width, int col_width) {
-
-    bool all_equal = true;
-
-    for (int r = 0; r < n_bits; r++) {
-
-        ostringstream oss;
-        //Uncomment to print the spins when comparing
-        /*
-        oss << "Realization" << right << setw(3) << r+1;
-        cout << oss.str() << "\n";
-
-        cout << left << setw(prefix_width) << "       before: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_before[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "after classic: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_classic[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "   after bits: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_bits[r*N_neurons+i] << " ";
-        cout << "\n\n";
-        */
-
-        for (int i = 0; i < N_neurons; i++) {
-            if (neurons_classic[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
-                all_equal = false;
-                cout << "Mismatch at r=" << r+1 << " i=" << i+1 << endl;
-            }
-        }
-    }
-
-    if (all_equal)
-        cout << "OK: classic and bitwise results are identical\n";
-    else
-        cout << "WARNING: differences detected between classic and bitwise results\n";
-}
-
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
 }
@@ -126,11 +77,13 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
-// TO DO :  optimzied version : several repetions, random order bit/nobits
+
 int main(){
+
+    SimulationIO IO;
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 7;
+    const int N_sweeps = 1 << 5;
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 
@@ -203,8 +156,14 @@ int main(){
                 gsl_rng_set(ran, 123);
 
                 bits.initSpinsBits(ran);
-                auto initial_config = bits.getSpinsConfig();
-                nobits.initSpinsFromConfig(initial_config);
+                bits.toCanonical();
+                auto initial_config_bits = bits.getSpinsConfig();
+                nobits.initSpinsFromConfig(initial_config_bits);
+                auto initial_config_nobits= nobits.getSpinsConfig();
+
+                IO.check_equality_configs(initial_config_bits, initial_config_nobits, initial_config_bits, N_spins);
+
+        
 
                 cout << "Initial Configuration initialized" <<endl;
 
@@ -235,6 +194,8 @@ int main(){
                 clock_gettime(CLOCK_MONOTONIC, &t0);
                 bits.runSweeps(ran_bits, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
+                bits.toCanonical();
+                auto final_config_bits = bits.getSpinsConfig();
 
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +
@@ -245,14 +206,21 @@ int main(){
                 // ----------------------------------------------
                 // Classical implementation
                 // ----------------------------------------------
-                gsl_rng_set(ran_nobits, 42);
+                gsl_rng_set(ran_bits, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.runSweepsIndependentRNG(ran_nobits, false, 0);
+                nobits.runSweepsSharedRNG(ran_bits, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
+                auto final_config_nobits = nobits.getSpinsConfig();
 
                 double t_nobits =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+
+                // ----------------------------------------------
+                // Check equality
+                // ----------------------------------------------
+
+                IO.check_equality_configs(initial_config_bits, final_config_nobits, final_config_bits, N_spins);
 
                 // ----------------------------------------------
                 // Compute speedup

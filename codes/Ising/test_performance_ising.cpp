@@ -66,55 +66,6 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
 // =============================================================================
 
-
-// ──────────────────────────────────────────────
-// Print and compare spin configurations across realizations
-// ──────────────────────────────────────────────
-void print_neurons(const vector<int>& neurons_before,
-                   const vector<int>& neurons_classic,
-                   const vector<int>& neurons_bits,
-                   int N_neurons, int prefix_width, int col_width) {
-
-    bool all_equal = true;
-
-    for (int r = 0; r < n_bits; r++) {
-
-        ostringstream oss;
-        //Uncomment to print the spins when comparing
-        /*
-        oss << "Realization" << right << setw(3) << r+1;
-        cout << oss.str() << "\n";
-
-        cout << left << setw(prefix_width) << "       before: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_before[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "after classic: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_classic[r*N_neurons+i] << " ";
-        cout << "\n";
-
-        cout << left << setw(prefix_width) << "   after bits: ";
-        for (int i = 0; i < N_neurons; i++)
-            cout << right << setw(col_width) << neurons_bits[r*N_neurons+i] << " ";
-        cout << "\n\n";
-        */
-
-        for (int i = 0; i < N_neurons; i++) {
-            if (neurons_classic[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
-                all_equal = false;
-                cout << "Mismatch at r=" << r+1 << " i=" << i+1 << endl;
-            }
-        }
-    }
-
-    if (all_equal)
-        cout << "OK: classic and bitwise results are identical\n";
-    else
-        cout << "WARNING: differences detected between classic and bitwise results\n";
-}
-
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
 }

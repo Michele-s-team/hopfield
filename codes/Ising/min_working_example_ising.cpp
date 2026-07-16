@@ -60,10 +60,7 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // No output files are written.
 // =============================================================================
 
-// ──────────────────────────────────────────────
-// Print and compare spin configurations across realizations
-// ──────────────────────────────────────────────
-void print_neurons(const vector<int>& neurons_before,
+void check_equality_configs(const vector<int>& neurons_before,
                    const vector<int>& neurons_classic,
                    const vector<int>& neurons_bits,
                    int N_neurons, int prefix_width, int col_width) {
@@ -98,7 +95,7 @@ void print_neurons(const vector<int>& neurons_before,
         for (int i = 0; i < N_neurons; i++) {
             if (neurons_classic[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
                 all_equal = false;
-                cout << "Mismatch at r=" << r+1 << " i=" << i+1 << endl;
+                cout << "Mismatch at r=" << r<< " i=" << i << endl;
             }
         }
     }
@@ -144,7 +141,7 @@ int main() {
     classic_test.initSpinsFromConfig(initial_config);
     cout << "Spin configurations initialized\n" << endl;
 
-    print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
+    check_equality_configs(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
 
     gsl_rng_set(ran_test, 45);
     clock_t start_bits = clock();
@@ -160,7 +157,7 @@ int main() {
     double clock_ref = double(end_ref - start_ref) / CLOCKS_PER_SEC;
     cout << "Classic done. Time: " << clock_ref << " s\n";
 
-    //print_neurons(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
+    //check_equality_configs(initial_config, classic_test.getSpinsConfig(), bits_test.getSpinsConfig(), L_test*L_test, prefix_width, col_width);
 
     cout << "Acceleration factor = " << clock_ref / clock_bits << "\n";
 

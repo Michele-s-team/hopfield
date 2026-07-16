@@ -694,23 +694,24 @@ void UnsignedInt::AddAnd(UnsignedInt* a, Bits* mask){
     Bits carry;
     carry.Clear();
 
-    const unsigned int size = a->GetSize();
+    const unsigned int size_a = a->GetSize();
+    const unsigned int size   = GetSize();
+    unsigned int p = 0;
 
-    for (unsigned int p = 0; p < size; ++p)
-    {
+    for (; p < size_a; ++p) {
         Bits add_bit = a->b[p] & (*mask);
-
-        Bits new_carry = (b[p] & add_bit) |
-                         (b[p] & carry) |
-                         (add_bit & carry);
-
+        Bits new_carry = (b[p] & add_bit) | (b[p] & carry) | (add_bit & carry);
         b[p] ^= &add_bit;
         b[p] ^= &carry;
-
         carry = new_carry;
     }
-}
 
+    for (; p < size && carry.Get() != 0; ++p) {
+        Bits t = b[p] ^ carry;
+        carry  = b[p] & carry;
+        b[p]   = t;
+    }
+}
 
 // Increment a bit-sliced counter by mask (per-lane 0/1), early-exiting once
 // the carry has died out. Number of iterations needed adapts automatically

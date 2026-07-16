@@ -67,11 +67,6 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 // =============================================================================
 
 
-// ──────────────────────────────────────────────
-// Print and compare spin configurations across realizations
-// ──────────────────────────────────────────────
-
-
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
 }

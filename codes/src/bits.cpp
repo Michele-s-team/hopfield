@@ -185,8 +185,7 @@ void Bits::Print(ostream& output_stream){
 
 
 //inline
-Bits& Bits::operator=(const Bits& m)
-{
+Bits& Bits::operator=(const Bits& m){
     n = m.n;
     return *this;
 }
