@@ -184,12 +184,12 @@ void Bits::Print(ostream& output_stream){
 }
 
 
-////inline
-//void Bits::operator = (const Bits& m){
-//    
-//    n = (m.n);
-//    
-//}
+//inline
+Bits& Bits::operator=(const Bits& m)
+{
+    n = m.n;
+    return *this;
+}
 
 Bits Bits::operator | (const Bits& m) const { return Bits(n |  m.n); }
 Bits Bits::operator & (const Bits& m) const { return Bits(n &  m.n); }

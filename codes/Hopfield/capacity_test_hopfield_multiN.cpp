@@ -77,7 +77,7 @@ int main() {
     int          N_sweeps    = 1 << 10;    // default / base number of sweeps
 
     // ── Lattice sizes (N = L*L, fully-connected Hopfield) ────────────────────
-    vector<int> N_vals = {1000, 1500, 2000, 4000, 8000, 10000};
+    vector<int> N_vals = {1000};
 
     // ── Alpha grid, refined around alpha_c ≈ 0.138 (AGS critical capacity) ──
     const double alpha_c   = 0.138;

@@ -1,12 +1,11 @@
 //
-//  int.cpp
+//  unsigned_int.cpp
 //  hopfield
 //
 //  Created by Michele on 07/02/2024.
 //
 
 #include "unsigned_int.hpp"
-
 #include "main.hpp"
 #include "gsl_math.h"
 #include <vector>
@@ -64,10 +63,11 @@ void UnsignedInt::GetBase10(vector<unsigned long long int>& v){
 // Replaces entries bit-by-bit from matching structures depending on condition flags.
 //if this->GetSize() == replacer->GetSize(), replace bit-by-bit all bs of *this with the respective bs of *replacer, and leave *this unchanged otherwise
 void UnsignedInt::Replace(UnsignedInt* replacer, Bits* check){
+    const unsigned int size = this->GetSize();
     
-    if((this->GetSize()) == (replacer->GetSize())){
+    if(size == (replacer->GetSize())){
         
-        for(unsigned int s=0; s<(this->GetSize()); s++){
+        for(unsigned int s=0; s<size; s++){
             b[s].Replace((replacer->b.data()) + s, check);
         }
         
@@ -81,9 +81,10 @@ void UnsignedInt::Replace(UnsignedInt* replacer, Bits* check){
 void UnsignedInt::Set(unsigned int s, unsigned long long int i){
     
     unsigned int p;
+    const unsigned int size = b.size();
     Bits n(i);
     
-    for(p=0; p<b.size(); p++){
+    for(p=0; p<size; p++){
         b[p].Set(s, ((bool)(n.Get(p))));
     }
     
@@ -98,9 +99,11 @@ void UnsignedInt::Set(unsigned int s, unsigned long long int i){
 void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
     if (!vec) return; // safety check
 
+    const unsigned int size = GetSize();
+
     size_t n_cols = vec->size();
 
-    if (GetSize() < n_bits) Resize(n_bits);
+    if (size < n_bits) Resize(n_bits);
 
     for (size_t p = 0; p < n_bits; p++) {
         for (size_t s = 0; s < n_cols; s++) {
@@ -108,7 +111,7 @@ void UnsignedInt::SetFromVector(const vector<unsigned long long>* vec) {
         }
     }
 
-    for (size_t p = n_bits; p < GetSize(); p++) {
+    for (size_t p = n_bits; p < size ; p++) {
         b[p].SetAll(false);
     }
 }
@@ -126,20 +129,21 @@ void UnsignedInt::AddScalar(unsigned long long int val) {
 
 // Computes the one-complement logic inversion mapping out padding allocations.
 //write the one-complement of *this with respect to a size 'size' of the binary representation and write it into *this
-void UnsignedInt::ComplementTo(unsigned int size){
+void UnsignedInt::ComplementTo(const unsigned int size){
     
     unsigned int s;
+    const unsigned int n = GetSize();
     
     
     //set the first bits common to *this
-    for(s=0; s<GetSize(); s++){
+    for(s=0; s<n; s++){
         b[s] = (b[s]).Complement();
     }
     
     Resize(size);
 
     //set the remaining bits equal to one 
-    for(; s<GetSize(); s++){
+    for(; s<n; s++){
         b[s] = Bits_one;
     }
     
@@ -236,6 +240,7 @@ void UnsignedInt::SubtractMasked(UnsignedInt* val, Bits* mask){
  */
 void UnsignedInt::MultiplyByConstant(unsigned long long int constant, UnsignedInt* result){
     const unsigned int n_size = GetSize();
+    const unsigned int result_size = result->GetSize();
 
     result->SetAll(Bits_zero); // une seule fois
 
@@ -248,7 +253,7 @@ void UnsignedInt::MultiplyByConstant(unsigned long long int constant, UnsignedIn
         for (unsigned int p = 0; p < n_size; ++p)
         {
             unsigned int idx = p + s;
-            if (idx >= result->GetSize()) continue; // ou assert(false)
+            if (idx >= result_size) continue; // ou assert(false)
 
             Bits t;
             t.Set(((result->b)[idx]) ^ b[p] ^ carry);
@@ -260,7 +265,7 @@ void UnsignedInt::MultiplyByConstant(unsigned long long int constant, UnsignedIn
         }
 
         unsigned int idx = s + n_size;
-        if (idx < result->GetSize())
+        if (idx < result_size)
             ((result->b)[idx]).Set(carry);
     }
 }
@@ -276,11 +281,11 @@ void UnsignedInt::AddTo(UnsignedInt* addend, Bits* carry){
     
     Bits t;
     unsigned int p;
+    unsigned int size_addend= addend->GetSize();
+    const unsigned int size= GetSize();
 
     
-    for(p=0, carry->Clear();
-        p<addend->GetSize();
-        p++){
+    for(p=0, carry->Clear(); p<size_addend; p++){
         //run over  bits of addend
         
         t.Set(((b[p]).Get()) ^ (((addend->b)[p]).Get()) ^ (carry->Get()));
@@ -288,12 +293,8 @@ void UnsignedInt::AddTo(UnsignedInt* addend, Bits* carry){
         (b[p]).Set(t);
         
     }
-    for(p=addend->GetSize(); p<GetSize(); p++){
-        //run over the extra bits of augend
-        
-//        (t.Get()) = (((b[p]).Get()) ^ (carry->Get()));
+    for(p=size_addend; p<size && carry->Get()!=0; p++){
         t.Set((b[p]) ^ (*carry));
-//        (carry->Get()) = (((b[p]).Get()) & (carry->Get()));
         carry->Set((b[p]) & (*carry));
         (b[p]).Set(t);   
     }
@@ -304,36 +305,31 @@ void UnsignedInt::AddTo(UnsignedInt* addend, Bits* carry){
 //add bit-by-bit addend (which here is either 1 or 0) to *this and store the result in *this and the carry in *carry. This method requires this->GetSize() to be > 1
 //inline 
 void UnsignedInt::AddTo(Bits* addend, Bits* carry){
-        
     Bits t;
     unsigned int p;
+    const unsigned int size = GetSize();
 
-    //sum the only bit of addend
-    //    (carry->Get()) = ((addend->Get()) & ((b[0]).Get()));
     carry->Set((*addend) & (b[0]));
-    
-    //    (b[0]).Get() = (((b[0]).Get()) ^ (addend->Get()));
     (b[0]).Set((b[0]) ^ (*addend));
-    
-    for(p=1; p<GetSize(); p++){
-        //run over the extra bits of augend
-        
+
+    for(p=1; p<size && carry->Get()!=0; p++){
         t.Set((b[p]) ^ (*carry));
         carry->Set((b[p]) & (*carry));
-        (b[p]).Set(t);     
+        (b[p]).Set(t);
     }
 }
 
 // Subtracts container components evaluating borrow patterns progressively across rows.
-void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow)
-{
+void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow){
+
     unsigned int p;
+    unsigned int size_subtrahend= subtrahend->GetSize();
+    const unsigned int size= GetSize();
     Bits a, s, t;
 
     borrow->Clear();
 
-    for(p = 0; p < subtrahend->GetSize(); ++p)
-    {
+    for(p = 0; p < size_subtrahend; ++p){
         a = b[p];
         s = (*subtrahend)[p];
 
@@ -346,8 +342,7 @@ void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow)
         b[p].Set(t);
     }
 
-    for(; p < GetSize(); ++p)
-    {
+    for(; p < size; ++p){
         a = b[p];
 
         t.Set(a ^ (*borrow));
@@ -360,9 +355,10 @@ void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow)
 }
 
 // Deducts a isolated track profile tracking borrow transitions downwards.
-void UnsignedInt::SubstractTo(Bits* subtrahend, Bits* borrow)
-{
+void UnsignedInt::SubstractTo(Bits* subtrahend, Bits* borrow){
+
     unsigned int p;
+    const unsigned int size= GetSize();
     Bits a, t;
 
     a = b[0];
@@ -373,7 +369,7 @@ void UnsignedInt::SubstractTo(Bits* subtrahend, Bits* borrow)
 
     b[0].Set(t);
 
-    for(p = 1; p < GetSize(); ++p)
+    for(p = 1; p <size; ++p)
     {
         a = b[p];
 
@@ -399,9 +395,9 @@ void UnsignedInt::SubstractTo(Bits* subtrahend, Bits* borrow)
  * Accesses result->b[p + s] assume valid indexing; caller is responsible
  * for guaranteeing correct allocation size.
  */
-void UnsignedInt::Multiply(UnsignedInt* multiplicand, UnsignedInt* result)
-{
+void UnsignedInt::Multiply(UnsignedInt* multiplicand, UnsignedInt* result){
     const unsigned int m_size = multiplicand->GetSize();
+    const unsigned int result_size = result->GetSize();
     const unsigned int n_size = GetSize();
 
     Bits carry, t, u;
@@ -419,7 +415,7 @@ void UnsignedInt::Multiply(UnsignedInt* multiplicand, UnsignedInt* result)
             u.Set(((*multiplicand)[s]) & (b[p]));
 
             unsigned int idx = p + s;
-            if (idx >= result->GetSize())
+            if (idx >= result_size)
                 continue; // or assert(false)
 
             t.Set(((result->b)[idx]) ^ u ^ carry);
@@ -431,7 +427,7 @@ void UnsignedInt::Multiply(UnsignedInt* multiplicand, UnsignedInt* result)
         }
 
         unsigned int idx = s + n_size;
-        if (idx < result->GetSize())
+        if (idx < result_size)
             ((result->b)[idx]).Set(carry);
     }
 }
@@ -479,7 +475,10 @@ void UnsignedInt::operator += (UnsignedInt* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
-    if(carry.Get()!=0) b.push_back(carry);
+    if(carry.Get()!=0){
+        cout << "new size exceeds the max allocated size, issue (UnsignedInt addition)" << endl;
+        b.push_back(carry);
+    }
     // Only normalize if b has more than one entry: if b has exactly one entry,
     // normalizing would delete it when the value is 0, leaving b empty (GetSize()=0),
     //if (b.size() > 1) Normalize();
@@ -542,20 +541,22 @@ void UnsignedInt::operator -= (UnsignedInt* subtrahend) {
 void UnsignedInt::operator *= (UnsignedInt* multiplicand){
     
     unsigned int s;
+    const unsigned int multiplicant_size = multiplicand->GetSize();
+    const unsigned int size = GetSize();
     UnsignedInt result, t;
     
 
     //THIS MAY SLOW DOWN THE CODE
     //resize *this and result in order to be large enough to host the result
-    Resize(GetSize() + (multiplicand->GetSize()));
-    for(s=GetSize()-(multiplicand->GetSize()); s<GetSize(); s++){
+    Resize(size + multiplicant_size);
+    for(s=size-multiplicant_size; s<size; s++){
         b[s].SetAll(false);
     }
-    result.Resize(GetSize());
+    result.Resize(size);
     //THIS MAY SLOW DOWN THE CODE
     
 
-    for(s=0, result.SetAll(0); s<multiplicand->GetSize(); s++){
+    for(s=0, result.SetAll(0); s<multiplicant_size; s++){
         //multiply by the s-th element of multiplicand: at each step of this loop *this is shifted by one unit to the left
         
         //the temporarly variable t is set equal to the original value of *this multiplyed by 2^s
@@ -572,7 +573,7 @@ void UnsignedInt::operator *= (UnsignedInt* multiplicand){
     }
     
     //during the for loop above, the line result += &t has uselessly increased the size of result -> THIS MAY SLOW DOWN THE CODE -> I resize result to the maximum size it can have after the multiplication 
-    result.Resize(GetSize());
+    result.Resize(size);
     //result now is complete: set *this equal to result
     (*this) = result;
     
@@ -586,6 +587,11 @@ void UnsignedInt::operator += (Bits* addend){
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
+
+    if(carry.Get()!=0){
+        cout << "new size exceeds the max allocated size, issue (Bits addition)" << endl;
+        b.push_back(carry);
+    }
     
     
     // Only normalize if b has more than one entry: if b has exactly one entry,
@@ -681,4 +687,41 @@ UnsignedInt UnsignedInt::Substract(UnsignedInt* subtrahend, Bits* borrow) {
 
     return t;
 
+}
+
+// Adds the bitwise AND of a and mask to this UnsignedInt without creating temporary objects.
+void UnsignedInt::AddAnd(UnsignedInt* a, Bits* mask){
+    Bits carry;
+    carry.Clear();
+
+    const unsigned int size = a->GetSize();
+
+    for (unsigned int p = 0; p < size; ++p)
+    {
+        Bits add_bit = a->b[p] & (*mask);
+
+        Bits new_carry = (b[p] & add_bit) |
+                         (b[p] & carry) |
+                         (add_bit & carry);
+
+        b[p] ^= &add_bit;
+        b[p] ^= &carry;
+
+        carry = new_carry;
+    }
+}
+
+
+// Increment a bit-sliced counter by mask (per-lane 0/1), early-exiting once
+// the carry has died out. Number of iterations needed adapts automatically
+// to however many bit-planes 'counter' was sized with (i.e. to deg).
+void UnsignedInt::IncrementMaskedFast(UnsignedInt& counter, Bits mask) {
+    Bits carry = mask;
+    Bits new_carry;
+    const unsigned int L = counter.GetSize();       // = bits(deg), auto-derived
+    for (unsigned int p = 0; p < L && carry.Get() != 0; ++p) {
+        new_carry = counter[p] & carry;
+        counter[p] ^= &carry;
+        carry = new_carry;
+    }
 }

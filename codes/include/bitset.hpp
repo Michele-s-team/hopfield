@@ -59,12 +59,10 @@ public:
 
     void operator^=(Bits*),operator>>=(UnsignedInt*), operator<<=(UnsignedInt*);
     BitSet& operator=(const BitSet&);
+    void CopyValues(const BitSet&);
     void operator>>=(Bits*), operator<<=(Bits*), operator&=(Bits*);
 
     friend class UnsignedInt;
-    friend class Double;
-    friend class Fraction;
-    friend class SystemBits;
 };
 
 #endif

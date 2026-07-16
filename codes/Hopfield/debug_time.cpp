@@ -130,11 +130,11 @@ void make_dir(const string& path) {
 int main(){
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 7;
+    const int N_sweeps = 1 << 10;
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 
-        32 * 32
+        10 * 10
         //80 * 80
     };
 
@@ -144,7 +144,7 @@ int main(){
          //, 0.20
          };
 
-    vector<double> temperatures = {1.0,2.0, 3.0, 4.0, 5.0, 6.0,  7.0, 8.0, 9.0, 10.0};
+    vector<double> temperatures = {1.0};
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng* ran_bits = gsl_rng_alloc(gsl_rng_gfsr4);
@@ -189,14 +189,12 @@ int main(){
             cout << "------------------------------------------\n";
 
             HopfieldBits bits(N_spins, 1, N_sweeps, P);
-            HopfieldNoBits nobits(N_spins, 1, N_sweeps, P);
 
             for (size_t i = 0; i < temperatures.size(); ++i) {
                 double T = temperatures[i];
                 double beta = 1.0 / T;
 
                 bits.initNetworkFullyConnected();
-                nobits.initNetworkFullyConnected();
 
                 cout << "Network initialized" <<endl;
 
@@ -204,20 +202,16 @@ int main(){
 
                 bits.initSpinsBits(ran);
                 auto initial_config = bits.getSpinsConfig();
-                nobits.initSpinsFromConfig(initial_config);
 
                 cout << "Initial Configuration initialized" <<endl;
 
                 bits.initPatternsBits(ran);
                 cout << "Patterns initialized (bitwise)" <<endl;
                 auto patterns = bits.getPatternsBitsToCanonical();
-                nobits.initPatternsFromConfig(patterns);
 
                 cout << "Patterns initialized" <<endl;
 
                 bits.setBeta(beta);
-
-                nobits.setBeta(beta);
 
                 cout
                     << "N = " << N_spins
@@ -233,7 +227,7 @@ int main(){
                 cout << "bitwise evolution ready"<< endl;
                 gsl_rng_set(ran_bits, 42);    
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps(ran_bits, false, 0, 0);
+                bits.runSweeps_DEBUG(ran_bits, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
 
                 double t_bits =
@@ -241,97 +235,14 @@ int main(){
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
                 cout << "   bitwise   : " << t_bits << " s\n";
-
-                // ----------------------------------------------
-                // Classical implementation
-                // ----------------------------------------------
-                gsl_rng_set(ran_nobits, 42);
-                clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.runSweepsIndependentRNG(ran_nobits, false, 0);
-                clock_gettime(CLOCK_MONOTONIC, &t1);
-
-                double t_nobits =
-                    (t1.tv_sec - t0.tv_sec) +
-                    (t1.tv_nsec - t0.tv_nsec) * 1e-9;
-
-                // ----------------------------------------------
-                // Compute speedup
-                // ----------------------------------------------
-
-                double ratio =
-                    (t_bits > 0.0) ? t_nobits / t_bits : 0.0;
-
-                cout
-                    << "   classical : " << t_nobits << " s\n"
-                    << "   speedup   : " << ratio << '\n';
-
-                out << N_spins << ","
-                    << P << ","
-                    << alpha << ","
-                    << T << ","
-                    << t_bits << ","
-                    << t_nobits << ","
-                    << ratio << "\n";
-
-                out.flush();
-
-                // ============================================================
-                // TIME ACCUMULATION (AJOUT)
-                // ============================================================
-                double t_total = t_bits + t_nobits;
-                total_time_alpha += t_total;
-                total_time_N += t_total;
-                total_time_global += t_total;
-            }
-
-            // ============================================================
-            // PRINT ALPHA TIME (AJOUT)
-            // ============================================================
-            cout << "\n[alpha timing] alpha = "
-                 << alpha
-                 << " | total time = "
-                 << total_time_alpha
-                 << " s\n";
         }
 
-        clock_gettime(CLOCK_MONOTONIC, &t_end);
-
-        double elapsed_N =
-            (t_end.tv_sec - t_start.tv_sec) +
-            (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
-
-        cout << "\n[N timing] N = "
-             << N_spins
-             << " | accumulated = "
-             << total_time_N
-             << " s\n";
-
-        cout << "Finished N = "
-             << N_spins
-             << " in "
-             << elapsed_N
-             << " s\n";
     }
-
-    clock_gettime(CLOCK_MONOTONIC, &t_final);
-
-    double elapsed =
-        (t_final.tv_sec - t_init.tv_sec) +
-        (t_final.tv_nsec - t_init.tv_nsec) * 1e-9;
-
-    cout << "\n=========================================\n";
-    cout << "Total execution time : "
-              << elapsed
-              << " s\n";
-
-    cout << "Total accumulated compute time : "
-         << total_time_global
-         << " s\n";
-
-    cout << "=========================================\n";
 
     out.close();
     gsl_rng_free(ran);
 
     return 0;
+
+    }
 }

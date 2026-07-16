@@ -1,5 +1,5 @@
 //
-//  int.hpp
+//  unsigned_int.hpp
 //  hopfield
 //
 //  Created by Michele on 07/02/2024.
@@ -52,10 +52,9 @@ public:
     void operator += (UnsignedInt*), operator -= (UnsignedInt*), operator *= (UnsignedInt*), operator += (Bits*);
     Bits operator < (const UnsignedInt&), operator <= (UnsignedInt&); 
     UnsignedInt operator + (UnsignedInt*), operator - (UnsignedInt*);
-    UnsignedInt Add(UnsignedInt*, Bits*), Substract(UnsignedInt*, Bits*);
-    
-    friend class Double;
-    
+    UnsignedInt Add(UnsignedInt*, Bits*), Substract(UnsignedInt*, Bits*);    
+    void AddAnd(UnsignedInt*, Bits*);
+    void IncrementMaskedFast(UnsignedInt& counter, Bits mask);
 };
 
 #endif

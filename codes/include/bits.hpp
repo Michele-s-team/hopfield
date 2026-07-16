@@ -42,7 +42,7 @@ public:
     Bits operator ~  (void)        const;
     Bits operator == (const Bits&) const;
     bool equal       (const Bits&) const;
-
+    Bits& operator=(const Bits&);
     void operator &= (const Bits&);
     void operator &= (Bits*);
     void operator ^= (Bits*);

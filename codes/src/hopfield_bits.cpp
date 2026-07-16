@@ -325,87 +325,8 @@ vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
-void HopfieldBits::runSweeps_old(gsl_rng* ran, bool save, double freq){
-    Bits c_ij, mask;
-
-    const int total_sweeps    = getNSweeps();
-    const int progress_stride = max(1, total_sweeps / 10);
-    const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
-
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
-
-    UnsignedInt sum_g          ((unsigned long long) 2 * max_deg * P);
-    UnsignedInt sum_c          ((unsigned long long) max_deg);
-    UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
-    UnsignedInt sum_c_times_2P ((unsigned long long) 2 * max_deg * P);
-    UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
-    UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
-    UnsignedInt tmp            ((unsigned long long) 2 * P);
-    UnsignedInt twoP           ((unsigned long long) 2 * P);
-    twoP.SetAll((unsigned long long) 2 * P);      
-
-    for (int sweep = 0; sweep < total_sweeps; ++sweep){
-        for (int step = 0; step < N; ++step){
-
-            int i      = gsl_rng_uniform_int(ran, N);
-            int deg_i  = neighbor_count[i];
-            int random = randomNumber(ran, deg_i * P, N);
-
-            Bits& S_i = Bits_Spins_Set[i];
-
-            if (random >= P * deg_i) {
-                S_i.ComplementTo();
-                continue;
-            }
-
-            sum_g .SetAll(0);
-            sum_c .SetAll(0);
-            sum_cg.SetAll(0);
-
-            for (int k = 0; k < deg_i; ++k){
-                int j = neighbors[i][k];
-                UnsignedInt& g_ij = Couplings[i][k];
-
-                c_ij = ~(S_i ^ Bits_Spins_Set[j]);
-
-                sum_g += &g_ij;
-                sum_c += &c_ij;
-
-                tmp  = g_ij;
-                tmp &= &c_ij;
-                sum_cg += &tmp;
-            }
-
-            // RHS = P*deg_i + 2*sum_cg
-            RHS  = sum_cg;
-            RHS.MultiplyByTwoTo();
-            RHS += &P_times_Neighbor_Count[i];
-
-            // LHS = random + sum_g + 2P*sum_c
-            LHS  = sum_g;
-            LHS.AddScalar(random);
-            sum_c.Multiply(&twoP, &sum_c_times_2P);
-            LHS += &sum_c_times_2P;
-
-            mask = (RHS <= LHS);
-            S_i ^= &mask;
-        }
-
-        if (save && sweep > 0 && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
-    }
-    cout << "\n";
-}
-
-#include <chrono>
 
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
-    Bits c_ij, mask;
 
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
@@ -413,13 +334,14 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
 
     int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
+    Bits c_ij, mask;
+
     UnsignedInt sum_c          ((unsigned long long) max_deg);
     UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
     UnsignedInt sum_c_times_2P ((unsigned long long) 2 * max_deg * P);
     UnsignedInt LHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
-    UnsignedInt tmp            ((unsigned long long) 2 * P);
-
+    
     const unsigned long long twoP = 2 * P;
 
     // Precompute Σ_j g_ij once
@@ -457,14 +379,11 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
                 sum_c += &c_ij;
-
-                tmp = Couplings[i][k];
-                tmp &= &c_ij;
-                sum_cg += &tmp;
+                sum_cg.AddAnd(&Couplings[i][k], &c_ij);
             }
 
             // RHS = 2*sum_cg + P*deg_i
-            RHS = sum_cg;
+            RHS.CopyValues(sum_cg);
             RHS.MultiplyByTwoTo();
             RHS += &P_times_Neighbor_Count[i];
 
@@ -472,7 +391,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
             sum_c.MultiplyByConstant(twoP, &sum_c_times_2P);
 
             // LHS = random + sum_g + 2P*sum_c
-            LHS = sum_g_persist[i];
+            LHS.CopyValues(sum_g_persist[i]);
             LHS.AddScalar(random);
             LHS += &sum_c_times_2P;
 
@@ -489,7 +408,230 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
                  << flush;
     }
 
-    cout << endl;
+    cout << endl; 
+}
+
+void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shift) {
+    using namespace std::chrono;
+    
+    // ============================================================
+    // Configuration
+    // ============================================================
+    const int total_sweeps = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
+    const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
+    const int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+    
+    // ============================================================
+    // Working variables
+    // ============================================================
+    Bits c_ij, mask;
+    UnsignedInt sum_c((unsigned long long) max_deg);
+    UnsignedInt sum_cg((unsigned long long) 2 * max_deg * P);
+    UnsignedInt sum_c_times_2P((unsigned long long) 2 * max_deg * P);
+    UnsignedInt LHS((unsigned long long) 5 * max_deg * P);
+    UnsignedInt RHS((unsigned long long) 5 * max_deg * P);
+    const unsigned long long twoP = 2 * P;
+    
+    // ============================================================
+    // Profiling
+    // ============================================================
+    struct TimerData {
+        double time = 0.0;
+        unsigned long long calls = 0;
+        
+        void add(double t) { time += t; calls++; }
+        double average() const { return calls ? time / calls : 0.0; }
+    };
+    
+    TimerData t_precompute, t_cij, t_sum_c, t_addand;
+    TimerData t_rhs_copy, t_rhs_mult, t_rhs_add;
+    TimerData t_multiply, t_lhs_copy, t_lhs_scalar, t_lhs_add;
+    TimerData t_compare, t_spin_update, t_save;
+    
+    auto total_start = high_resolution_clock::now();
+    
+    // ============================================================
+    // Precompute sum_g_persist
+    // ============================================================
+    auto pre_start = high_resolution_clock::now();
+    vector<UnsignedInt> sum_g_persist(N);
+    
+    for (int i = 0; i < N; ++i) {
+        sum_g_persist[i] = UnsignedInt((unsigned long long)2 * max_deg * P);
+        sum_g_persist[i].SetAll(0);
+        
+        for (int k = 0; k < neighbor_count[i]; ++k)
+            sum_g_persist[i] += &Couplings[i][k];
+    }
+    
+    t_precompute.add(duration<double>(high_resolution_clock::now() - pre_start).count());
+    
+    // ============================================================
+    // Main simulation
+    // ============================================================
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
+        for (int step = 0; step < N; ++step) {
+            int i = gsl_rng_uniform_int(ran, N);
+            int deg_i = neighbor_count[i];
+            int random = randomNumber(ran, deg_i * P, N);
+            Bits& S_i = Bits_Spins_Set[i];
+            
+            // Random spin flip without neighbor calculation
+            if (random >= P * deg_i) {
+                auto start = high_resolution_clock::now();
+                S_i.ComplementTo();
+                t_spin_update.add(duration<double>(high_resolution_clock::now() - start).count());
+                continue;
+            }
+            
+            sum_c.SetAll(0);
+            sum_cg.SetAll(0);
+            
+            // ====================================================
+            // Neighbor loop
+            // ====================================================
+            for (int k = 0; k < deg_i; ++k) {
+                int j = neighbors[i][k];
+                volatile unsigned long long sink = 0;
+                
+                // Compute c_ij = ~(S_i ^ S_j)
+                auto cij_start = high_resolution_clock::now();
+                for (int r = 0; r < 1000; ++r) {
+                    c_ij = ~(S_i ^ Bits_Spins_Set[j]);
+                    sink ^= c_ij.Get();
+                }
+                t_cij.add(duration<double>(high_resolution_clock::now() - cij_start).count() / 1000.0);
+                
+                // Accumulate sum_c
+                auto sum_start = high_resolution_clock::now();
+                UnsignedInt tmp = sum_c;
+                for (int r = 0; r < 1000; ++r) {
+                    tmp = sum_c;
+                    tmp += &c_ij;
+                    sink ^= tmp.Get(0);
+                }
+                t_sum_c.add(duration<double>(high_resolution_clock::now() - sum_start).count() / 1000.0);
+                
+                // Accumulate sum_cg
+                auto add_start = high_resolution_clock::now();
+                sum_cg.AddAnd(&Couplings[i][k], &c_ij);
+                t_addand.add(duration<double>(high_resolution_clock::now() - add_start).count());
+            }
+            
+            // ====================================================
+            // RHS calculation: RHS = (2 * sum_cg) + P_times_Neighbor_Count[i]
+            // ====================================================
+            auto rhs_copy_start = high_resolution_clock::now();
+            RHS.CopyValues(sum_cg);
+            t_rhs_copy.add(duration<double>(high_resolution_clock::now() - rhs_copy_start).count());
+            
+            auto rhs_mult_start = high_resolution_clock::now();
+            RHS.MultiplyByTwoTo();
+            t_rhs_mult.add(duration<double>(high_resolution_clock::now() - rhs_mult_start).count());
+            
+            auto rhs_add_start = high_resolution_clock::now();
+            RHS += &P_times_Neighbor_Count[i];
+            t_rhs_add.add(duration<double>(high_resolution_clock::now() - rhs_add_start).count());
+            
+            // ====================================================
+            // LHS calculation: LHS = sum_g_persist[i] + random + (2P * sum_c)
+            // ====================================================
+            auto mult_start = high_resolution_clock::now();
+            sum_c.MultiplyByConstant(twoP, &sum_c_times_2P);
+            t_multiply.add(duration<double>(high_resolution_clock::now() - mult_start).count());
+            
+            auto lhs_copy_start = high_resolution_clock::now();
+            LHS.CopyValues(sum_g_persist[i]);
+            t_lhs_copy.add(duration<double>(high_resolution_clock::now() - lhs_copy_start).count());
+            
+            auto lhs_scalar_start = high_resolution_clock::now();
+            LHS.AddScalar(random);
+            t_lhs_scalar.add(duration<double>(high_resolution_clock::now() - lhs_scalar_start).count());
+            
+            auto lhs_add_start = high_resolution_clock::now();
+            LHS += &sum_c_times_2P;
+            t_lhs_add.add(duration<double>(high_resolution_clock::now() - lhs_add_start).count());
+            
+            // ====================================================
+            // Decision and spin update
+            // ====================================================
+            auto compare_start = high_resolution_clock::now();
+            mask = (RHS <= LHS);
+            t_compare.add(duration<double>(high_resolution_clock::now() - compare_start).count());
+            
+            auto update_start = high_resolution_clock::now();
+            S_i ^= &mask;
+            t_spin_update.add(duration<double>(high_resolution_clock::now() - update_start).count());
+            
+        } // end step loop
+        
+        // ========================================================
+        // Save and progress
+        // ========================================================
+        if (save && sweep > 0 && (sweep % save_stride == 0)) {
+            auto save_start = high_resolution_clock::now();
+            SaveSpinConfigurations(sweep);
+            t_save.add(duration<double>(high_resolution_clock::now() - save_start).count());
+        }
+        
+        if ((sweep + 1) % progress_stride == 0) {
+            cout << "\rSweep: " << sweep + 1 
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    " << flush;
+        }
+    } // end sweep loop
+    
+    // ============================================================
+    // Final profiling report
+    // ============================================================
+    auto total_end = high_resolution_clock::now();
+    double total_time = duration<double>(total_end - total_start).count();
+    
+    auto print_timer = [&](const string& name, const TimerData& t) {
+        double percent = total_time > 0 ? 100.0 * t.time / total_time : 0.0;
+        double avg_ns = t.average() * 1e9;
+        
+        cout << setw(35) << left << name
+             << " calls = " << setw(12) << t.calls
+             << " time = " << setw(12) << scientific << t.time << " s   "
+             << fixed << setprecision(3) << percent << "%   "
+             << "avg = " << avg_ns << " ns" << endl;
+    };
+    
+    cout << "\n\n";
+    cout << "==================================================\n";
+    cout << "                 PROFILING REPORT\n";
+    cout << "==================================================\n\n";
+    
+    cout << "TOTAL EXECUTION TIME : " << fixed << setprecision(6) 
+         << total_time << " s\n\n";
+    
+    cout << "---------------- PRECOMPUTATION ----------------\n";
+    print_timer("sum_g_persist construction", t_precompute);
+    
+    cout << "\n---------------- NEIGHBOURS --------------------\n";
+    print_timer("c_ij = ~(S_i ^ S_j)", t_cij);
+    print_timer("sum_c += c_ij", t_sum_c);
+    print_timer("sum_cg.AddAnd", t_addand);
+    
+    cout << "\n---------------- RHS ----------------------------\n";
+    print_timer("RHS.CopyValues", t_rhs_copy);
+    print_timer("RHS.MultiplyByTwoTo", t_rhs_mult);
+    print_timer("RHS += P_times_neighbor", t_rhs_add);
+    
+    cout << "\n---------------- LHS ----------------------------\n";
+    print_timer("sum_c.MultiplyByConstant", t_multiply);
+    print_timer("LHS.CopyValues", t_lhs_copy);
+    print_timer("LHS.AddScalar", t_lhs_scalar);
+    print_timer("LHS += sum_c_times_2P", t_lhs_add);
+    
+    cout << "\n---------------- UPDATE -------------------------\n";
+    print_timer("RHS <= LHS comparison", t_compare);
+    print_timer("Spin update ^= mask", t_spin_update);
+    
+    cout << "\n---------------- OUTPUT -------------------------\n";
+    print_timer("SaveSpinConfigurations", t_save);
+    cout << "\n";
 }
 
 // =====================================================

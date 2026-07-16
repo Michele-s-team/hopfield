@@ -42,9 +42,9 @@ void Metropolis::setBeta(double new_beta) {
 // RANDOM NUMBER GENERATION
 // =====================================================
 
-int Metropolis::randomNumber(gsl_rng* ran, int max_neighbor_count, double factor) {
+int Metropolis::randomNumber(gsl_rng* ran, int max, double factor) {
     return static_cast<int>(
-        min(static_cast<double>(max_neighbor_count),
+        min(static_cast<double>(max),
             factor * inv2beta * gsl_ran_exponential(ran, 1.0))
     );
 }

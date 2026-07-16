@@ -60,8 +60,8 @@ public:
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
-    void runSweeps_time_debug(gsl_rng* ran, bool save);
-    void runSweeps(gsl_rng*, bool save, double, int shift);
+    void runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shift);
+    void runSweeps(gsl_rng* ran, bool save, double freq, int shift);
     void runSweeps_old(gsl_rng*, bool save, double);
 };
 
