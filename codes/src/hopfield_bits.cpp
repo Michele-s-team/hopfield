@@ -514,7 +514,6 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     Bits carry_L, borrow_L;   // carry/borrow dédiés à sum_L
     Bits carry_c;
 
-    Bits carry_delta;
     Bits borrow_delta;
 
     UnsignedInt sum_c          ((unsigned long long) P);
@@ -535,9 +534,6 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 
     UnsignedInt TwoP  ((unsigned long long) 2*P);
     TwoP.SetAll(2*P);
-
-    UnsignedInt delta((unsigned long long)2 * P);
-    delta.SetAll(2 * P);
 
     UnsignedInt sum_L ((unsigned long long) 2*N*P);
     sum_L.SetAll(0);

@@ -22,7 +22,7 @@ int HopfieldNoBits::DeltaE(int spin, int r) {
     int sum = 0.0;
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];
-        sum += couplings[spin][k][r] * spins_set[r * N + j];
+        sum += couplings[spin][k*n_bits+r] * spins_set[r * N + j];
     }
     return spins_set[r * N + spin] * sum;
 }
@@ -37,7 +37,7 @@ void HopfieldNoBits::DeltaE_all(int spin, vector<int>& delta_E) {
     for (int k = 0; k < neighbors[spin].size(); ++k) {
         int j = neighbors[spin][k];
         for (int r = 0; r < n_bits; ++r) {
-            delta_E[r] += couplings[spin][k][r] * spins_set[r * N + j];
+            delta_E[r] += couplings[spin][k*n_bits+r] * spins_set[r * N + j];
         }
     }
     for (int r = 0; r < n_bits; ++r) {

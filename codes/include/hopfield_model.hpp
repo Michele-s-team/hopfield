@@ -23,8 +23,8 @@ protected:
     int P;                                    // number of patterns
     vector<int> patterns;                  // index : i * P * n_bits + mu * n_bits + r
 
-    vector<vector<vector<int>>> couplings;    // couplings [i][k][r] for each replica
-    vector<vector<int>> overlaps;             // overlaps [mu][r] for each replica
+    vector<vector<int>> couplings;         // couplings[i][k * n_bits + r]
+    vector<int> overlaps;                  // overlaps[mu * n_bits + r]
         
 public:
     
@@ -41,7 +41,7 @@ public:
     
     // Couplings initialization (from patterns)
     void initCouplings();
-    vector<vector<vector<int>>> getCouplingsConfig();
+    vector<vector<int>> getCouplingsConfig();
 
     void compute_overlaps();
 

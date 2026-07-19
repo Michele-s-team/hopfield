@@ -59,38 +59,35 @@ void HopfieldModel::initPatterns(gsl_rng* ran) {
 
 // Initializes the Couplings depending on the patterns (Hebb rule)
 void HopfieldModel::initCouplings(){
-    // Allocate couplings: N spins, each with neighbor list size, times n_bits replicas
+    // Allocate one flat array per spin
+    couplings.resize(N);
     for (int spin = 0; spin < N; ++spin) {
-        couplings[spin].assign(
-            neighbors[spin].size(),
-            vector<int>(n_bits, 0)
-        );
+        couplings[spin].assign(neighbor_count[spin] * n_bits, 0);
     }
 
-    // Hebb rule: each edge computed once (spin < nb), then mirrored
-    for (int spin = 0; spin < N; ++spin){
-        for (int i = 0; i < (int)neighbors[spin].size(); ++i){
-            int nb = neighbors[spin][i];
-
+    // Hebb rule: compute each edge once (spin < nb), then mirror
+    for (int spin = 0; spin < N; ++spin) {
+        for (int k = 0; k < neighbor_count[spin]; ++k) {
+            int nb = neighbors[spin][k];
             if (nb <= spin)
-                continue;  // skip already-filled edges
-
-            auto& J = couplings[spin][i];
-
-            for (int r = 0; r < n_bits; ++r){
-                J[r] = 0;
-
-                for (int mu = 0; mu < P; ++mu)
-                {
-                    J[r] += patterns[spin * P * n_bits + mu * n_bits+ r] * patterns[nb * P * n_bits + mu * n_bits+ r]; 
+                continue;
+            for (int r = 0; r < n_bits; ++r) {
+                int J = 0;
+                for (int mu = 0; mu < P; ++mu) {
+                    J += patterns[spin * P * n_bits + mu * n_bits + r]
+                       * patterns[nb   * P * n_bits + mu * n_bits + r];
                 }
+                couplings[spin][k * n_bits + r] = J;
             }
-
-            // Mirror onto neighbor
-            couplings[nb][neighbor_index(nb, spin)] = J;
+            // Mirror onto neighbour
+            int k_mirror = neighbor_index(nb, spin);
+            std::copy_n(
+                &couplings[spin][k * n_bits],
+                n_bits,
+                &couplings[nb][k_mirror * n_bits]
+            );
         }
     }
-    cout << endl;
 }
 
 
@@ -107,7 +104,7 @@ vector<int> HopfieldModel::getPatterns() {
 }
 
 // Return a copy of the full coupling tensor
-vector<vector<vector<int>>> HopfieldModel::getCouplingsConfig() {
+vector<vector<int>> HopfieldModel::getCouplingsConfig() {
     return couplings;
 }
 
@@ -116,7 +113,7 @@ void HopfieldModel::compute_overlaps(){
     for (int mu=0; mu<P; mu++){
         for (int r=0; r<n_bits; r++){
             for (int spin=0; spin<N; spin++){
-                overlaps[mu][r]+=spins_set[r*N+spin]*patterns[spin * P * n_bits + mu * n_bits+ r];
+                overlaps[mu *n_bits +r]+=spins_set[r*N+spin]*patterns[spin * P * n_bits + mu * n_bits+ r];
             }
         }
  
