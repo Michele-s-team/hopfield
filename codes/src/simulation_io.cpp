@@ -142,20 +142,18 @@ void SimulationIO::SaveSpinConfigurations(int sweep, const vector<vector<uint64_
 
 void SimulationIO::SavePatterns(
     const std::string& folder,
-    const std::vector<std::vector<std::vector<int>>>& patterns,
-    int N)
-{
+    const std::vector<int>& patterns,
+    int N, int P){
     namespace fs = std::filesystem;
     fs::path base_folder(folder);
     fs::path full_folder = base_folder / "patterns";
     fs::create_directories(full_folder);
 
-    const int P = patterns.size();
     const int n_blocks = num_blocks(N);
     std::vector<int> binary(N);
 
-    for (int r = 0; r < n_bits; ++r)
-    {
+    for (int r = 0; r < n_bits; ++r) {
+
         fs::path path =
             full_folder /
             ("patterns_r" + std::to_string(r) + ".csv");
@@ -163,18 +161,17 @@ void SimulationIO::SavePatterns(
         if (!file)
             continue;
 
-        file << "p";
+        file << "mu";
         for (int b = 0; b < n_blocks; ++b)
             file << ",block" << b;
         file << "\n";
 
-        for (int p = 0; p < P; ++p)
-        {
-            file << p;
+        for (int mu = 0; mu < P; ++mu){
+            file << mu;
             for (int i = 0; i < N; ++i)
-                binary[i] = SpinToBit(patterns[p][i][r]);
-            for (int b = 0; b < n_blocks; ++b)
-            {
+                binary[i] = SpinToBit(patterns[(i * P + mu) * n_bits + r]);
+
+            for (int b = 0; b < n_blocks; ++b) {
                 int start = b * BITS_PER_BLOCK;
                 int end   = std::min(N, start + BITS_PER_BLOCK);
                 uint64_t config = PackBlock(binary.data(), start, end);

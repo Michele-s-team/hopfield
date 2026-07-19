@@ -40,8 +40,8 @@ void HopfieldBits::fromCanonical() {
     for (int spin = 0; spin < N; ++spin) {
         Bits spin_tmp;
         for (int r = 0; r < n_bits; ++r) {
-            int spin = (spins_set[r * N + spin] + 1) / 2;
-            spin_tmp.Set(r, spin);
+            int bit = (spins_set[r * N + spin] + 1) / 2;
+            spin_tmp.Set(r, bit);
         }
         Bits_Spins_Set.push_back(spin_tmp);
 
@@ -58,18 +58,17 @@ void HopfieldBits::fromCanonical() {
     // 2. Convert patterns
     // =====================================================
     Patterns.clear();
-    Patterns.resize(P);
+    Patterns.resize(P*N);
     for (int mu = 0; mu < P; ++mu) {
-        Patterns[mu].resize(N);
         for (int spin = 0; spin < N; ++spin) {
             Bits pat_tmp;
             for (int r = 0; r < n_bits; ++r) {
-                pat_tmp.Set(r, (patterns[mu][spin][r] + 1) / 2);
+                pat_tmp.Set(r, (patterns[spin * P * n_bits + mu * n_bits+ r] + 1) / 2);
             }
-            Patterns[mu][spin] = pat_tmp;
+            Patterns[spin*P+mu] = pat_tmp;
         }
     }
-
+    /*
     // =====================================================
     // 3. Convert couplings
     // =====================================================
@@ -87,6 +86,7 @@ void HopfieldBits::fromCanonical() {
             Couplings[spin].push_back(coupling_tmp);
         }
     }
+    */
 }
 
 // bit representation {0,1} -> canonical spins {-1,+1}
@@ -140,15 +140,13 @@ void HopfieldBits::initSpinMetadataBits() {
 // patterns[mu][spin] is a Bits word: bit r = (xi^p_i^r + 1) / 2 in {0,1}
 void HopfieldBits::initPatternsBits(gsl_rng* ran) {
     Patterns.clear();
-    Patterns.resize(P);
+    Patterns.resize(P*N);
     for (int mu = 0; mu < P; ++mu) {
-        Patterns[mu].resize(N);
         for (int spin = 0; spin < N; ++spin) {
             for (int r = 0; r < n_bits; ++r)
-                Patterns[mu][spin].Set(r, randomBit(ran));
+                Patterns[spin*P + mu].Set(r, randomBit(ran));
         }
     }
-    initCouplingsBits();
 }
 
 
@@ -168,34 +166,24 @@ void HopfieldBits::initPatternsBits(gsl_rng* ran) {
 // once per spin spin (outside the r loop) and apply it to all r — see the
 // commented alternative below.
 
-vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& pattern,
-                                           double flip_fraction,
-                                           gsl_rng* ran) const {
-
-    vector<Bits> corrupted = pattern; // copy, size N
+vector<Bits> HopfieldBits::corruptPattern( const vector<Bits>& Patterns,
+    int mu, double flip_fraction, gsl_rng* ran) const {
+    vector<Bits> corrupted = Patterns;
 
     for (int spin = 0; spin < N; ++spin) {
-
-        // --- Option 1 (default): independent noise per replica ---
         for (int r = 0; r < n_bits; ++r) {
+
             if (gsl_rng_uniform(ran) < flip_fraction) {
-                int bit = corrupted[spin].Get(r);
-                corrupted[spin].Set(r, 1 - bit);
+
+                int bit = corrupted[spin*P + mu].Get(r);
+                corrupted[spin*P + mu].Set(r, 1-bit);
+
             }
         }
-
-        // --- Option 2: same flip mask shared across all replicas ---
-        // if (gsl_rng_uniform(ran) < flip_fraction) {
-        //     for (int r = 0; r < n_bits; ++r) {
-        //         int bit = corrupted[spin].Get(r);
-        //         corrupted[spin].Set(r, 1 - bit);
-        //     }
-        // }
     }
 
     return corrupted;
 }
-
 
 // Initialize Couplings directly in bit-sliced representation via Hebb rule,
 // without ever building the scalar couplings[][][] tensor.
@@ -220,7 +208,7 @@ void HopfieldBits::initCouplingsBits() {
             Couplings[spin][k].SetAll((unsigned long long) 0);
 
             for (int mu = 0; mu < P; ++mu) {
-                Bits prod = ~(Patterns[mu][spin] ^ Patterns[mu][j]);
+                Bits prod = ~(Patterns[spin*P+mu] ^ Patterns[j*P+mu]);
                 Couplings[spin][k] += &prod;
             }
             Couplings[spin][k].MultiplyByTwoTo();
@@ -235,9 +223,8 @@ void HopfieldBits::initCouplingsBits() {
 
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.
-void HopfieldBits::initPatternsFromConfigBits(const vector<vector<Bits>>& Config) {
+void HopfieldBits::initPatternsFromConfigBits(const vector<Bits>& Config) {
     Patterns = Config;
-    initCouplingsBits();
 }
 
 void HopfieldBits::initSpinsFromConfigBits(const vector<Bits>& Config) {
@@ -246,7 +233,7 @@ void HopfieldBits::initSpinsFromConfigBits(const vector<Bits>& Config) {
 }
 
 // Return a copy of the full pattern tensor
- vector<vector<Bits>> HopfieldBits::getPatternsBits() {
+ vector<Bits> HopfieldBits::getPatternsBits() {
     return Patterns;
 }
 
@@ -292,27 +279,27 @@ void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
         }
     }
 }
-// Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[mu][spin][r] in {-1,+1}
-vector<vector<vector<int>>> HopfieldBits::getPatternsBitsToCanonical() {
-    vector<vector<vector<int>>> result(P, vector<vector<int>>(N, vector<int>(n_bits, 0)));
-    for (int mu = 0; mu < P; ++mu)
-        for (int spin = 0; spin < N; ++spin)
+// Convert Patterns (bit-sliced) back to canonical scalar tensor patterns[spin * P * n_bits + mu * n_bits + r] in {-1,+1}
+vector<int> HopfieldBits::getPatternsBitsToCanonical() {
+    vector<int> result(P*n_bits*N);
+    for (int spin = 0; spin < N; ++spin)
+        for (int mu = 0; mu < P; ++mu)
             for (int r = 0; r < n_bits; ++r)
-                result[mu][spin][r] = -1 + 2 * Patterns[mu][spin].Get(r);
+                result[spin * P * n_bits + mu * n_bits + r] = -1 + 2 * Patterns[spin*P+mu].Get(r);
     return result;
 }
 
-void HopfieldBits::compute_shifted_overalps(){
-    UnsignedInt sum(2*N);
+void HopfieldBits::compute_shifted_overlaps(){
+    Shifted_Overlaps.clear();
+    Shifted_Overlaps.reserve(P);
     Bits c_ij, carry;
-    for (int mu=0; mu < P; mu++){
+    for (int mu = 0; mu < P; mu++){
+        UnsignedInt sum(2*N);
         sum.SetAll(0);
-        c_ij.Set(0);
         for (int spin = 0; spin < N; spin++){
             carry.Set(0);
-            c_ij = ~(Patterns[mu][spin]^ Bits_Spins_Set[spin]);
+            c_ij = ~(Patterns[spin*P+mu] ^ Bits_Spins_Set[spin]);
             sum.AddTo(&c_ij, &carry);
-      
         }
         sum.MultiplyByTwoTo();
         Shifted_Overlaps.push_back(sum);
@@ -360,10 +347,11 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
     UnsignedInt RHS            ((unsigned long long) 5 * max_deg * P);
     UnsignedInt tmp          ((unsigned long long) max_deg * P);
 
-    Bits         c_terms[MaxDeg];
+    const unsigned long long twoP = 2 * P;
+
+    /*Bits         c_terms[MaxDeg];
     UnsignedInt  cg_terms[MaxDeg];
     
-    const unsigned long long twoP = 2 * P;
 
     // Buffers scratch pour CSAReduceBits, alloués une seule fois
     Bits bucketsScratch[MaxWidth][MaxDeg];
@@ -378,6 +366,7 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
         csaScratchCarry[i] = UnsignedInt(2 * max_deg * P);
         csaBuf[i]          = UnsignedInt(2 * max_deg * P);
     }
+    */
 
     // Precompute Σ_j g_ij once
     vector<UnsignedInt> sum_g_persist(N);
@@ -486,7 +475,7 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 
         for (int spin = 0; spin < N; spin++) {
             carry.Set(0);
-            c_ij = ~(Patterns[mu][spin] ^ Bits_Spins_Set[spin]);
+            c_ij = ~(Patterns[spin*P+mu] ^ Bits_Spins_Set[spin]); 
             fresh.AddTo(&c_ij, &carry);
         }
         fresh.MultiplyByTwoTo();
@@ -512,7 +501,7 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 
 void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int shift){
 
-    compute_shifted_overalps();
+    compute_shifted_overlaps();
     cout << "Shifted overlaps computed"<< endl;
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
@@ -584,7 +573,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
                     borrow_g.Set(0);
                     borrow_L.Set(0);
 
-                    c_i_mu = ~(S_i ^ Patterns[mu][spin]);
+                    c_i_mu = ~(S_i ^ Patterns[spin*P+mu]);
 
                     Shifted_Overlaps[mu].AddTo(&Two, &carry_g);
                     sum_L.AddTo(&Two, &carry_L);
@@ -610,7 +599,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
                 //cout << "         " << mu << endl;
                 carry_c.Set(0);
 
-                c_cache[mu] = ~(S_i ^ Patterns[mu][spin]);
+                c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
 
                 sum_c.AddTo(&c_cache[mu], &carry_c);
                 sum_cl.AddAnd(&Shifted_Overlaps[mu], &c_cache[mu]);
@@ -682,7 +671,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 
 void HopfieldBits::runSweeps_overlaps_old(gsl_rng* ran, bool save, double freq, int shift){
 
-    compute_shifted_overalps();
+    compute_shifted_overlaps();
     cout << "Shifted overlaps computed" << endl;
 
     const int total_sweeps = getNSweeps();
@@ -744,7 +733,7 @@ void HopfieldBits::runSweeps_overlaps_old(gsl_rng* ran, bool save, double freq, 
                     borrow_g.Set(0);
                     borrow_L.Set(0);
 
-                    c_i_mu = ~(S_i ^ Patterns[mu][spin]);
+                    c_i_mu = ~(S_i ^ Patterns[spin*P+mu]);
 
                     Shifted_Overlaps[mu].AddTo(&Two,&carry_g);
                     sum_L.AddTo(&Two,&carry_L);
@@ -773,7 +762,7 @@ void HopfieldBits::runSweeps_overlaps_old(gsl_rng* ran, bool save, double freq, 
 
                 carry_c.Set(0);
 
-                c_i_mu = ~(S_i ^ Patterns[mu][spin]);
+                c_i_mu = ~(S_i ^ Patterns[spin*P+mu]);
 
                 sum_c.AddTo(&c_i_mu,&carry_c);
                 sum_cl.AddAnd(&Shifted_Overlaps[mu],&c_i_mu);
@@ -805,7 +794,7 @@ void HopfieldBits::runSweeps_overlaps_old(gsl_rng* ran, bool save, double freq, 
                 carry_g.Set(0);
                 borrow_g.Set(0);
 
-                c_i_mu = ~(S_i ^ Patterns[mu][spin]);
+                c_i_mu = ~(S_i ^ Patterns[spin*P+mu]);
                 c_i_mu &= mask;
 
 
@@ -1109,8 +1098,8 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){
     initSpinsBits(ran);
     cout << "Bitwise initialization done" << endl;
 
-    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
-    SavePatterns(patterns);
+    vector<int> patterns = getPatternsBitsToCanonical();
+    SavePatterns(patterns, P);
     cout << "Patterns saved" << endl;
 
     OpenSpinFiles();
@@ -1124,11 +1113,10 @@ void HopfieldBits::evolve_save_bits(gsl_rng* ran, double freq){
 // Run simulation without saving — fully bitwise initialization
 void HopfieldBits::evolve_bits(gsl_rng* ran){
     initPatternsBits(ran);
-    initCouplingsBits();
     initSpinsBits(ran);
 
-    vector<vector<vector<int>>> patterns = getPatternsBitsToCanonical();
-    SavePatterns(patterns);
+    vector<int> patterns = getPatternsBitsToCanonical();
+    SavePatterns(patterns, P);
     cout << "Patterns saved" << endl;
 
     OpenSpinFiles();

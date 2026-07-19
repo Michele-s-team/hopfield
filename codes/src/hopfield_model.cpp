@@ -21,7 +21,7 @@ HopfieldModel::HopfieldModel(int N, double beta, int N_sweeps, int P)
     : SimulationBase(N, beta, N_sweeps), P(P)
 {
     // Initialize patterns and couplings
-    patterns.assign(P, vector<vector<int>>(N, vector<int>(n_bits, 0)));
+    patterns.assign(n_bits * N* P, 0);
     couplings.assign(N, {});
 }
 
@@ -44,13 +44,13 @@ int HopfieldModel::neighbor_index(int spin, int target) const {
 // Initialize P random patterns (±1 random value for each neuron of the network) 
 // for the n_bits realizations
 void HopfieldModel::initPatterns(gsl_rng* ran) {
-    for (int p = 0; p < P; p++){
+    for (int mu = 0; mu < P; mu++){
         for (int i = 0; i < N; i++) {
             for (int r = 0; r < n_bits; r++)
-                patterns[p][i][r] = randomSpin(ran);
+                patterns[i * P * n_bits + mu * n_bits+ r] = randomSpin(ran);
         }
     }
-    initCouplings();
+    //initCouplings();
 }
 
 // =====================================================
@@ -80,9 +80,9 @@ void HopfieldModel::initCouplings(){
             for (int r = 0; r < n_bits; ++r){
                 J[r] = 0;
 
-                for (int p = 0; p < P; ++p)
+                for (int mu = 0; mu < P; ++mu)
                 {
-                    J[r] += patterns[p][spin][r] * patterns[p][nb][r];
+                    J[r] += patterns[spin * P * n_bits + mu * n_bits+ r] * patterns[nb * P * n_bits + mu * n_bits+ r]; 
                 }
             }
 
@@ -96,13 +96,13 @@ void HopfieldModel::initCouplings(){
 
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.
-void HopfieldModel::initPatternsFromConfig(vector<vector<vector<int>>> config) {
+void HopfieldModel::initPatternsFromConfig(vector<int> config) {
     patterns = config;
     initCouplings();
 }
 
 // Return a copy of the full pattern tensor
-vector<vector<vector<int>>> HopfieldModel::getPatterns() {
+vector<int> HopfieldModel::getPatterns() {
     return patterns;
 }
 
@@ -116,7 +116,7 @@ void HopfieldModel::compute_overlaps(){
     for (int mu=0; mu<P; mu++){
         for (int r=0; r<n_bits; r++){
             for (int spin=0; spin<N; spin++){
-                overalps[mu][r]+=spins_set[r*N+spin]*patterns[mu][spin][r];
+                overlaps[mu][r]+=spins_set[r*N+spin]*patterns[spin * P * n_bits + mu * n_bits+ r];
             }
         }
  

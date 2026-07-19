@@ -184,12 +184,12 @@ int main() {
             bits.initPatternsBits(ran);
             auto Patterns = bits.getPatternsBits();
             int mu = gsl_rng_uniform_int(ran, P);
-            auto corrupted = bits.corruptPattern(Patterns[mu], 5.0/100.0, ran);
+            auto corrupted = bits.corruptPattern(Patterns, mu, 5.0/100.0, ran);
             bits.initSpinsFromConfigBits(corrupted);
             cout << "Bitwise initialization done" << endl;
 
-            vector<vector<vector<int>>> patterns = bits.getPatternsBitsToCanonical();
-            bits.SavePatterns(patterns);
+            vector<int> patterns = bits.getPatternsBitsToCanonical();
+            bits.SavePatterns(patterns, P);
             cout << "Patterns saved" << endl;
 
             bits.OpenSpinFiles();

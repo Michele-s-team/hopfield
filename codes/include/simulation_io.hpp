@@ -35,7 +35,7 @@ string m_base_folder;
 
     void SaveMagnetizations(const int sweep, const vector<double>& magnetizations);
     void SaveSpinConfigurations(int sweep, const vector<vector<uint64_t>>& configs);
-    void SavePatterns(const string& folder,const vector<vector<vector<int>>>& patterns, int N);
+    void SavePatterns(const string& folder,const vector<int>& patterns, int N, int P);
 
 
     void check_equality_configs(const vector<int>& neurons_before,

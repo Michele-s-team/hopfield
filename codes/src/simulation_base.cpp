@@ -124,8 +124,8 @@ void SimulationBase::SaveSpinConfigurations(int sweep){
     m_io.SaveSpinConfigurations(sweep, configs);
 }
 
-void SimulationBase::SavePatterns(const vector<vector<vector<int>>>& patterns){
-    m_io.SavePatterns(m_base_folder, patterns, N);
+void SimulationBase::SavePatterns(const vector<int>& patterns, int P){
+    m_io.SavePatterns(m_base_folder, patterns, N, P);
 }
 
 // =====================================================

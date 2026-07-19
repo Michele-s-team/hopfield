@@ -70,6 +70,7 @@ int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const int L         = 32;           // lattice size (L×L spins)
+    const int N         = L* L;
     const double beta   = 5;           // inverse temperature
     const int N_sweeps  = 1 << 10;       // number of Metropolis sweeps
 
@@ -126,12 +127,19 @@ int main() {
         clock_t start_bits = clock();
         bits.initPatternsBits(ran);
         auto Patterns = bits.getPatternsBits();
+
         int mu = gsl_rng_uniform_int(ran, P);
-        bits.initSpinsFromConfigBits(Patterns[mu]);
+
+        vector<Bits> Config(N);
+
+        for (int spin = 0; spin < N; ++spin)
+            Config[spin] = Patterns[spin*P + mu];
+
+        bits.initSpinsFromConfigBits(Config);
         cout << "Bitwise initialization done" << endl;
 
-        vector<vector<vector<int>>> patterns = bits.getPatternsBitsToCanonical();
-        bits.SavePatterns(patterns);
+        vector<int> patterns = bits.getPatternsBitsToCanonical();
+        bits.SavePatterns(patterns, P);
         cout << "Patterns saved" << endl;
 
         bits.OpenSpinFiles();

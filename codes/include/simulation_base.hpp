@@ -50,7 +50,7 @@ public:
     void CloseSpinFiles();
     void SaveSpinConfigurations(int sweep);
 
-    void SavePatterns(const vector<vector<vector<int>>>& patterns);
+    void SavePatterns(const vector<int>& patterns, int P);
     
     static string format_beta(double beta);
 
