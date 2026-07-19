@@ -205,7 +205,7 @@ int main(){
                 cout  << "nobits shared RNG: " << endl;
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.runSweepsSharedRNG(ran_evolve, false, 0);
+                nobits.runSweepsSharedRNG_overlaps(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 
                 double t_nobits_shared =
@@ -229,7 +229,7 @@ int main(){
 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.runSweepsIndependentRNG(ran_evolve, false, 0);
+                nobits.runSweepsIndependentRNG_overlaps(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                
 

@@ -22,6 +22,7 @@ HopfieldModel::HopfieldModel(int N, double beta, int N_sweeps, int P)
 {
     // Initialize patterns and couplings
     patterns.assign(n_bits * N* P, 0);
+    overlaps.assign(n_bits * P, 0);
     couplings.assign(N, {});
 }
 
@@ -95,7 +96,7 @@ void HopfieldModel::initCouplings(){
 // Allows two model instances to share the exact same disorder realization.
 void HopfieldModel::initPatternsFromConfig(vector<int> config) {
     patterns = config;
-    initCouplings();
+    //initCouplings();
 }
 
 // Return a copy of the full pattern tensor
@@ -110,6 +111,7 @@ vector<vector<int>> HopfieldModel::getCouplingsConfig() {
 
 
 void HopfieldModel::compute_overlaps(){
+    std::fill(overlaps.begin(), overlaps.end(), 0);
     for (int mu=0; mu<P; mu++){
         for (int r=0; r<n_bits; r++){
             for (int spin=0; spin<N; spin++){

@@ -26,12 +26,18 @@ public:
     void evolve_save(gsl_rng*, double freq);
 
     void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
+    void runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq);
+
     void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
+    void runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq);
 
 private:
 
     int DeltaE(int spin, int realization);
     void DeltaE_all(int spin, vector<int>& delta_E);
+
+    int DeltaE_overlaps(int spin, int realization);
+    void DeltaE_overlaps_all(int spin, vector<int>& delta_E);
 };
 
 #endif
