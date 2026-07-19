@@ -567,24 +567,26 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 
             if (random >= P * deg_spin) {
                 cout << "unconditionnal flip"<<endl;
-                for (int mu = 0; mu < P; mu++) {
+                
+                for (int mu = 0; mu < P; mu++){
                     carry_g.Set(0);
                     carry_L.Set(0);
                     borrow_g.Set(0);
                     borrow_L.Set(0);
 
-                    c_i_mu = ~(S_i ^ Patterns[spin*P+mu]);
+                    c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
 
                     Shifted_Overlaps[mu].AddTo(&Two, &carry_g);
-                    sum_L.AddTo(&Two, &carry_L);
-
-                    Sub.SetAll(0);
-                    Sub.CopyValues(c_i_mu);
-                    Sub.MultiplyByPowerOfTwo(2); 
-
-                    Shifted_Overlaps[mu].SubtractTo(&Sub, &borrow_g);
-                    sum_L.SubtractTo(&Sub, &borrow_L);
+                    Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
                 }
+                carry_L.Set(0);
+                sum_L.AddTo(&TwoP, &carry_L);
+                fourSum.CopyValues(sum_c);
+                fourSum.MultiplyByPowerOfTwo(2);
+
+                borrow_delta.Set(0);
+                sum_L.SubtractTo(&fourSum, &borrow_delta); 
+
                 S_i.ComplementTo();
                 continue;
             }
