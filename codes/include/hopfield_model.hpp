@@ -21,8 +21,9 @@ using namespace std;
 class HopfieldModel : public SimulationBase {
 protected:
     int P;                                    // number of patterns
-    vector<vector<vector<int>>> patterns;     // patterns[p][i][r] for each replica and pattern
+    vector<vector<vector<int>>> patterns;     // patterns[mu][i][r] for each replica and pattern
     vector<vector<vector<int>>> couplings;    // couplings [i][k][r] for each replica
+    vector<vector<int>> overalps;             // overlaps [mu][r] for each replica
         
 public:
     
@@ -40,6 +41,8 @@ public:
     // Couplings initialization (from patterns)
     void initCouplings();
     vector<vector<vector<int>>> getCouplingsConfig();
+
+    void compute_overlaps();
 
     int neighbor_index(int , int) const;
 };

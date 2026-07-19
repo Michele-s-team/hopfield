@@ -25,6 +25,7 @@ class HopfieldBits : public HopfieldModel {
     vector<UnsignedInt> P_times_Neighbor_Count; // P*degree encoded for vectorized ops
     vector<vector<Bits>> Patterns;          // patterns encoded for vectorized ops
     vector<vector<UnsignedInt>> Couplings;         // couplings encoded for vectorized ops
+    vector<UnsignedInt> Shifted_Overlaps;        // Overlaps + N stored in an UnsignedInt list of length P
 
 
 public:
@@ -57,11 +58,17 @@ public:
     vector<Bits> corruptPattern(const vector<Bits>& pattern, double flip_fraction, gsl_rng* ran) const; // Corrupt a single pattern by flipping each bit independently with
                                                                                                                       // probability flip_fraction.
 
+
+    void compute_shifted_overalps();
+    bool check_shifted_overlaps_consistency(int sweep, int step);
+
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
     void runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shift);
     void runSweeps(gsl_rng* ran, bool save, double freq, int shift);
+    void runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int shift);
+    void runSweeps_overlaps_old(gsl_rng* ran, bool save, double freq, int shift);
     void runSweeps_old(gsl_rng*, bool save, double);
 };
 

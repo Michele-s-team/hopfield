@@ -225,7 +225,7 @@ void SimulationIO::check_equality_configs(const vector<int>& neurons_before,
     }
 
     if (all_equal)
-        cout << "OK: classic and bitwise results are identical\n";
+        cout << "OK: classic and bitwise configurations are identical\n";
     else
-        cout << "WARNING: differences detected between classic and bitwise results\n";
+        cout << "WARNING: differences detected between classic and bitwise configurations\n" << endl;
 }

@@ -53,12 +53,13 @@ public:
     
     BitSet operator<<(Bits* m);
     Bits& operator[](const unsigned int&);
+    const Bits& operator[](const unsigned int& i) const;
     void AndTo(Bits*, unsigned int, unsigned int), And(Bits*, BitSet*);
     Bits operator==(BitSet&);
 
     void operator^=(Bits*),operator>>=(UnsignedInt*), operator<<=(UnsignedInt*);
     BitSet& operator=(const BitSet&);
-    void CopyValues(const BitSet&);
+    void CopyValues(const BitSet&), CopyValues(const Bits& m);
     void operator>>=(Bits*), operator<<=(Bits*), operator&=(Bits*);
 
     friend class UnsignedInt;

@@ -9,6 +9,7 @@
 #include "main.hpp"
 #include "gsl_math.h"
 #include <vector>
+#include <algorithm>
 
 // ============================================================================
 // Constructors & Lifecycle Management
@@ -304,8 +305,7 @@ void UnsignedInt::AddTo(UnsignedInt* addend, Bits* carry){
 // Combines a standalone bit entry incrementing data with low-level carry ripples.
 //add bit-by-bit addend (which here is either 1 or 0) to *this and store the result in *this and the carry in *carry. This method requires this->GetSize() to be > 1
 //inline 
-void UnsignedInt::AddTo(const Bits* addend, Bits* carry)
-{
+void UnsignedInt::AddTo(const Bits* addend, Bits* carry){
     Bits t;
     const unsigned int size = GetSize();
 
@@ -321,7 +321,7 @@ void UnsignedInt::AddTo(const Bits* addend, Bits* carry)
 }
 
 // Subtracts container components evaluating borrow patterns progressively across rows.
-void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow){
+void UnsignedInt::SubtractTo(UnsignedInt* subtrahend, Bits* borrow){
 
     unsigned int p;
     unsigned int size_subtrahend= subtrahend->GetSize();
@@ -356,7 +356,7 @@ void UnsignedInt::SubstractTo(UnsignedInt* subtrahend, Bits* borrow){
 }
 
 // Deducts a isolated track profile tracking borrow transitions downwards.
-void UnsignedInt::SubstractTo(Bits* subtrahend, Bits* borrow){
+void UnsignedInt::SubtractTo(Bits* subtrahend, Bits* borrow){
 
     unsigned int p;
     const unsigned int size= GetSize();
@@ -446,6 +446,10 @@ void UnsignedInt::MultiplyByTwoTo(void){
     
 }
 
+void UnsignedInt::MultiplyByPowerOfTwo(unsigned int power){
+    for (unsigned int i = 0; i < power; ++i){MultiplyByTwoTo();}
+}
+
 // Divides the underlying values by shifting layouts rightwards.
 //this method requires *this to be even, it divides *this by 2 and writes the result in *this
 //inline
@@ -479,7 +483,7 @@ void UnsignedInt::operator += (UnsignedInt* addend){
 }
 
 // Deducts items directly transforming internal profiles via two-complement additions.
-//substract m to *this and write the result in *this
+//Subtract m to *this and write the result in *this
 //DOES NOT WORK (PROBABLY)
 void UnsignedInt::operator -= (UnsignedInt* subtrahend) {
     
@@ -667,10 +671,10 @@ void UnsignedInt::Add(UnsignedInt* addend, UnsignedInt* result, Bits* carry) {
 
 // Outputs differential configurations computing borrow dependencies externally.
 // return *this - *subtrahend and write the borrow in *borrow
-void UnsignedInt::Substract(UnsignedInt* subtrahend, UnsignedInt* result, Bits* borrow) {
+void UnsignedInt::Subtract(UnsignedInt* subtrahend, UnsignedInt* result, Bits* borrow) {
 
     *result = (*this);
-    result->SubstractTo(subtrahend, borrow);
+    result->SubtractTo(subtrahend, borrow);
 }
 
 // Adds the bitwise AND of a and mask to this UnsignedInt without creating temporary objects.
@@ -731,4 +735,24 @@ UnsignedInt UnsignedInt::PositionOfFirstSignificantBit() {
     }
     
     return result;
+}
+
+void UnsignedInt::CSAdd(const UnsignedInt& a, const UnsignedInt& b, const UnsignedInt& c,
+                         UnsignedInt* sum, UnsignedInt* carry) {
+    sum->SetAll(0);
+    carry->SetAll(0);
+
+    int width = std::max({(int)a.GetSize(), (int)b.GetSize(), (int)c.GetSize()});
+
+    for (int i = 0; i < width; ++i) {
+        Bits ai = (i < (int)a.GetSize()) ? a[i] : Bits(0);
+        Bits bi = (i < (int)b.GetSize()) ? b[i] : Bits(0);
+        Bits ci = (i < (int)c.GetSize()) ? c[i] : Bits(0);
+        Bits ab = ai ^ bi;
+
+        if (i < (int)sum->GetSize())
+            (*sum)[i] = ab ^ ci;
+        if (i + 1 < (int)carry->GetSize())
+            (*carry)[i + 1] = (ai & bi) | (ab & ci);
+    }
 }

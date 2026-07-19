@@ -83,7 +83,7 @@ int main(){
     SimulationIO IO;
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 5;
+    const int N_sweeps = 1 << 8;
 
     vector<int> N_vals = {
         32 * 32
@@ -124,7 +124,8 @@ int main(){
         double total_time_N = 0.0;
 
         cout << "\n==================================================\n";
-        cout << "Lattice size : N = " << N_spins << '\n';
+        cout << "Lattice size     : N = " << N_spins << '\n';
+        cout << "Number of sweeps : N_sweeps = " << N_sweeps << '\n';
         cout << "==================================================\n";
 
         for (double alpha : alpha_vals) {
@@ -175,7 +176,7 @@ int main(){
                 auto patterns = bits.getPatternsBitsToCanonical();
                 nobits.initPatternsFromConfig(patterns);
 
-                cout << "Patterns initialized" <<endl;
+                cout << "Patterns initialized \n" <<endl;
 
                 bits.setBeta(beta);
                 nobits.setBeta(beta);
@@ -184,22 +185,24 @@ int main(){
                 // BITWISE
                 // =====================================================
 
+                cout << "bitwise: "<<endl;
+
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps(ran_evolve, false, 0, 0);
+                bits.runSweeps_overlaps_old(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
-                cout << "   bitwise          : "
-                     << t_bits << " s\n";
+                
+                cout << t_bits << " s\n"<<endl;
 
                 // =====================================================
                 // CLASSICAL SHARED RNG
                 // =====================================================
-
+                cout  << "nobits shared RNG: " << endl;
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
                 nobits.runSweepsSharedRNG(ran_evolve, false, 0);
@@ -208,10 +211,8 @@ int main(){
                 double t_nobits_shared =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
-
-                cout
-                    << "   nobits shared      : "
-                    << t_nobits_shared << " s\n";
+                
+                cout << t_nobits_shared << " s\n" <<endl;
 
                 cout << "Comparison bits/nobits with Shared RNG: "<<endl;
 
@@ -221,6 +222,8 @@ int main(){
                 // CLASSICAL INDEPENDENT RNG
                 // =====================================================
 
+                cout << "nobits independent RNG: "<<endl;
+
                 // Reinitialisation pour comparer les mêmes conditions
                 nobits.initSpinsFromConfig(initial_config_bits);
 
@@ -228,15 +231,29 @@ int main(){
                 clock_gettime(CLOCK_MONOTONIC, &t0);
                 nobits.runSweepsIndependentRNG(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
+               
 
                 double t_nobits_indep =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
-                cout << "   nobits independent : "
-                     << t_nobits_indep << " s\n";
+                cout << t_nobits_indep << " s\n"<<endl;;
 
-               
+                cout << "Summary :"<<endl;
+
+                cout << "   bitwise                : "
+                     << t_bits << " s\n";
+
+                cout
+                    << "   nobits shared  RNG     : "
+                    << t_nobits_shared << " s\n";
+                
+                cout
+                    << "   nobits independent RNG : "
+                    << t_nobits_indep << " s\n\n";
+
+
+                  
                 // =====================================================
                 // SPEEDUPS
                 // =====================================================
@@ -257,12 +274,12 @@ int main(){
                     : 0.0;
 
                 cout
-                    << "   speedup indep     : "
+                    << "   speedup indep      : "
                     << speedup_indep << '\n'
-                    << "   speedup shared    : "
+                    << "   speedup shared RNG : "
                     << speedup_shared << '\n'
-                    << "   indep/shared      : "
-                   << ratio_indep_shared << "\n\n\n";
+                    << "   indep/shared  RNG  : "
+                   << ratio_indep_shared << "\n\n";
 
                 // =====================================================
                 // CSV

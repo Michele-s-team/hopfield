@@ -283,6 +283,10 @@ Bits& BitSet::operator[](const unsigned int& i) {
     return b[i];
 }
 
+const Bits& BitSet::operator[](const unsigned int& i) const {
+    return b[i];
+}
+
 // Applies a bitwise AND with 'm' across a constrained segment from start to end-1.
 void BitSet::AndTo(Bits* m, unsigned int start, unsigned int end) {
     for (unsigned int s = start; s < end; s++) {
@@ -339,6 +343,9 @@ void BitSet::CopyValues(const BitSet& m){
         b[i].SetAll(false);
 }
 
+void BitSet::CopyValues(const Bits& m){
+    b[0] = m;
+}
 // Shifts entries down to the right dynamically by a factor scaling with binary powers.
 void BitSet::operator>>=(UnsignedInt* e) {
     const unsigned int e_size = e->GetSize();       // cache #1: e is not modified during the loop

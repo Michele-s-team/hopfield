@@ -31,6 +31,10 @@ const unsigned long long int ullong_0 = 0;
 static constexpr int BITS_PER_BLOCK = 64;
 static constexpr int BLOCK_MASK = BITS_PER_BLOCK - 1; // 63
 
+static constexpr int MaxDeg=32*32-1;
+constexpr int MaxWidth = MaxDeg == 0 ? 1
+            : (sizeof(int) * 8 - __builtin_clz((unsigned)MaxDeg) + 1);
+
 inline Bits Bits_one(~0ULL);
 inline Bits Bits_zero(0ULL);
 inline UnsignedInt UnsignedInt_one;

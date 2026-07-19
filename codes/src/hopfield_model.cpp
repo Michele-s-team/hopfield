@@ -110,3 +110,15 @@ vector<vector<vector<int>>> HopfieldModel::getPatterns() {
 vector<vector<vector<int>>> HopfieldModel::getCouplingsConfig() {
     return couplings;
 }
+
+
+void HopfieldModel::compute_overlaps(){
+    for (int mu=0; mu<P; mu++){
+        for (int r=0; r<n_bits; r++){
+            for (int spin=0; spin<N; spin++){
+                overalps[mu][r]+=spins_set[r*N+spin]*patterns[mu][spin][r];
+            }
+        }
+ 
+    }
+}

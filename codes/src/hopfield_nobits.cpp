@@ -95,7 +95,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
                       << std::flush;
     }
 
-    std::cout << "\n";
+    std::cout << endl;
 }
 // =====================================================
 // INDEPENDENT RNG (different random threshold among replicas)
@@ -144,7 +144,7 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
                       << std::flush;
     }
 
-    std::cout << "\n";
+    std::cout << endl;
 }
 
 // =====================================================
