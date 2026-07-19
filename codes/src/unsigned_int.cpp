@@ -193,13 +193,31 @@ void UnsignedInt::Decrement(Bits* mask){
 
 // Combines parallel inputs together restricting updates to checked active lanes.
 // Adds *val to *this, only on the lanes selected by *mask
-void UnsignedInt::AddMasked(UnsignedInt* val, Bits* mask){
-    Bits carry; carry.SetAll(false);
-    for(unsigned int p=0; p<n_bits; p++){
-        Bits add_bit = val->b[p] & (*mask);
-        Bits sum      = b[p] ^ add_bit ^ carry;
-        Bits new_carry = (b[p] & add_bit) | (b[p] & carry) | (add_bit & carry);
-        b[p]  = sum;
+void UnsignedInt::AddMasked(UnsignedInt* a, Bits* mask){
+    Bits carry;
+    carry.Clear();
+
+    const unsigned int size_a = a->GetSize();
+    const unsigned int size   = GetSize();
+
+    unsigned int p = 0;
+
+    for (; p < size_a; ++p) {
+        Bits add_bit = a->b[p] & (*mask);
+
+        Bits new_carry = (b[p] & add_bit) |
+                         (b[p] & carry) |
+                         (add_bit & carry);
+
+        b[p] ^= &add_bit;
+        b[p] ^= &carry;
+
+        carry = new_carry;
+    }
+
+    for (; p < size && carry.Get() != 0; ++p) {
+        Bits new_carry = b[p] & carry;
+        b[p] ^= &carry;
         carry = new_carry;
     }
 }

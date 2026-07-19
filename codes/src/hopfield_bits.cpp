@@ -651,6 +651,16 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
             }
 
             sum_L.AddMasked(&TwoP, &mask);
+
+            /*
+            TwoMask.SetAll(0);
+            TwoMask.CopyValues(mask);
+            TwoMask.MultiplyByTwoTo();
+
+            for(int i=0;i<P;i++)
+                sum_L += &TwoMask;
+
+            */
             sum_c &= &mask;
 
             fourSum.CopyValues(sum_c);
