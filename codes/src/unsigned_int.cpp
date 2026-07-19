@@ -235,6 +235,108 @@ void UnsignedInt::SubtractMasked(UnsignedInt* val, Bits* mask){
     }
 }
 
+void UnsignedInt::SubtractShifted(UnsignedInt* val, unsigned int shift, Bits* borrow){
+    Bits sub_bit;
+    Bits a;
+    Bits new_borrow;
+
+    const unsigned int val_size = val->GetSize();
+    const unsigned int size = GetSize();
+
+    borrow->Clear();
+
+    // bits of val shifted by 'shift'
+    unsigned int p = 0;
+
+    for (; p < shift && p < size; ++p) {
+        a = b[p];
+
+        // subtract 0, only propagate borrow
+        Bits diff = a ^ (*borrow);
+        borrow->Set((~a) & (*borrow));
+
+        b[p].Set(diff);
+    }
+
+    for (unsigned int i = 0; i < val_size && (p+i) < size; ++i) {
+
+        sub_bit = (*val)[i];
+
+        a = b[p+i];
+
+        Bits diff = a ^ sub_bit ^ (*borrow);
+
+        new_borrow = ((~a) & sub_bit) |
+                     ((~a) & (*borrow)) |
+                     (sub_bit & (*borrow));
+
+        b[p+i].Set(diff);
+        borrow->Set(new_borrow);
+    }
+
+    // propagate remaining borrow
+    p += val_size;
+    for (; p < size && borrow->Get() != 0; ++p) {
+        a = b[p];
+        Bits diff = a ^ (*borrow);
+        borrow->Set((~a) & (*borrow));
+        b[p].Set(diff);
+    }
+}
+
+void UnsignedInt::SubtractShifted(Bits* val, unsigned int shift, Bits* borrow){
+
+    const unsigned int size = GetSize();
+
+    borrow->Clear();
+
+    unsigned int p = 0;
+
+    // propagate borrow through the lower zero bits
+    for(; p < shift && p < size; ++p){
+
+        Bits a = b[p];
+
+        Bits diff = a ^ (*borrow);
+
+        borrow->Set((~a) & (*borrow));
+
+        b[p].Set(diff);
+    }
+
+    // subtract val at the shifted position
+    if(p < size){
+
+        Bits a = b[p];
+
+        Bits sub_bit = *val;
+
+        Bits diff = a ^ sub_bit ^ (*borrow);
+
+        Bits new_borrow = ((~a) & sub_bit) |
+                          ((~a) & (*borrow)) |
+                          (sub_bit & (*borrow));
+
+        b[p].Set(diff);
+
+        borrow->Set(new_borrow);
+
+        ++p;
+    }
+
+    // propagate remaining borrow
+    for(; p < size && borrow->Get()!=0; ++p){
+
+        Bits a = b[p];
+
+        Bits diff = a ^ (*borrow);
+
+        borrow->Set((~a) & (*borrow));
+
+        b[p].Set(diff);
+    }
+}
+
 // Multiplies content scales skipping inactive bits dynamically to accelerate math.
 /*
  * Multiplies *this by a scalar constant (same value across all

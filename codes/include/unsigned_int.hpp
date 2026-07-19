@@ -42,6 +42,8 @@ public:
 
     void AddMasked(UnsignedInt* val, Bits* mask);
     void SubtractMasked(UnsignedInt* val, Bits* mask);
+    void SubtractShifted(UnsignedInt* val, unsigned int shift, Bits* borrow);
+    void SubtractShifted(Bits* val, unsigned int shift, Bits* borrow);
     void MultiplyByConstant(unsigned long long int constant, UnsignedInt* result);
 
     void AddTo(UnsignedInt*, Bits*), AddTo(const Bits*, Bits*), SubtractTo(UnsignedInt*, Bits*), SubtractTo(Bits*, Bits*);

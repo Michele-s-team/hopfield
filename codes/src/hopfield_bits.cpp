@@ -642,12 +642,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
                 c_cache[mu] &= mask;
 
                 Shifted_Overlaps[mu].AddTo(&TwoMask, &carry_g);
-
-                Sub.SetAll(0);
-                Sub.CopyValues(c_cache[mu]);
-                Sub.MultiplyByPowerOfTwo(2);
-
-                Shifted_Overlaps[mu].SubtractTo(&Sub, &borrow_g);
+                Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
             }
 
             sum_L.AddMasked(&TwoP, &mask);
