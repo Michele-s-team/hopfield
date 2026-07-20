@@ -60,25 +60,25 @@ Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the ne
 \begin{equation}
   \begin{aligned}
   \Delta E_k&= 2\sum_{i\partial k}w_{ki}S_kS_i\\
-            &= \frac{2}{N}  \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
+            &= \frac{2}{N}  \sum_{i \in \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
   \end{aligned}
 \end{equation}
 We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variables. Thus:
 \begin{equation*}
-    \frac{\Delta E_k N}{2} = \sum_{i \partial k} G_{ki} S_i S_k \qquad \text{with} \quad G_{ki} \in [-p, p].
+    \frac{\Delta E_k N}{2} = \sum_{i \in \partial k} G_{ki} S_i S_k \qquad \text{with} \quad G_{ki} \in [-p, p].
 \end{equation*}
 
 And the flip condition becomes:
 \begin{equation}
-  \lfloor \rho \rfloor \geq \sum_{i \partial k }G_{ki}S_kS_i,
+  \lfloor \rho \rfloor \geq S_k h_k,
   \label{eq:flip_condition_hopfield}
 \end{equation}
-with $\rho =-\frac{N}{2\beta} \log r$.
+with $h_k =  \sum_{i \in \partial k }G_{ki}S_i$ the local field and $\rho =-\frac{N}{2\beta} \log r$.
 \subsubsection{Naive implementation}
 A first naive implementation would be to unfold $G_{ki}$ into its pattern components in order to deal with \Bits only objects. The flip condition would then be:
 
 \begin{equation}
-  \lfloor \rho \rfloor \geq \sum_{i \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i.
+  \lfloor \rho \rfloor \geq \sum_{i \in \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i.
 \end{equation}
 As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
 However, it requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
@@ -86,15 +86,15 @@ However, it requires summing over the patterns, thus introducing  an additional 
 \subsubsection{Optimized implementation}
 A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
 \begin{equation*}
-    \sum_{i \partial k} G_{ki} S_i S_k = \sum_{i \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
-    = -\sum_{i \partial k} \tilde{G}_{ki} + 2\sum_{i \partial k}
+    \sum_{i \in \partial k} G_{ki} S_i S_k = \sum_{i \in \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
+    = -\sum_{i \in \partial k} \tilde{G}_{ki} + 2\sum_{i \in \partial k}
      C_{ik}(\tilde{G}_{ki}-p) + n_k p,
 \end{equation*}
 with $C_{ki}= B_k \odot B_i$.
 The bitwise flip test is then:
 \begin{equation}
-    \lfloor \rho \rfloor + \sum_{i \partial k} \tilde{G}_{ki} + 2p\sum_{i \partial k} C_{ki} \geq  pn_k+
-    2\sum_{i \partial k} C_{ki}\, \oplus \tilde{G}_{ki}
+    \lfloor \rho \rfloor + \sum_{i \in \partial k} \tilde{G}_{ki} + 2p\sum_{i \in \partial k} C_{ki} \geq  pn_k+
+    2\sum_{i \in \partial k} C_{ki}\, \oplus \tilde{G}_{ki}
 \end{equation}
 Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{ki}$ and every \Bits composing the \UnsignedInt $\tilde{G}_{ki}$:
 \begin{equation*}
@@ -174,6 +174,49 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 }
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
+\subsubsection{Reducing complexity in dense networks using overlaps}
+\myindent In the case of a fully-connected network, summing over the neighbors of $k$ amounts to sum over the entirety of the network, yielding a complexity of $\mathcal{O}(N)$ in itself. In order to reduce this complexity, one can also make use of the overlap to compute the neuron flip condition. We define the extensive overlap:
+\begin{equation}
+    M^\mu= N m^\mu = \sum_{i=1}^N \xi_i^\mu S_i.
+    \label{eq:extensive_overlaps}
+\end{equation}
+Then,
+\begin{align*}
+    S_kh_k =
+    \sum_{i \in \partial k} G_{ki} S_i S_k &= \sum_{\mu=1}^p \xi_k^\mu  S_k \left(M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}}\xi_i^\mu S_i - \xi_k^\mu S_k \right)\\
+    &= \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu -  \sum_{\mu=1}^p \sum_{\substack{i \notin \partial k \\ i \neq k}} \xi_k^\mu \xi_i^\mu S_k S_i - \sum_{\mu=1}^p \left(\xi_k^\mu S_k \right) ^2.
+\end{align*}
+The second sum is simply the sum $G_{ki} S_i S_k$ over the non-neighbors of $k$. Each term of the last sum is equal to 1. The flip condition is thus:
+\begin{equation}
+  \lfloor \rho \rfloor +p  \geq \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k.
+\end{equation}
+The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps $ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, with $S_k \xi_k^\mu = 2 c_k^\mu -1$ with $c_k^\mu = S_k \odot \xi_k^\mu$,
+\begin{align*}
+    \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu &= \sum_{\mu=1}^p \xi_k^\mu S_k (\tilde{M}^\mu - N)\\
+    &= - N \sum_{\mu=1}^p \left(2c_k^\mu - 1 \right) + \sum_{\mu=1}^p \left(2 c_k^\mu-1\right) \tilde{M}^\mu\\
+    &= Np - 2N \sum_{\mu=1}^p c_k^\mu + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu- \sum_{\mu=1}^p \tilde{M}^\mu.
+\end{align*}
+
+We also use the previous decomposition of $G_{ki} S_i S_k$:
+\begin{equation*}
+    \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k= -
+    \sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} +
+  2 \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik} \oplus \tilde{G}_{ki} - 2p
+    \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik}
+    +(N-n_k-1)p.
+\end{equation*}
+The overall bitwise flip condition is thus:
+\begin{equation}
+    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p c_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik}.
+    \label{eq:bitwise_flip_overlap}
+\end{equation}
+This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4c_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas.
+In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
+\begin{equation}
+    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p c_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu \geq  p (N-1) + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu,
+    \label{eq:bitwise_flip_overlap_FC}
+\end{equation}
+and no summation over the non-neighbors is required.
 \subsection{Capacity of the network}
 \myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
 
