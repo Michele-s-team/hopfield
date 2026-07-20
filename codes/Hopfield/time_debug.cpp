@@ -86,7 +86,7 @@ int main(){
 
     vector<int> N_vals = {
         //10 * 10, 20 * 20, 
-        10 * 10
+        32 * 32
         //80 * 80
     };
 
@@ -179,7 +179,8 @@ int main(){
                 cout << "bitwise evolution ready"<< endl;
                 gsl_rng_set(ran_bits, 42);    
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps_DEBUG(ran_bits, false, 0, 0);
+                bits.compute_shifted_overlaps();
+                bits.runSweeps_overlaps_DEBUG(ran_bits, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
 
                 double t_bits =

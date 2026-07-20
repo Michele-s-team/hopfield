@@ -46,28 +46,8 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
+// g++ Hopfield/test_performance_hopfield_shared_indep_RNG.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -flto -Wno-deprecated -Iinclude -I/usr/include/gsl -DHAVE_INLINE -march=native -o main.o
 
-// =============================================================================
-// phase_diagram.cpp
-//
-// Simulates the 2D Ising model using a bitwise Metropolis algorithm
-// (IsingBits) on a square lattice of size L×L with periodic boundary
-// conditions, across a range of temperatures.
-//
-// For each temperature T:
-//   - sets the inverse temperature beta = 1/T
-//   - reinitializes spins from a fixed reference configuration
-//   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
-//     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
-//
-// The temperature grid is defined by several segments with different
-// step sizes, with finer resolution near the critical point Tc ≈ 2.269.
-//
-// An optional classic (non-bitwise) simulation is available for comparison
-// and correctness checking (see commented sections).
-//
-// Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
-// =============================================================================
 
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
@@ -83,7 +63,7 @@ int main(){
     SimulationIO IO;
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 8;
+    const int N_sweeps = 1 << 10;
 
     vector<int> N_vals = {
         32 * 32
@@ -186,9 +166,10 @@ int main(){
                 // =====================================================
 
                 cout << "bitwise: "<<endl;
-
+                
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
+                bits.compute_overlaps();
                 bits.runSweeps_overlaps(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
@@ -205,6 +186,7 @@ int main(){
                 cout  << "nobits shared RNG: " << endl;
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
+                nobits.compute_overlaps();
                 nobits.runSweepsSharedRNG_overlaps(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 
@@ -229,6 +211,7 @@ int main(){
 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
+                nobits.compute_overlaps();
                 nobits.runSweepsIndependentRNG_overlaps(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                
@@ -278,7 +261,7 @@ int main(){
                     << speedup_indep << '\n'
                     << "   speedup shared RNG : "
                     << speedup_shared << '\n'
-                    << "   indep/shared  RNG  : "
+                    << "   indep/shared RNG   : "
                    << ratio_indep_shared << "\n\n";
 
                 // =====================================================

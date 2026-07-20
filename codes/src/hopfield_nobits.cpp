@@ -113,8 +113,6 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 
 void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq) {
 
-    compute_overlaps();
-    cout << "overlaps computed"<<endl;
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
@@ -205,9 +203,6 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
 
 
 void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq) {
-
-    compute_overlaps();
-    cout << "overlaps computed" << endl;
 
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);

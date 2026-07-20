@@ -292,14 +292,13 @@ vector<int> HopfieldBits::getPatternsBitsToCanonical() {
 void HopfieldBits::compute_shifted_overlaps(){
     Shifted_Overlaps.clear();
     Shifted_Overlaps.reserve(P);
-    Bits c_ij, carry;
+    Bits c_ij;
     for (int mu = 0; mu < P; mu++){
         UnsignedInt sum(2*N);
         sum.SetAll(0);
         for (int spin = 0; spin < N; spin++){
-            carry.Set(0);
             c_ij = ~(Patterns[spin*P+mu] ^ Bits_Spins_Set[spin]);
-            sum.AddTo(&c_ij, &carry);
+            sum+=&c_ij;
         }
         sum.MultiplyByTwoTo();
         Shifted_Overlaps.push_back(sum);
@@ -331,14 +330,14 @@ void HopfieldBits::compute_shifted_overlaps(){
 // their maximum possible values to avoid any heap allocation in the hot path.
 
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
-
+    
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
 
     int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
 
-    Bits c_ij, mask, carry;
+    Bits c_ij, mask;
 
     UnsignedInt sum_c          ((unsigned long long) max_deg);
     UnsignedInt sum_cg         ((unsigned long long) 2 * max_deg * P);
@@ -399,36 +398,15 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift){
             RHS.SetAll(0);
             sum_c_times_2P.SetAll(0);
 
-            /*
-
             for (int k = 0; k < deg_spin; ++k) {
-                int j = neighbors[spin][k];
-
-                // Agreement mask between spin i and neighbor j
-                c_terms[k] = ~(S_i ^ Bits_Spins_Set[j]);
-
-                // Broadcast-AND: apply the 1-bit mask across every bit-plane of the coupling
-                cg_terms[k] = Couplings[spin][k];
-                cg_terms[k].AndTo(&c_terms[k], 0, cg_terms[k].GetSize());
-            }
-
-            sum_c  = UnsignedInt::CSAReduceBits<MaxDeg, MaxWidth>(c_terms, deg_spin, (unsigned long long) max_deg, bucketsScratch, resultBitScratch);
-            sum_cg = UnsignedInt::CSAReduceUnsignedInt<MaxDeg>(cg_terms, deg_spin, csaBuf, csaScratchSum, csaScratchCarry);
-            */
-            //old loop
-
-            for (int k = 0; k < deg_spin; ++k) {
-                carry.Set(0);
 
                 int j = neighbors[spin][k];
-
                 c_ij = ~(S_i ^ Bits_Spins_Set[j]);
 
-                sum_c.AddTo(&c_ij, &carry); //assumes that the carry won't overflow the size of "sum_c"
+                sum_c+=&c_ij; //assumes that the sum won't overflow the size of "sum_c"
                 sum_cg.AddAnd(&Couplings[spin][k], &c_ij);
             }
-        
-
+    
             // RHS = 2*sum_cg + P*deg_spin
             RHS.CopyValues(sum_cg);
             RHS.MultiplyByTwoTo();
@@ -469,14 +447,13 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
     for (int mu = 0; mu < P; mu++) {
 
         UnsignedInt fresh(2 * N);
-        Bits c_ij, carry;
+        Bits c_ij;
 
         fresh.SetAll(0);
 
         for (int spin = 0; spin < N; spin++) {
-            carry.Set(0);
             c_ij = ~(Patterns[spin*P+mu] ^ Bits_Spins_Set[spin]); 
-            fresh.AddTo(&c_ij, &carry);
+            fresh+=&c_ij;
         }
         fresh.MultiplyByTwoTo();
 
@@ -501,8 +478,6 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 
 void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int shift){
 
-    compute_shifted_overlaps();
-    cout << "Shifted overlaps computed"<< endl;
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
@@ -562,12 +537,12 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
                 for (int mu = 0; mu < P; mu++){
 
                     c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
-                    sum_c.AddTo(&c_cache[mu], &carry_c);
+                    sum_c+=&c_cache[mu];
 
-                    Shifted_Overlaps[mu].AddTo(&Two, &carry_g);
+                    Shifted_Overlaps[mu]+=&Two;
                     Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
                 }
-                sum_L.AddTo(&TwoP, &carry_L);
+                sum_L+=&TwoP;
                 fourSum.CopyValues(sum_c);
                 fourSum.MultiplyByPowerOfTwo(2);
 
@@ -587,7 +562,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 
                 c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
 
-                sum_c.AddTo(&c_cache[mu], &carry_c);
+                sum_c+=&c_cache[mu];
                 sum_cl.AddAnd(&Shifted_Overlaps[mu], &c_cache[mu]);
             }
         
@@ -610,7 +585,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
             
                 c_cache[mu] &= mask;
 
-                Shifted_Overlaps[mu].AddTo(&TwoMask, &carry_g);
+                Shifted_Overlaps[mu]+=&TwoMask;
                 Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
             }
 
@@ -866,6 +841,588 @@ void HopfieldBits::runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shi
     print_timer("SaveSpinConfigurations", t_save);
     cout << "\n";
 }
+
+
+void HopfieldBits::runSweeps_overlaps_DEBUG(gsl_rng* ran, bool save, double freq, int shift){
+using namespace std::chrono;
+
+// ============================================================
+// Configuration
+// ============================================================
+const int total_sweeps = getNSweeps();
+const int progress_stride = max(1,total_sweeps/10);
+const int save_stride = save ? max(1,(int)round(1.0/freq)) : 0;
+
+// ============================================================
+// Working variables
+// ============================================================
+Bits mask;
+Bits carry_g, borrow_g;
+Bits carry_L;
+Bits carry_c;
+Bits borrow_delta;
+
+UnsignedInt sum_c((unsigned long long)P);
+UnsignedInt sum_cl((unsigned long long)2*N*P);
+UnsignedInt sum_c_times_2N((unsigned long long)2*N*P);
+UnsignedInt LHS((unsigned long long)P*(5*N-1));
+UnsignedInt RHS((unsigned long long)P*(5*N-1));
+UnsignedInt tmp((unsigned long long)P*(N-1));
+UnsignedInt fourSum((unsigned long long)4*P);
+UnsignedInt TwoMask((unsigned long long)2);
+
+UnsignedInt CST((unsigned long long)(N-1)*P);
+CST.SetAll((N-1)*P);
+
+UnsignedInt Two((unsigned long long)2);
+Two.SetAll(2);
+
+UnsignedInt TwoP((unsigned long long)2*P);
+TwoP.SetAll(2*P);
+
+UnsignedInt sum_L((unsigned long long)2*N*P);
+sum_L.SetAll(0);
+
+const unsigned long long twoN = 2*N;
+
+vector<Bits> c_cache(P);
+
+// ============================================================
+// Profiling structure
+// ============================================================
+struct TimerData{
+    double time=0.0;
+    unsigned long long calls=0;
+
+    void add(double t){
+        time+=t;
+        calls++;
+    }
+
+    double average() const{
+        return calls ? time/calls : 0.0;
+    }
+};
+
+// Global
+TimerData t_total_loop;
+
+// Initialization
+TimerData t_sumL_init;
+
+// Random and selection
+TimerData t_random_spin;
+TimerData t_random_number;
+
+// Unconditional flip
+TimerData t_unc_total;
+TimerData t_unc_ccache;
+TimerData t_unc_sumc;
+TimerData t_unc_overlap_update;
+TimerData t_unc_sumL_update;
+TimerData t_unc_spin_update;
+
+// Conditional flip
+TimerData t_cond_total;
+TimerData t_cond_ccache;
+TimerData t_cond_sumc;
+TimerData t_cond_sumcl;
+
+// RHS
+TimerData t_rhs_copy;
+TimerData t_rhs_mult;
+TimerData t_rhs_add;
+
+// LHS
+TimerData t_lhs_mult;
+TimerData t_lhs_copy;
+TimerData t_lhs_scalar;
+TimerData t_lhs_add;
+
+// Decision
+TimerData t_compare;
+
+// Mask and overlap update
+TimerData t_mask_prepare;
+TimerData t_overlap_update;
+TimerData t_sumL_mask;
+TimerData t_sumc_mask;
+TimerData t_fourSum;
+TimerData t_sumL_subtract;
+
+// Spin
+TimerData t_spin_flip;
+
+// Output
+TimerData t_save;
+TimerData t_progress;
+
+auto total_start = high_resolution_clock::now();
+
+// ============================================================
+// Precompute sum_L
+// ============================================================
+auto start_sumL = high_resolution_clock::now();
+
+for(int mu=0;mu<P;++mu)
+    sum_L += &Shifted_Overlaps[mu];
+
+t_sumL_init.add(duration<double>(high_resolution_clock::now()-start_sumL).count());
+
+cout<<"initialization done"<<endl;
+
+// ============================================================
+// Main simulation
+// ============================================================
+for(int sweep=0;sweep<total_sweeps;++sweep){
+
+    auto loop_start = high_resolution_clock::now();
+
+    for(int step=0;step<N;++step){
+
+        auto random_start = high_resolution_clock::now();
+        int spin = gsl_rng_uniform_int(ran,N);
+        t_random_spin.add(duration<double>(high_resolution_clock::now()-random_start).count());
+
+        int deg_spin = neighbor_count[spin];
+
+        auto randnum_start = high_resolution_clock::now();
+        int random = randomNumber(ran,deg_spin*P,N);
+        t_random_number.add(duration<double>(high_resolution_clock::now()-randnum_start).count());
+
+        Bits& S_i = Bits_Spins_Set[spin];
+
+
+        // ====================================================
+        // Unconditional flip
+        // ====================================================
+        if(random >= P*deg_spin){
+
+            auto unc_total_start = high_resolution_clock::now();
+
+            sum_c.SetAll(0);
+
+            auto unc_ccache_start = high_resolution_clock::now();
+
+            for(int mu=0;mu<P;mu++){
+                c_cache[mu]=~(S_i ^ Patterns[spin*P+mu]);
+            }
+
+            t_unc_ccache.add(duration<double>(high_resolution_clock::now()-unc_ccache_start).count());
+
+
+            auto unc_sumc_start = high_resolution_clock::now();
+
+            for(int mu=0;mu<P;mu++)
+                sum_c += &c_cache[mu];
+
+            t_unc_sumc.add(duration<double>(high_resolution_clock::now()-unc_sumc_start).count());
+
+
+            auto unc_overlap_start = high_resolution_clock::now();
+
+            for(int mu=0;mu<P;mu++){
+
+                Shifted_Overlaps[mu]+=&Two;
+
+                Shifted_Overlaps[mu].SubtractShifted(
+                    &c_cache[mu],
+                    2,
+                    &borrow_g
+                );
+            }
+
+            t_unc_overlap_update.add(duration<double>(high_resolution_clock::now()-unc_overlap_start).count());
+
+
+            auto unc_sumL_start = high_resolution_clock::now();
+
+            sum_L += &TwoP;
+
+            fourSum.CopyValues(sum_c);
+            fourSum.MultiplyByPowerOfTwo(2);
+
+            sum_L.SubtractTo(&fourSum,&borrow_delta);
+
+            t_unc_sumL_update.add(duration<double>(high_resolution_clock::now()-unc_sumL_start).count());
+
+
+            auto unc_spin_start = high_resolution_clock::now();
+
+            S_i.ComplementTo();
+
+            t_unc_spin_update.add(duration<double>(high_resolution_clock::now()-unc_spin_start).count());
+
+
+            t_unc_total.add(duration<double>(high_resolution_clock::now()-unc_total_start).count());
+
+            continue;
+        }
+
+
+        // ====================================================
+        // Conditional flip
+        // ====================================================
+        auto cond_total_start = high_resolution_clock::now();
+
+        sum_c.SetAll(0);
+        sum_cl.SetAll(0);
+        LHS.SetAll(0);
+        RHS.SetAll(0);
+
+
+        auto cond_ccache_start = high_resolution_clock::now();
+
+        for(int mu=0;mu<P;++mu){
+
+            c_cache[mu]=~(S_i ^ Patterns[spin*P+mu]);
+
+        }
+
+        t_cond_ccache.add(duration<double>(high_resolution_clock::now()-cond_ccache_start).count());
+
+
+        auto cond_sumc_start = high_resolution_clock::now();
+
+        for(int mu=0;mu<P;++mu)
+            sum_c += &c_cache[mu];
+
+        t_cond_sumc.add(duration<double>(high_resolution_clock::now()-cond_sumc_start).count());
+
+
+        auto cond_sumcl_start = high_resolution_clock::now();
+
+        for(int mu=0;mu<P;++mu)
+            sum_cl.AddAnd(&Shifted_Overlaps[mu],&c_cache[mu]);
+
+        t_cond_sumcl.add(duration<double>(high_resolution_clock::now()-cond_sumcl_start).count());
+// ====================================================
+// RHS calculation
+// ====================================================
+auto rhs_copy_start = high_resolution_clock::now();
+
+RHS.CopyValues(sum_cl);
+
+t_rhs_copy.add(duration<double>(high_resolution_clock::now()-rhs_copy_start).count());
+
+
+auto rhs_mult_start = high_resolution_clock::now();
+
+RHS.MultiplyByTwoTo();
+
+t_rhs_mult.add(duration<double>(high_resolution_clock::now()-rhs_mult_start).count());
+
+
+auto rhs_add_start = high_resolution_clock::now();
+
+RHS += &CST;
+
+t_rhs_add.add(duration<double>(high_resolution_clock::now()-rhs_add_start).count());
+
+
+// ====================================================
+// LHS calculation
+// ====================================================
+auto lhs_mult_start = high_resolution_clock::now();
+
+sum_c.MultiplyByConstant(twoN,&sum_c_times_2N);
+
+t_lhs_mult.add(duration<double>(high_resolution_clock::now()-lhs_mult_start).count());
+
+
+auto lhs_copy_start = high_resolution_clock::now();
+
+LHS.CopyValues(sum_c_times_2N);
+
+t_lhs_copy.add(duration<double>(high_resolution_clock::now()-lhs_copy_start).count());
+
+
+auto lhs_scalar_start = high_resolution_clock::now();
+
+LHS.AddScalar(random,tmp);
+
+t_lhs_scalar.add(duration<double>(high_resolution_clock::now()-lhs_scalar_start).count());
+
+
+auto lhs_add_start = high_resolution_clock::now();
+
+LHS += &sum_L;
+
+t_lhs_add.add(duration<double>(high_resolution_clock::now()-lhs_add_start).count());
+
+
+// ====================================================
+// Decision
+// ====================================================
+auto compare_start = high_resolution_clock::now();
+
+mask=(RHS<=LHS);
+
+t_compare.add(duration<double>(high_resolution_clock::now()-compare_start).count());
+
+
+// ====================================================
+// Prepare doubled mask
+// ====================================================
+auto mask_start = high_resolution_clock::now();
+
+TwoMask.SetAll(0);
+TwoMask.CopyValues(mask);
+TwoMask.MultiplyByTwoTo();
+
+t_mask_prepare.add(duration<double>(high_resolution_clock::now()-mask_start).count());
+
+
+// ====================================================
+// Update shifted overlaps
+// ====================================================
+auto overlap_start = high_resolution_clock::now();
+
+for(int mu=0;mu<P;mu++){
+
+    c_cache[mu] &= mask;
+
+    Shifted_Overlaps[mu] += &TwoMask;
+
+    Shifted_Overlaps[mu].SubtractShifted(
+        &c_cache[mu],
+        2,
+        &borrow_g
+    );
+}
+
+t_overlap_update.add(duration<double>(high_resolution_clock::now()-overlap_start).count());
+
+
+// ====================================================
+// Update sum_L
+// ====================================================
+auto sumL_mask_start = high_resolution_clock::now();
+
+sum_L.AddMasked(&TwoP,&mask);
+
+t_sumL_mask.add(duration<double>(high_resolution_clock::now()-sumL_mask_start).count());
+
+
+auto sumc_mask_start = high_resolution_clock::now();
+
+sum_c &= &mask;
+
+t_sumc_mask.add(duration<double>(high_resolution_clock::now()-sumc_mask_start).count());
+
+
+auto fourSum_start = high_resolution_clock::now();
+
+fourSum.CopyValues(sum_c);
+fourSum.MultiplyByPowerOfTwo(2);
+
+t_fourSum.add(duration<double>(high_resolution_clock::now()-fourSum_start).count());
+
+
+auto subtract_start = high_resolution_clock::now();
+
+borrow_delta.Set(0);
+
+sum_L.SubtractTo(&fourSum,&borrow_delta);
+
+t_sumL_subtract.add(duration<double>(high_resolution_clock::now()-subtract_start).count());
+
+
+// ====================================================
+// Spin update
+// ====================================================
+auto spin_update_start = high_resolution_clock::now();
+
+S_i ^= &mask;
+
+t_spin_flip.add(duration<double>(high_resolution_clock::now()-spin_update_start).count());
+
+
+t_cond_total.add(duration<double>(high_resolution_clock::now()-cond_total_start).count());
+
+} // end step loop
+
+// ========================================================
+// End of sweep
+// ========================================================
+auto loop_end = high_resolution_clock::now();
+
+t_total_loop.add(duration<double>(loop_end-loop_start).count());
+
+
+if(save && sweep>0 && (sweep%save_stride==0)){
+
+    auto save_start = high_resolution_clock::now();
+
+    SaveSpinConfigurations(sweep);
+
+    t_save.add(duration<double>(high_resolution_clock::now()-save_start).count());
+}
+
+
+if((sweep+1)%progress_stride==0){
+
+    auto progress_start = high_resolution_clock::now();
+
+    cout<<"\rSweep: "<<sweep+1
+        <<" ("<<(sweep+1)*100/total_sweeps<<"%)    "
+        <<flush;
+
+    t_progress.add(duration<double>(high_resolution_clock::now()-progress_start).count());
+}
+
+} // end sweep loop
+
+
+cout<<endl;
+
+
+// ============================================================
+// Final profiling report
+// ============================================================
+auto total_end = high_resolution_clock::now();
+
+double total_time = duration<double>(total_end-total_start).count();
+
+
+auto print_timer = [&](const string& name,const TimerData& t){
+
+    double percent = total_time>0 ? 100.0*t.time/total_time : 0.0;
+    double avg_ns = t.average()*1e9;
+
+    cout<<setw(40)<<left<<name
+        <<" calls = "<<setw(12)<<t.calls
+        <<" time = "<<setw(12)<<scientific<<t.time<<" s   "
+        <<fixed<<setprecision(3)<<percent<<"%   "
+        <<"avg = "<<avg_ns<<" ns"
+        <<endl;
+};
+
+
+cout<<"\n\n";
+cout<<"==================================================\n";
+cout<<"              OVERLAPS PROFILING REPORT\n";
+cout<<"==================================================\n\n";
+
+
+cout<<"TOTAL EXECUTION TIME : "
+    <<fixed<<setprecision(6)
+    <<total_time<<" s\n\n";
+
+
+// ============================================================
+// Initialization
+// ============================================================
+cout<<"---------------- INITIALIZATION ----------------\n";
+
+print_timer("Precompute sum_L",t_sumL_init);
+
+
+// ============================================================
+// Main loop
+// ============================================================
+cout<<"\n---------------- MAIN LOOP ----------------------\n";
+
+print_timer("Complete sweep loop",t_total_loop);
+
+print_timer("Random spin generation",t_random_spin);
+
+print_timer("Random number generation",t_random_number);
+
+
+// ============================================================
+// Unconditional flip
+// ============================================================
+cout<<"\n---------------- UNCONDITIONAL FLIP -------------\n";
+
+print_timer("Total unconditional flip",t_unc_total);
+
+print_timer("Compute c_cache",t_unc_ccache);
+
+print_timer("Compute sum_c",t_unc_sumc);
+
+print_timer("Update Shifted_Overlaps",t_unc_overlap_update);
+
+print_timer("Update sum_L",t_unc_sumL_update);
+
+print_timer("Spin ComplementTo",t_unc_spin_update);
+
+
+// ============================================================
+// Conditional flip
+// ============================================================
+cout<<"\n---------------- CONDITIONAL FLIP ---------------\n";
+
+print_timer("Total conditional flip",t_cond_total);
+
+print_timer("Compute c_cache",t_cond_ccache);
+
+print_timer("Compute sum_c",t_cond_sumc);
+
+print_timer("Compute sum_cl",t_cond_sumcl);
+
+
+// ============================================================
+// RHS
+// ============================================================
+cout<<"\n---------------- RHS ----------------------------\n";
+
+print_timer("RHS.CopyValues",t_rhs_copy);
+
+print_timer("RHS.MultiplyByTwoTo",t_rhs_mult);
+
+print_timer("RHS += CST",t_rhs_add);
+
+
+// ============================================================
+// LHS
+// ============================================================
+cout<<"\n---------------- LHS ----------------------------\n";
+
+print_timer("sum_c.MultiplyByConstant",t_lhs_mult);
+
+print_timer("LHS.CopyValues",t_lhs_copy);
+
+print_timer("LHS.AddScalar",t_lhs_scalar);
+
+print_timer("LHS += sum_L",t_lhs_add);
+
+
+// ============================================================
+// Decision and updates
+// ============================================================
+cout<<"\n---------------- UPDATE -------------------------\n";
+
+print_timer("RHS <= LHS comparison",t_compare);
+
+print_timer("Prepare TwoMask",t_mask_prepare);
+
+print_timer("Shifted_Overlaps update",t_overlap_update);
+
+print_timer("sum_L.AddMasked",t_sumL_mask);
+
+print_timer("sum_c &= mask",t_sumc_mask);
+
+print_timer("fourSum preparation",t_fourSum);
+
+print_timer("sum_L subtraction",t_sumL_subtract);
+
+print_timer("Spin XOR mask",t_spin_flip);
+
+
+// ============================================================
+// Output
+// ============================================================
+cout<<"\n---------------- OUTPUT -------------------------\n";
+
+print_timer("SaveSpinConfigurations",t_save);
+
+print_timer("Progress display",t_progress);
+
+cout<<endl;
+
+}
+
 
 // =====================================================
 // PUBLIC API

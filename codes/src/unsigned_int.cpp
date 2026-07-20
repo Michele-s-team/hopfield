@@ -589,7 +589,7 @@ void UnsignedInt::DivideByTwoTo(void){
 // add addend to *this, and store the result in *this.
 // This method requires this->GetSize() to be >= addend->GetSize()
 void UnsignedInt::operator += (UnsignedInt* addend){
-    Bits carry, t;
+    Bits carry;
     AddTo(addend, &carry);
     // add the carry bit from the addition as a new entry in b
     // ******** THIS MAY BE TIME CONSUMING ********
@@ -799,7 +799,7 @@ void UnsignedInt::Subtract(UnsignedInt* subtrahend, UnsignedInt* result, Bits* b
 
 // Adds the bitwise AND of a and mask to this UnsignedInt without creating temporary objects.
 void UnsignedInt::AddAnd(UnsignedInt* a, Bits* mask){
-    Bits carry;
+    Bits carry, add_bit, new_carry, t;
     carry.Clear();
 
     const unsigned int size_a = a->GetSize();
@@ -807,17 +807,17 @@ void UnsignedInt::AddAnd(UnsignedInt* a, Bits* mask){
     unsigned int p = 0;
 
     for (; p < size_a; ++p) {
-        Bits add_bit = a->b[p] & (*mask);
-        Bits new_carry = (b[p] & add_bit) | (b[p] & carry) | (add_bit & carry);
+        add_bit.Set(a->b[p] & (*mask));
+        new_carry.Set((b[p] & add_bit) | (b[p] & carry) | (add_bit & carry));
         b[p] ^= &add_bit;
         b[p] ^= &carry;
-        carry = new_carry;
+        carry.Set(new_carry);
     }
 
     for (; p < size && carry.Get() != 0; ++p) {
-        Bits t = b[p] ^ carry;
-        carry  = b[p] & carry;
-        b[p]   = t;
+        t.Set(b[p] ^ carry);
+        carry.Set(b[p] & carry);
+        b[p].Set(t);
     }
 }
 
