@@ -172,9 +172,9 @@ int main() {
 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps(ran_evolve, false, 0, 0);
+                bits.compute_shifted_overlaps();
+                bits.runSweeps_overlaps(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
-                bits.toCanonical();
 
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +

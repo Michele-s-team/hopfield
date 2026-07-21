@@ -20,7 +20,8 @@ using namespace std;
 class SpinSystem {
 protected:
     int N;                              // total number of spins
-    vector<vector<int>> neighbors;      // neighbors[i] = liste of neigbhors of each spins
+    vector<vector<int>> neighbors;      // neighbors[i] = liste of neighbors of each spins
+    vector<vector<int>> non_neighbors;  // non neighbors of i
     vector<int> neighbor_count;         // number of neighbors for each spin
     vector<int> spins_set;              // spin configurations (±1), shape: [N * n_bits]: [configurations 1 for all spins, configurations 2 for all spins ...]
 
@@ -33,6 +34,8 @@ public:
     void initNetwork2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
     void initNetworkFullyConnected();          // Builds a fully connected network
     void initNetwork_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
+    void computeNonNeighbors();
+    
     int randomSpin(gsl_rng*);                      // initializes randomly a spin +-1
     int randomBit(gsl_rng*);                       // initializes randomly a bit 0/1
     void initSpins(gsl_rng*);                      // Initializes all spins randomly to ±1 using the GSL RNG

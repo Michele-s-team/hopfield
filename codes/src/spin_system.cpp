@@ -9,6 +9,7 @@
 #include "main.hpp"
 #include "gsl_math.h"
 #include "gsl_randist.h"
+#include <unordered_set>
 #include <math.h>
 
 // =====================================================
@@ -49,6 +50,7 @@ void SpinSystem::initNetwork2D_PBC() {
             };
             neighbor_count[i] = 4;
         }
+    computeNonNeighbors();
 }
 
 // 2D square lattice with open boundary conditions (edge spins have fewer neighbors)
@@ -64,6 +66,7 @@ void SpinSystem::initNetwork2D_OBC() {
             if (y - 1 >= 0) neighbors[i].push_back(x + L*(y-1));
             neighbor_count[i] = neighbors[i].size();
         }
+    computeNonNeighbors();
 }
 
 // Fully connected network: every site is connected to every other site
@@ -77,18 +80,41 @@ void SpinSystem::initNetworkFullyConnected(){
         }
         neighbor_count[i] = N - 1;
     }
+    computeNonNeighbors();
 }
 
 // Erdos-Renyi random graph: each directed edge (i,j) included with probability p
 void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     neighbors.assign(N, vector<int>());
     fill(neighbor_count.begin(), neighbor_count.end(), 0);
-    for (int i = 0; i < N; i++)
-        for (int j = 0; j < N; j++)
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < N; j++){
             if (i != j && gsl_rng_uniform(ran) < p) {
                 neighbors[i].push_back(j);
                 neighbor_count[i]++;
             }
+        }
+    }
+    computeNonNeighbors();
+
+}
+
+
+void SpinSystem::computeNonNeighbors(){
+    non_neighbors.assign(N, vector<int>());
+
+    for (int i = 0; i < N; ++i) {
+        // on met les voisins de i dans un set pour un lookup en O(log k) (ou unordered_set pour O(1))
+        unordered_set<int> neigh_set(neighbors[i].begin(), neighbors[i].end());
+
+        non_neighbors[i].reserve(N - 1 - neighbors[i].size());
+        for (int j = 0; j < N; ++j) {
+            if (j == i) continue;              // on exclut le spin lui-même
+            if (neigh_set.find(j) == neigh_set.end()) {
+                non_neighbors[i].push_back(j);
+            }
+        }
+    }
 }
 
 // =====================================================

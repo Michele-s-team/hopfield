@@ -476,6 +476,146 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
     return ok;
 }
 
+
+void HopfieldBits::runSweeps_overlaps_new(gsl_rng* ran, bool save, double freq, int shift){
+
+    const int total_sweeps    = getNSweeps();
+    const int progress_stride = max(1, total_sweeps / 10);
+    const int save_stride     = save ? max(1, (int)round(1.0 / freq)) : 0;
+
+    Bits mask;
+    Bits carry_g, borrow_g;   // carry/borrow dédiés à Shifted_Overlaps[mu]
+    Bits carry_L;  // carry/borrow dédiés à sum_L
+    Bits carry_c;
+
+    Bits borrow_delta;
+
+    UnsignedInt sum_c          ((unsigned long long) P);
+    UnsignedInt sum_cl         ((unsigned long long) 2 * N* P);
+    UnsignedInt sum_c_times_2N ((unsigned long long) 2 * N * P);
+    UnsignedInt LHS            ((unsigned long long) P * (5*N - 1));
+    UnsignedInt RHS            ((unsigned long long) P * (5*N - 1));
+    UnsignedInt tmp            ((unsigned long long) P * (N-1));
+    UnsignedInt fourSum        ((unsigned long long) 4 * P);
+    UnsignedInt TwoMask        ((unsigned long long) 2);
+
+    UnsignedInt CST ((unsigned long long) (N-1)*P);
+    CST.SetAll((N-1)*P);
+
+    UnsignedInt Two ((unsigned long long) 2);
+    Two.SetAll(2);
+
+    UnsignedInt TwoP  ((unsigned long long) 2*P);
+    TwoP.SetAll(2*P);
+
+    UnsignedInt sum_L ((unsigned long long) 2*N*P);
+    sum_L.SetAll(0);
+
+    const unsigned long long twoN = 2 * N;
+
+    vector<Bits> c_cache(P);
+
+    cout <<"initialization done"<<endl;
+
+    // Precompute Σ_mu L^mu
+    for (int mu = 0; mu < P; ++mu) {
+        sum_L+= &Shifted_Overlaps[mu];
+    }
+    
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
+
+        for (int step = 0; step < N; ++step) {
+
+            int spin      = gsl_rng_uniform_int(ran, N);
+            int deg_spin  = neighbor_count[spin];
+            int random = randomNumber(ran, deg_spin * P, N);
+
+            Bits& S_i = Bits_Spins_Set[spin];
+
+            if (random >= P * deg_spin) {
+                cout << "unconditionnal flip"<<endl;
+                sum_c.SetAll(0); 
+                for (int mu = 0; mu < P; mu++){
+
+                    c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
+                    sum_c+=&c_cache[mu];
+
+                    Shifted_Overlaps[mu]+=&Two;
+                    Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
+                }
+                sum_L+=&TwoP;
+                fourSum.CopyValues(sum_c);
+                fourSum.MultiplyByPowerOfTwo(2);
+
+                sum_L.SubtractTo(&fourSum, &borrow_delta); 
+
+                S_i.ComplementTo();
+                continue;
+            }
+
+            sum_c.SetAll(0);
+            sum_cl.SetAll(0);
+            LHS.SetAll(0);
+            RHS.SetAll(0);
+
+            for (int mu = 0; mu < P; ++mu) {
+                carry_c.Set(0);
+
+                c_cache[mu] = ~(S_i ^ Patterns[spin*P+mu]);
+
+                sum_c+=&c_cache[mu];
+                sum_cl.AddAnd(&Shifted_Overlaps[mu], &c_cache[mu]);
+            }
+        
+            RHS.CopyValues(sum_cl);
+            RHS.MultiplyByTwoTo();
+            RHS += &CST;
+
+            sum_c.MultiplyByConstant(twoN, &sum_c_times_2N);
+            LHS.CopyValues(sum_c_times_2N);
+            LHS.AddScalar(random, tmp);
+            LHS += &sum_L;
+
+            mask = (RHS <= LHS);
+
+            TwoMask.SetAll(0);
+            TwoMask.CopyValues(mask);
+            TwoMask.MultiplyByTwoTo();
+
+            for (int mu = 0; mu < P; mu++){
+            
+                c_cache[mu] &= mask;
+
+                Shifted_Overlaps[mu]+=&TwoMask;
+                Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
+            }
+
+            sum_L.AddMasked(&TwoP, &mask);
+
+            sum_c &= &mask;
+
+            fourSum.CopyValues(sum_c);
+            fourSum.MultiplyByPowerOfTwo(2);
+
+            borrow_delta.Set(0);
+            sum_L.SubtractTo(&fourSum, &borrow_delta); 
+
+            S_i ^= &mask;
+        }
+
+        if (save && sweep > 0 && (sweep % save_stride == 0))
+            SaveSpinConfigurations(sweep);
+
+        if ((sweep + 1) % progress_stride == 0)
+            cout << "\rSweep: " << sweep + 1
+                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
+                 << flush;
+    }
+
+    cout << endl; 
+    cout <<" bitwise done"<< endl;
+}
+
 void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int shift){
 
     const int total_sweeps    = getNSweeps();

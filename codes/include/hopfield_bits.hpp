@@ -70,6 +70,7 @@ public:
     void runSweeps_DEBUG(gsl_rng* ran, bool save, double freq, int shift);
 
     void runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int shift);
+    void runSweeps_overlaps_new(gsl_rng* ran, bool save, double freq, int shift);
     void runSweeps_overlaps_DEBUG(gsl_rng* ran, bool save, double freq, int shift);
 };
 
