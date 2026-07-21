@@ -190,30 +190,30 @@ The second sum is simply the sum $G_{ki} S_i S_k$ over the non-neighbors of $k$.
 \begin{equation}
   \lfloor \rho \rfloor +p  \geq \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k.
 \end{equation}
-The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps $ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, with $S_k \xi_k^\mu = 2 c_k^\mu -1$ with $c_k^\mu = S_k \odot \xi_k^\mu$,
+The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps $ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, writing $S_k \xi_k^\mu = 2 C_k^\mu -1$ with $C_k^\mu = B_k \odot X_k^\mu$, $X_k^\mu $ being the binary counterpart of $\xi_k^\mu$,
 \begin{align*}
     \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu &= \sum_{\mu=1}^p \xi_k^\mu S_k (\tilde{M}^\mu - N)\\
-    &= - N \sum_{\mu=1}^p \left(2c_k^\mu - 1 \right) + \sum_{\mu=1}^p \left(2 c_k^\mu-1\right) \tilde{M}^\mu\\
-    &= Np - 2N \sum_{\mu=1}^p c_k^\mu + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu- \sum_{\mu=1}^p \tilde{M}^\mu.
+    &= - N \sum_{\mu=1}^p \left(2C_k^\mu - 1 \right) + \sum_{\mu=1}^p \left(2 C_k^\mu-1\right) \tilde{M}^\mu\\
+    &= Np - 2N \sum_{\mu=1}^p C_k^\mu + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu- \sum_{\mu=1}^p \tilde{M}^\mu.
 \end{align*}
 
 We also use the previous decomposition of $G_{ki} S_i S_k$:
 \begin{equation*}
     \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k= -
     \sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} +
-  2 \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik} \oplus \tilde{G}_{ki} - 2p
-    \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik}
+  2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} - 2p
+    \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}
     +(N-n_k-1)p.
 \end{equation*}
 The overall bitwise flip condition is thus:
 \begin{equation}
-    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p c_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} c_{ik}.
+    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}.
     \label{eq:bitwise_flip_overlap}
 \end{equation}
-This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4c_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas.
+This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas.
 In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
 \begin{equation}
-    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p c_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu \geq  p (N-1) + 2 \sum_{\mu=1}^p c_k^\mu \oplus \tilde{M}^\mu,
+    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu \geq  p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
     \label{eq:bitwise_flip_overlap_FC}
 \end{equation}
 and no summation over the non-neighbors is required.
@@ -250,7 +250,7 @@ Lastly, we can plot the evolution of the mean of maximum overlaps across all rep
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.7\linewidth]{mean_overlap_N1024_beta=5.0.pdf}
-\caption{Evolution $\langle m^* \rangle$ with the storage load. }
+\caption{Evolution of $\langle m^* \rangle$ with the storage load. }
 \label{fig:mean_mu_star}
 \end{figure}
 As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly increases to $\langle m^* \rangle \approx 1$ and remains stable. The plateau value decreases as the storage load increases: it is less and less likely for the system to end up in a completely pattern-aligned configuration from a random initialization when the number of spurious states increases.
