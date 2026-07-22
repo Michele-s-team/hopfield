@@ -135,8 +135,8 @@ int main(){
                     <<"\n"
                     << endl;
 
-                bits.initNetwork2D_PBC();
-                nobits.initNetwork2D_PBC();
+                bits.initNetwork_FullyConnected();
+                nobits.initNetwork_FullyConnected();
 
                 cout << "Network initialized" <<endl;
 

@@ -30,9 +30,9 @@ public:
     SpinSystem(int L);                             // Constructor: allocates all vectors for an L x L lattice
     virtual ~SpinSystem() = default;
     void setSize(int); 
-    void initNetwork2D_PBC();                  // Builds the periodic square lattice connectivity (4 neighbors per spin)
-    void initNetwork2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
-    void initNetworkFullyConnected();          // Builds a fully connected network
+    void initNetwork_2D_PBC();                  // Builds the periodic square lattice connectivity (4 neighbors per spin)
+    void initNetwork_2D_OBC();                  // Builds the square lattice connectivity with Open Boundary Conditions
+    void initNetwork_FullyConnected();          // Builds a fully connected network
     void initNetwork_random(gsl_rng*, double); // builds a random connectivity matrix with no self-connections
     void computeNonNeighbors();
     

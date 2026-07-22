@@ -37,7 +37,7 @@ void SpinSystem::setSize(int new_N) {
 // =====================================================
 
 // 2D square lattice with periodic boundary conditions
-void SpinSystem::initNetwork2D_PBC() {
+void SpinSystem::initNetwork_2D_PBC() {
     int L = sqrt(N);
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
@@ -54,7 +54,7 @@ void SpinSystem::initNetwork2D_PBC() {
 }
 
 // 2D square lattice with open boundary conditions (edge spins have fewer neighbors)
-void SpinSystem::initNetwork2D_OBC() {
+void SpinSystem::initNetwork_2D_OBC() {
     int L = sqrt(N);
     for (int y = 0; y < L; ++y)
         for (int x = 0; x < L; ++x) {
@@ -70,7 +70,7 @@ void SpinSystem::initNetwork2D_OBC() {
 }
 
 // Fully connected network: every site is connected to every other site
-void SpinSystem::initNetworkFullyConnected(){
+void SpinSystem::initNetwork_FullyConnected(){
     for (int i = 0; i < N; ++i) {
         neighbors[i].clear();
         neighbors[i].reserve(N - 1);

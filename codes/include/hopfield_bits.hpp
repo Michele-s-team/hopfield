@@ -34,7 +34,7 @@ public:
 
     //void initRandomNumbers(gsl_rng*);                                         // initialize RNG-based thresholds
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base);    // initialize from external distribution
-    
+
     void GetMagnetizations(vector<double>&) override;                           // get the n_bits magnetizations using the UnsignedInt formalism
     void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
 
@@ -64,10 +64,10 @@ public:
     
     void runSweeps(gsl_rng* ran, bool save, double freq, int burn_in);
     void runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in);
-
     void runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_overlaps_non_neighbors(gsl_rng* ran, bool save, double freq, int burn_in);
+    void runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in);
+    
+    void runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in);
     void runSweeps_overlaps_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in);
 };
 

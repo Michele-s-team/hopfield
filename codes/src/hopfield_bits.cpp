@@ -363,12 +363,12 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) 
     double alpha = (double)P / N;
 
     double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    double mean_density = mean_degree / N;
+    double mean_density = mean_degree / (N-1);
 
     if (alpha + 0.5 <= mean_density) {
         // Dense graph: overlap formulation over non-neighbors is cheaper
         compute_shifted_overlaps();
-        runSweeps_overlaps_non_neighbors(ran, save, freq, burn_in);
+        runSweeps_overlaps(ran, save, freq, burn_in);
     } else {
         // Sparse graph: direct neighbor-coupling formulation is cheaper
         initCouplingsBits();
@@ -564,10 +564,10 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 // Falls back to the neighbor-based algorithm (runSweeps_overlaps) whenever
 // the graph is fully connected (min degree == N-1), since the non-neighbor
 // set is then empty and this formulation offers no benefit.
-void HopfieldBits::runSweeps_overlaps_non_neighbors(gsl_rng* ran, bool save, double freq, int burn_in) {
+void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
 
     int min_deg = *min_element(degrees.begin(), degrees.end());
-    if (min_deg == N - 1) { runSweeps_overlaps(ran, save, freq, burn_in); return; }
+    if (min_deg == N - 1) { runSweeps_pure_overlaps(ran, save, freq, burn_in); return; }
 
     cout << "Overlaps and non-neighbors couplings spin update algorithm" << endl;
 
@@ -783,7 +783,7 @@ void HopfieldBits::runSweeps_overlaps_non_neighbors(gsl_rng* ran, bool save, dou
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
-void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
+void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
 
     cout << "Overlaps spin update algorithm" << endl;
 
@@ -835,13 +835,12 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
         for (int step = 0; step < N; ++step) {
 
             int spin     = gsl_rng_uniform_int(ran, N);
-            int deg_spin = degrees[spin];
-            int random   = randomNumber(ran, deg_spin * P, N);
+            int random   = randomNumber(ran, (N-1) * P, N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= P * deg_spin) {
+            if (random >= P * (N-1)) {
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
 
