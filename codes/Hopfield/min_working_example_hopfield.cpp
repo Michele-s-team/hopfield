@@ -155,7 +155,7 @@ int main() {
                      << " | " << i + 1 << "/" << temperatures.size()
                      << "\n\n";
 
-                bits.initNetworkFullyConnected();
+                bits.initNetwork_FullyConnected();
                 cout << "Network initialized\n";
 
                 gsl_rng_set(ran, 123);

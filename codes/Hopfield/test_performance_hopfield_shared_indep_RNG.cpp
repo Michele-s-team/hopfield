@@ -134,14 +134,16 @@ int main(){
                     << " | " << i+1 << "/" << temperatures.size()
                     <<"\n"
                     << endl;
+                gsl_rng_set(ran, 123);
 
-                bits.initNetwork_FullyConnected();
-                nobits.initNetwork_FullyConnected();
+                bits.initNetwork_random(ran, 0.7);
+                gsl_rng_set(ran, 123);
+
+                nobits.initNetwork_random(ran, 0.7);
 
                 cout << "Network initialized" <<endl;
 
-                gsl_rng_set(ran, 123);
-
+                
                 bits.initSpinsBits(ran);
                 bits.toCanonical();
 
@@ -185,7 +187,6 @@ int main(){
                 cout  << "nobits shared RNG: " << endl;
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.initCouplings();
                 nobits.runSweepsSharedRNG(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 
@@ -210,8 +211,7 @@ int main(){
 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.compute_overlaps();
-                nobits.runSweepsIndependentRNG_overlaps(ran_evolve, false, 0);
+                nobits.runSweepsIndependentRNG(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                
 

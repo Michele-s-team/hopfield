@@ -175,7 +175,7 @@ int main() {
             cout << "  Base folder:   " << base_folder << "\n";
             cout << "==============================================\n\n";
 
-            bits.initNetworkFullyConnected();
+            bits.initNetwork_FullyConnected();
             cout << "Network initialized (Fully Connected)\n";
 
             // ── Evolution: HopfieldBits ────────────────────────────────────

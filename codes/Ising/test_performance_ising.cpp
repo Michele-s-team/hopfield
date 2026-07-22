@@ -116,8 +116,8 @@ int main() {
             double T     = temperatures[i];
             double betaJ = 1.0 / T;
 
-            bits.initNetworkFullyConnected();
-            nobits.initNetworkFullyConnected();
+            bits.initNetwork_FullyConnected();
+            nobits.initNetwork_FullyConnected();
 
             gsl_rng_set(ran, 123);
             bits.initSpins(ran);

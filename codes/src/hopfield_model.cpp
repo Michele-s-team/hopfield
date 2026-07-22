@@ -97,7 +97,7 @@ void HopfieldModel::initCouplings(){
 
 void HopfieldModel::initCouplings_nonNeighbors(){
     // Allocate one flat array per spin
-    couplings.resize(N);
+    couplings_nonneighbors.resize(N);
     for (int spin = 0; spin < N; ++spin) {
         int non_deg = (int)non_neighbors[spin].size();
         couplings_nonneighbors[spin].assign(non_deg * n_bits, 0);
@@ -115,7 +115,7 @@ void HopfieldModel::initCouplings_nonNeighbors(){
                     J += patterns[spin * P * n_bits + mu * n_bits + r]
                        * patterns[nb   * P * n_bits + mu * n_bits + r];
                 }
-                couplings[spin][k * n_bits + r] = J;
+                couplings_nonneighbors[spin][k * n_bits + r] = J;
             }
             // Mirror onto non-neighbour
             int k_mirror = non_neighbor_index(nb, spin);

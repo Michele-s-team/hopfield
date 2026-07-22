@@ -119,7 +119,7 @@ int main() {
         cout << "==============================================\n\n";      
 
         // Build the 2D square lattice with periodic boundary conditions
-        bits.initNetworkFullyConnected();
+        bits.initNetwork_FullyConnected();
         cout << "Network initialized (Fully Connected)\n";
 
         // ── Evolution: HopfieldBits ──────────────────────────────────────────

@@ -46,28 +46,8 @@ BitSet BitSet_one; // really strange that we need to define this for the operato
 //  compile on abacus:
 //  g++ main.cpp src/*.cpp -I ./include/ -I /mnt/beegfs/home/mcastel1/gsl/include/gsl  -I/mnt/beegfs/home/mcastel1/gsl/include/ -L/mnt/beegfs/home/mcastel1/gsl/lib/ -lgsl -lgslcblas -lm -O3 -Wno-deprecated  -o main.o -DHAVE_INLINE
 
+// g++ Hopfield/test_performance_hopfield_shared_indep_RNG.cpp src/*.cpp -llapack -lgsl -lgslcblas -lm -O3 -flto -Wno-deprecated -Iinclude -I/usr/include/gsl -DHAVE_INLINE -march=native -o main.o
 
-// =============================================================================
-// phase_diagram.cpp
-//
-// Simulates the 2D Ising model using a bitwise Metropolis algorithm
-// (IsingBits) on a square lattice of size L×L with periodic boundary
-// conditions, across a range of temperatures.
-//
-// For each temperature T:
-//   - sets the inverse temperature beta = 1/T
-//   - reinitializes spins from a fixed reference configuration
-//   - runs N_sweeps Metropolis sweeps, saving magnetizations at regular
-//     intervals to CSV files (one per realization, named L{L}_r{r}.csv)
-//
-// The temperature grid is defined by several segments with different
-// step sizes, with finer resolution near the critical point Tc ≈ 2.269.
-//
-// An optional classic (non-bitwise) simulation is available for comparison
-// and correctness checking (see commented sections).
-//
-// Output: ../results/magnetizations/L{L}_r{r}.csv  (columns: T, N, m)
-// =============================================================================
 
 void make_dir(const string& path) {
     mkdir(path.c_str(), 0755);
@@ -78,13 +58,10 @@ void make_dir(const string& path) {
 // Main
 // ──────────────────────────────────────────────
 // TO DO :  optimzied version : several repetions, random order bit/nobits
-int main() {
+int main(){
 
     SimulationIO IO;
-
-    struct timespec t_init, t_final;
-    struct timespec t_start, t_end;
-    struct timespec t0, t1;
+    struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
     const int N_sweeps = 1 << 10;
 
@@ -97,34 +74,39 @@ int main() {
     };
 
     vector<double> temperatures = {
-        1.0
+        1.0,2.0,3.0,4.0,5.0,
+        6.0,7.0,8.0,9.0,10.0
     };
 
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
     gsl_rng* ran_evolve = gsl_rng_alloc(gsl_rng_gfsr4);
 
+    ofstream out("../results/Hopfield/test_speedup/speedup.csv");
+
+    out << "N,P,alpha,T,"
+           "t_bits,"
+           "t_nobits_indep,"
+           "t_nobits_shared,"
+           "speedup_indep,"
+           "speedup_shared,"
+           "ratio_indep_shared\n";
+
+    out << fixed << setprecision(6);
+
     clock_gettime(CLOCK_MONOTONIC, &t_init);
 
     double total_time_global = 0.0;
 
-    // ============================================================
-    // Loop over system sizes
-    // ============================================================
-
-    for (int N_spins : N_vals) {
+    for (int N_spins : N_vals){
 
         clock_gettime(CLOCK_MONOTONIC, &t_start);
 
         double total_time_N = 0.0;
 
         cout << "\n==================================================\n";
-        cout << "Lattice size     : " << N_spins << '\n';
-        cout << "Number of sweeps : " << N_sweeps << '\n';
+        cout << "Lattice size     : N = " << N_spins << '\n';
+        cout << "Number of sweeps : N_sweeps = " << N_sweeps << '\n';
         cout << "==================================================\n";
-
-        // ========================================================
-        // Loop over loading factors
-        // ========================================================
 
         for (double alpha : alpha_vals) {
 
@@ -134,69 +116,191 @@ int main() {
 
             cout << "\n------------------------------------------\n";
             cout << "alpha = " << alpha
-                 << " | P = " << P << '\n';
+                 << "   P = " << P << '\n';
             cout << "------------------------------------------\n";
 
             HopfieldBits bits(N_spins, 1, N_sweeps, P);
-
-            // ====================================================
-            // Loop over temperatures
-            // ====================================================
+            HopfieldNoBits nobits(N_spins, 1, N_sweeps, P);
 
             for (size_t i = 0; i < temperatures.size(); ++i) {
 
                 double T = temperatures[i];
                 double beta = 1.0 / T;
 
-                cout << "\n"
-                     << "N = " << N_spins
-                     << " | alpha = " << alpha
-                     << " | T = " << T
-                     << " | " << i + 1 << "/" << temperatures.size()
-                     << "\n\n";
-
-                bits.initNetwork2D_PBC();
-                cout << "Network initialized\n";
-
+                cout
+                    << "\nN = " << N_spins
+                    << " | alpha = " << alpha
+                    << " | T = " << T
+                    << " | " << i+1 << "/" << temperatures.size()
+                    <<"\n"
+                    << endl;
                 gsl_rng_set(ran, 123);
 
+                bits.initNetwork_random(ran, 0.7);
+                gsl_rng_set(ran, 123);
+
+                nobits.initNetwork_random(ran, 0.7);
+
+                cout << "Network initialized" <<endl;
+
+                
                 bits.initSpinsBits(ran);
-                cout << "Initial configuration initialized\n";
-
-                bits.initPatternsBits(ran);
-                cout << "Patterns initialized\n\n";
-
-                bits.setBeta(beta);
-
-                cout << "Bitwise implementation\n";
-
-                gsl_rng_set(ran_evolve, 42);
-                clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.initCouplingsBits();
-                bits.initCouplings_nonNeighbors_Bits();
-                bits.compute_shifted_overlaps();
-                bits.runSweeps_overlaps_new(ran_evolve, false, 0, 0);
-                clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
 
+                auto initial_config_bits = bits.getSpinsConfig();
+                nobits.initSpinsFromConfig(initial_config_bits);
+
+                cout << "Initial Configuration initialized" <<endl;
+
+                IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), initial_config_bits, N_spins);
+
+                bits.initPatternsBits(ran);
+                auto patterns = bits.getPatternsBitsToCanonical();
+                nobits.initPatternsFromConfig(patterns);
+
+                cout << "Patterns initialized \n" <<endl;
+
+                bits.setBeta(beta);
+                nobits.setBeta(beta);
+
+                // =====================================================
+                // BITWISE
+                // =====================================================
+
+                cout << "bitwise: "<<endl;
+                
+                gsl_rng_set(ran_evolve, 42);
+                clock_gettime(CLOCK_MONOTONIC, &t0);
+                bits.runSweeps(ran_evolve, false, 0, 0);
+                clock_gettime(CLOCK_MONOTONIC, &t1);
+                bits.toCanonical();
                 double t_bits =
                     (t1.tv_sec - t0.tv_sec) +
                     (t1.tv_nsec - t0.tv_nsec) * 1e-9;
 
-                cout << "Execution time : "
-                     << t_bits
-                     << " s\n\n";
+                
+                cout << t_bits << " s\n"<<endl;
 
-                total_time_alpha += t_bits;
-                total_time_N += t_bits;
-                total_time_global += t_bits;
+                // =====================================================
+                // CLASSICAL SHARED RNG
+                // =====================================================
+                cout  << "nobits shared RNG: " << endl;
+                gsl_rng_set(ran_evolve, 42);
+                clock_gettime(CLOCK_MONOTONIC, &t0);
+                nobits.runSweepsSharedRNG(ran_evolve, false, 0);
+                clock_gettime(CLOCK_MONOTONIC, &t1);
+                
+                double t_nobits_shared =
+                    (t1.tv_sec - t0.tv_sec) +
+                    (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+                
+                cout << t_nobits_shared << " s\n" <<endl;
+
+                cout << "Comparison bits/nobits with Shared RNG: "<<endl;
+
+                IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), bits.getSpinsConfig(), N_spins);
+
+                // =====================================================
+                // CLASSICAL INDEPENDENT RNG
+                // =====================================================
+
+                cout << "nobits independent RNG: "<<endl;
+
+                // Reinitialisation pour comparer les mêmes conditions
+                nobits.initSpinsFromConfig(initial_config_bits);
+
+                gsl_rng_set(ran_evolve, 42);
+                clock_gettime(CLOCK_MONOTONIC, &t0);
+                nobits.runSweepsIndependentRNG(ran_evolve, false, 0);
+                clock_gettime(CLOCK_MONOTONIC, &t1);
+               
+
+                double t_nobits_indep =
+                    (t1.tv_sec - t0.tv_sec) +
+                    (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+
+                cout << t_nobits_indep << " s\n"<<endl;;
+
+                cout << "Summary :"<<endl;
+
+                cout << "   bitwise                : "
+                     << t_bits << " s\n";
+
+                cout
+                    << "   nobits shared  RNG     : "
+                    << t_nobits_shared << " s\n";
+                
+                cout
+                    << "   nobits independent RNG : "
+                    << t_nobits_indep << " s\n\n";
+
+
+                  
+                // =====================================================
+                // SPEEDUPS
+                // =====================================================
+
+                double speedup_indep =
+                    (t_bits > 0.0)
+                    ? t_nobits_indep / t_bits
+                    : 0.0;
+
+                double speedup_shared =
+                    (t_bits > 0.0)
+                    ? t_nobits_shared / t_bits
+                    : 0.0;
+
+                double ratio_indep_shared =
+                    (t_nobits_shared > 0.0)
+                    ? t_nobits_indep / t_nobits_shared
+                    : 0.0;
+
+                cout
+                    << "   speedup indep      : "
+                    << speedup_indep << '\n'
+                    << "   speedup shared RNG : "
+                    << speedup_shared << '\n'
+                    << "   indep/shared RNG   : "
+                   << ratio_indep_shared << "\n\n";
+
+                // =====================================================
+                // CSV
+                // =====================================================
+
+                out
+                    << N_spins << ","
+                    << P << ","
+                    << alpha << ","
+                    << T << ","
+                    << t_bits << ","
+                    << t_nobits_indep << ","
+                    << t_nobits_shared << ","
+                    << speedup_indep << ","
+                    << speedup_shared << ","
+                    << ratio_indep_shared
+                    << "\n";
+
+
+                out.flush();
+
+                double t_total =
+                    t_bits +
+                    t_nobits_indep +
+                    t_nobits_shared;
+
+
+                total_time_alpha += t_total;
+                total_time_N += t_total;
+                total_time_global += t_total;
+
             }
 
-            cout << "[Alpha summary] "
-                 << "alpha = " << alpha
-                 << " | accumulated time = "
-                 << total_time_alpha
-                 << " s\n";
+            cout
+                << "\n[alpha timing] alpha = "
+                << alpha
+                << " | total time = "
+                << total_time_alpha
+                << " s\n";
         }
 
         clock_gettime(CLOCK_MONOTONIC, &t_end);
@@ -205,11 +309,20 @@ int main() {
             (t_end.tv_sec - t_start.tv_sec) +
             (t_end.tv_nsec - t_start.tv_nsec) * 1e-9;
 
-        cout << "\n==================================================\n";
-        cout << "N = " << N_spins << '\n';
-        cout << "Accumulated compute time : " << total_time_N << " s\n";
-        cout << "Wall-clock time          : " << elapsed_N << " s\n";
-        cout << "==================================================\n";
+        cout
+            << "\n[N timing] N = "
+            << N_spins
+            << " | accumulated = "
+            << total_time_N
+            << " s\n";
+
+
+        cout
+            << "Finished N = "
+            << N_spins
+            << " in "
+            << elapsed_N
+            << " s\n";
     }
 
     clock_gettime(CLOCK_MONOTONIC, &t_final);
@@ -218,13 +331,22 @@ int main() {
         (t_final.tv_sec - t_init.tv_sec) +
         (t_final.tv_nsec - t_init.tv_nsec) * 1e-9;
 
-    cout << "\n==================================================\n";
-    cout << "Total wall-clock time : " << elapsed << " s\n";
-    cout << "Total compute time    : " << total_time_global << " s\n";
-    cout << "==================================================\n";
+    cout << "\n=========================================\n";
+    cout << "Total execution time : "
+         << elapsed
+         << " s\n";
+
+    cout << "Total accumulated compute time : "
+         << total_time_global
+         << " s\n";
+
+    cout << "=========================================\n";
+
+    out.close();
 
     gsl_rng_free(ran);
     gsl_rng_free(ran_evolve);
+
 
     return 0;
 }

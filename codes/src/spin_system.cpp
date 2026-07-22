@@ -87,11 +87,13 @@ void SpinSystem::initNetwork_FullyConnected(){
 void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     neighbors.assign(N, vector<int>());
     fill(degrees.begin(), degrees.end(), 0);
-    for (int i = 0; i < N; i++){
-        for (int j = 0; j < N; j++){
-            if (i != j && gsl_rng_uniform(ran) < p) {
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j < N; j++) {
+            if (gsl_rng_uniform(ran) < p) {
                 neighbors[i].push_back(j);
+                neighbors[j].push_back(i);
                 degrees[i]++;
+                degrees[j]++;
             }
         }
     }
