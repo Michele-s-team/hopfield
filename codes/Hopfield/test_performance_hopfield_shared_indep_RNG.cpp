@@ -66,7 +66,7 @@ int main(){
     const int N_sweeps = 1 << 10;
 
     vector<int> N_vals = {
-        32 * 32
+        10 * 10
     };
 
     vector<double> alpha_vals = {

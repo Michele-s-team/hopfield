@@ -147,8 +147,8 @@ int main(){
                 double T = temperatures[i];
                 double beta = 1.0 / T;
 
-                bits.initNetworkFullyConnected();
-                nobits.initNetworkFullyConnected();
+                bits.initNetwork_FullyConnected();
+                nobits.initNetwork_FullyConnected();
 
                 cout << "Network initialized" <<endl;
 
