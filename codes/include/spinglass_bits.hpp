@@ -21,7 +21,7 @@ using namespace std;
 class SpinGlassBits : public SpinGlassModel {
 
     vector<Bits> Bits_Spins_Set;                 // bitwise spins across all realizations
-    vector<UnsignedInt> Neighbor_Count;          // degree encoded for vectorized ops
+    vector<UnsignedInt> Degrees;          // degree encoded for vectorized ops
     vector<vector<Bits>> Couplings;              // couplings encoded for vectorized ops
 
 public:

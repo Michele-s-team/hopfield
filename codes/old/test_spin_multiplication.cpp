@@ -56,13 +56,13 @@ const int prefix_width = 12;
 const int N_neurons = 100;
 // CLASSIC IMPLEMENTATION
 // connections: Matrix N_neurons x N_neurons, 1 if there is a connection, 0 otherwise, random.
-// neighbor_count: number of neighbors of each neuron (identical across all realizations).
+// degrees: number of neighbors of each neuron (identical across all realizations).
 // neurons_set: Matrix n_bits x N_neurons, initial spin value (+1/-1) per realization per neuron.
 
 // BITWISE IMPLEMENTATION
 // Same connections as classic implementation.
-// Neurons_Set: vector of N_neurons UnsignedInts. Neurons_Set[i] encodes the state of neuron iand neighbor_counts
-// Neighbor_Count: vector of N_neurons UnsignedInts of same as neighbor_count
+// Neurons_Set: vector of N_neurons UnsignedInts. Neurons_Set[i] encodes the state of neuron iand degreess
+// Degrees: vector of N_neurons UnsignedInts of same as degrees
 // 
 // across all n_bits realizations simultaneously: bit r = 1 if neuron i is +1 in realization r.
 
@@ -79,7 +79,7 @@ void init_neurons_set(vector<vector<int>>& neurons_set, gsl_rng* ran) {
 // simultaneously using bitwise arithmetic.
 //
 // Two branches avoid unnecessary computation:
-//   BRANCH 1: rho >= neighbor_count[i]  =>  flip neuron i in all realizations unconditionally
+//   BRANCH 1: rho >= degrees[i]  =>  flip neuron i in all realizations unconditionally
 //   BRANCH 2: general case, compute the neighbor sum and apply the mask
 void test_spin_multiplication(vector<vector<int>>& neurons_set, vector<int>& sum,  vector<int>& sum_bitwise){
 

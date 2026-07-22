@@ -17,7 +17,7 @@
 class IsingBits : public IsingModel {
 private:
     std::vector<Bits> Bits_Spins_Set;
-    std::vector<UnsignedInt> Neighbor_Count;
+    std::vector<UnsignedInt> Degrees;
 
 public:
 

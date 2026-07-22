@@ -23,10 +23,10 @@
 // canonical spins {-1,+1} -> bit representation {0,1}
 void IsingBits::fromCanonical(){
     Bits_Spins_Set.clear();
-    Neighbor_Count.clear();
+    Degrees.clear();
 
     Bits_Spins_Set.reserve(N);
-    Neighbor_Count.reserve(N);
+    Degrees.reserve(N);
     Bits spin_tmp;
 
     for (int i = 0; i < N; ++i) {
@@ -34,10 +34,10 @@ void IsingBits::fromCanonical(){
             int bit = (spins_set[r*N+i] + 1) / 2;
             spin_tmp.Set(r, bit);
         }
-        UnsignedInt neighbor_tmp(neighbor_count[i]);
-        neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
+        UnsignedInt neighbor_tmp(degrees[i]);
+        neighbor_tmp.SetAll((unsigned long long int) degrees[i]);
         Bits_Spins_Set.push_back(spin_tmp);
-        Neighbor_Count.push_back(neighbor_tmp);
+        Degrees.push_back(neighbor_tmp);
     }
 }
 
@@ -56,20 +56,20 @@ void IsingBits::toCanonical(){
 // Initialize spins directly in bit-sliced representation.
 // Replaces: initSpins() + fromCanonical() step 1.
 void IsingBits::initSpinsBits(gsl_rng* ran) {
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+    int max_deg = *max_element(degrees.begin(), degrees.end());
 
     Bits_Spins_Set.clear();
     Bits_Spins_Set.resize(N);
-    Neighbor_Count.clear();
-    Neighbor_Count.reserve(N);
+    Degrees.clear();
+    Degrees.reserve(N);
 
     for (int i = 0; i < N; ++i) {
         for (int r = 0; r < n_bits; ++r)
             Bits_Spins_Set[i].Set(r, randomBit(ran));
 
         UnsignedInt nc_tmp((unsigned long long) max_deg);
-        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
-        Neighbor_Count.push_back(nc_tmp);
+        nc_tmp.SetAll((unsigned long long) degrees[i]);
+        Degrees.push_back(nc_tmp);
     }
 }
 
@@ -123,7 +123,7 @@ void IsingBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+    int max_deg = *max_element(degrees.begin(), degrees.end());
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask;
     UnsignedInt sum((unsigned long long int)(max_deg * 2));
@@ -139,11 +139,11 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
         for (int step = 0; step < N; ++step) {
             spin = gsl_rng_uniform_int(ran, N);
             // Use base class randomNumber method
-            rng = randomNumber(ran, neighbor_count[0]);
+            rng = randomNumber(ran, degrees[0]);
             Bits& Bits_Spin_i = Bits_Spins_Set[spin];
 
             // 1ST BRANCH: UNCONDITIONAL FLIP IN EVERY REPLICA
-            if (rng >= neighbor_count[spin]) {  
+            if (rng >= degrees[spin]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
             }
@@ -157,7 +157,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
             sum.MultiplyByTwoTo();  
 
             threshold.SetAll((unsigned long long int) rng);
-            threshold += &Neighbor_Count[spin];
+            threshold += &Degrees[spin];
 
             mask = (sum <= threshold);
             Bits_Spin_i ^= &mask;

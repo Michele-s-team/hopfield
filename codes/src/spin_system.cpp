@@ -19,7 +19,7 @@
 SpinSystem::SpinSystem(int N)
     : N(N),
       neighbors(N),
-      neighbor_count(N, 0),
+      degrees(N, 0),
       spins_set(n_bits * N, 0)
 {}
 
@@ -28,7 +28,7 @@ void SpinSystem::setSize(int new_N) {
     N = new_N;
     
     neighbors.assign(N, vector<int>());
-    neighbor_count.assign(N, 0);
+    degrees.assign(N, 0);
     spins_set.assign(n_bits * N, 0);
 }
 
@@ -48,7 +48,7 @@ void SpinSystem::initNetwork2D_PBC() {
                 x + L*((y+1)%L),
                 x + L*((y-1+L)%L)
             };
-            neighbor_count[i] = 4;
+            degrees[i] = 4;
         }
     computeNonNeighbors();
 }
@@ -64,7 +64,7 @@ void SpinSystem::initNetwork2D_OBC() {
             if (x - 1 >= 0) neighbors[i].push_back((x-1) + L*y);
             if (y + 1 < L) neighbors[i].push_back(x + L*(y+1));
             if (y - 1 >= 0) neighbors[i].push_back(x + L*(y-1));
-            neighbor_count[i] = neighbors[i].size();
+            degrees[i] = neighbors[i].size();
         }
     computeNonNeighbors();
 }
@@ -78,7 +78,7 @@ void SpinSystem::initNetworkFullyConnected(){
             if (j != i)
                 neighbors[i].push_back(j);
         }
-        neighbor_count[i] = N - 1;
+        degrees[i] = N - 1;
     }
     computeNonNeighbors();
 }
@@ -86,12 +86,12 @@ void SpinSystem::initNetworkFullyConnected(){
 // Erdos-Renyi random graph: each directed edge (i,j) included with probability p
 void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     neighbors.assign(N, vector<int>());
-    fill(neighbor_count.begin(), neighbor_count.end(), 0);
+    fill(degrees.begin(), degrees.end(), 0);
     for (int i = 0; i < N; i++){
         for (int j = 0; j < N; j++){
             if (i != j && gsl_rng_uniform(ran) < p) {
                 neighbors[i].push_back(j);
-                neighbor_count[i]++;
+                degrees[i]++;
             }
         }
     }

@@ -155,7 +155,7 @@ int main() {
                      << " | " << i + 1 << "/" << temperatures.size()
                      << "\n\n";
 
-                bits.initNetworkFullyConnected();
+                bits.initNetwork2D_PBC();
                 cout << "Network initialized\n";
 
                 gsl_rng_set(ran, 123);
@@ -172,7 +172,10 @@ int main() {
 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.runSweeps_overlaps(ran_evolve, false, 0, 0);
+                bits.initCouplingsBits();
+                bits.initCouplings_nonNeighbors_Bits();
+                bits.compute_shifted_overlaps();
+                bits.runSweeps_overlaps_new(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
 

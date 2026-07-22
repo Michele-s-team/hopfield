@@ -38,6 +38,10 @@ int HopfieldModel::neighbor_index(int spin, int target) const {
     return find(nb.begin(), nb.end(), target) - nb.begin();
 }
 
+int HopfieldModel::non_neighbor_index(int spin, int target) const {
+    const auto& nnb = non_neighbors[spin];
+    return find(nnb.begin(), nnb.end(), target) - nnb.begin();
+}
 // =====================================================
 // PATTERNS INITIALIZATION
 // =====================================================
@@ -63,12 +67,12 @@ void HopfieldModel::initCouplings(){
     // Allocate one flat array per spin
     couplings.resize(N);
     for (int spin = 0; spin < N; ++spin) {
-        couplings[spin].assign(neighbor_count[spin] * n_bits, 0);
+        couplings[spin].assign(degrees[spin] * n_bits, 0);
     }
 
     // Hebb rule: compute each edge once (spin < nb), then mirror
     for (int spin = 0; spin < N; ++spin) {
-        for (int k = 0; k < neighbor_count[spin]; ++k) {
+        for (int k = 0; k < degrees[spin]; ++k) {
             int nb = neighbors[spin][k];
             if (nb <= spin)
                 continue;
@@ -91,6 +95,38 @@ void HopfieldModel::initCouplings(){
     }
 }
 
+void HopfieldModel::initCouplings_nonNeighbors(){
+    // Allocate one flat array per spin
+    couplings.resize(N);
+    for (int spin = 0; spin < N; ++spin) {
+        int non_deg = (int)non_neighbors[spin].size();
+        couplings_nonneighbors[spin].assign(non_deg * n_bits, 0);
+    }
+
+    // Hebb rule: compute each edge once (spin < nb), then mirror
+    for (int spin = 0; spin < N; ++spin) {
+        for (int k = 0; k < (int)non_neighbors[spin].size(); ++k) {
+            int nb = non_neighbors[spin][k];
+            if (nb <= spin)
+                continue;
+            for (int r = 0; r < n_bits; ++r) {
+                int J = 0;
+                for (int mu = 0; mu < P; ++mu) {
+                    J += patterns[spin * P * n_bits + mu * n_bits + r]
+                       * patterns[nb   * P * n_bits + mu * n_bits + r];
+                }
+                couplings[spin][k * n_bits + r] = J;
+            }
+            // Mirror onto non-neighbour
+            int k_mirror = non_neighbor_index(nb, spin);
+            std::copy_n(
+                &couplings_nonneighbors[spin][k * n_bits],
+                n_bits,
+                &couplings_nonneighbors[nb][k_mirror * n_bits]
+            );
+        }
+    }
+}
 
 // Overwrite the patterns tensor with an externally provided configuration.
 // Allows two model instances to share the exact same disorder realization.

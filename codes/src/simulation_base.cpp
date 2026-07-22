@@ -131,8 +131,8 @@ void SimulationBase::SavePatterns(const vector<int>& patterns, int P){
 // =====================================================
 // METROPOLIS
 // =====================================================
-int SimulationBase::randomNumber(gsl_rng* ran, int max_neighbor_count, int factor){
-    return m_metropolis.randomNumber(ran, max_neighbor_count, factor);
+int SimulationBase::randomNumber(gsl_rng* ran, int max_degrees, int factor){
+    return m_metropolis.randomNumber(ran, max_degrees, factor);
 }
 
 int SimulationBase::getNSweeps() const {

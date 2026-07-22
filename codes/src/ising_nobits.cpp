@@ -64,7 +64,7 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
         for (int step = 0; step < N; ++step) {
 
             const int spin = gsl_rng_uniform_int(ran, N);
-            const int rng = randomNumber(ran, neighbor_count[spin]);
+            const int rng = randomNumber(ran, degrees[spin]);
 
             DeltaE_all(spin, delta_E);
 
@@ -116,7 +116,7 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
                 if (dE <= 0) {
                     spins_set[r * N + spin] *= -1;
                 } else {
-                    const int rng = randomNumber(ran, neighbor_count[spin]);
+                    const int rng = randomNumber(ran, degrees[spin]);
                     if (rng >= dE)
                         spins_set[r * N + spin] *= -1;
                 }

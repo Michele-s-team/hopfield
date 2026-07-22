@@ -135,8 +135,8 @@ int main(){
                     <<"\n"
                     << endl;
 
-                bits.initNetworkFullyConnected();
-                nobits.initNetworkFullyConnected();
+                bits.initNetwork2D_PBC();
+                nobits.initNetwork2D_PBC();
 
                 cout << "Network initialized" <<endl;
 
@@ -169,8 +169,7 @@ int main(){
                 
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                bits.compute_overlaps();
-                bits.runSweeps_overlaps(ran_evolve, false, 0, 0);
+                bits.runSweeps(ran_evolve, false, 0, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 bits.toCanonical();
                 double t_bits =
@@ -186,8 +185,8 @@ int main(){
                 cout  << "nobits shared RNG: " << endl;
                 gsl_rng_set(ran_evolve, 42);
                 clock_gettime(CLOCK_MONOTONIC, &t0);
-                nobits.compute_overlaps();
-                nobits.runSweepsSharedRNG_overlaps(ran_evolve, false, 0);
+                nobits.initCouplings();
+                nobits.runSweepsSharedRNG(ran_evolve, false, 0);
                 clock_gettime(CLOCK_MONOTONIC, &t1);
                 
                 double t_nobits_shared =

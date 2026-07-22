@@ -22,7 +22,7 @@ protected:
     int N;                              // total number of spins
     vector<vector<int>> neighbors;      // neighbors[i] = liste of neighbors of each spins
     vector<vector<int>> non_neighbors;  // non neighbors of i
-    vector<int> neighbor_count;         // number of neighbors for each spin
+    vector<int> degrees;         // number of neighbors for each spin
     vector<int> spins_set;              // spin configurations (±1), shape: [N * n_bits]: [configurations 1 for all spins, configurations 2 for all spins ...]
 
 public:

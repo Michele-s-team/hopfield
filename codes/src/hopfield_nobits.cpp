@@ -80,7 +80,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             const int spin = gsl_rng_uniform_int(ran, N);
-            int deg_spin  = neighbor_count[spin];
+            int deg_spin  = degrees[spin];
             int rng = randomNumber(ran, P * deg_spin, N);
             // Branch 1: unconditional flip
             if (rng >= P * deg_spin) {
@@ -122,7 +122,7 @@ void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             const int spin = gsl_rng_uniform_int(ran, N);
-            int deg_spin  = neighbor_count[spin];
+            int deg_spin  = degrees[spin];
             int rng = randomNumber(ran, P * deg_spin, N);
             // Branch 1: unconditional flip
             if (rng >= P * deg_spin) {
@@ -183,7 +183,7 @@ void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double fre
                 if (dE <= 0) {
                     spins_set[r * N + spin] *= -1;
                 } else {
-                    const int rng = randomNumber(ran, neighbor_count[spin]);
+                    const int rng = randomNumber(ran, degrees[spin]);
                     if (rng >= dE)
                         spins_set[r * N + spin] *= -1;
                 }
@@ -214,7 +214,7 @@ void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, d
         for (int step = 0; step < N; ++step) {
 
             const int spin     = gsl_rng_uniform_int(ran, N);
-            const int deg_spin = neighbor_count[spin];
+            const int deg_spin = degrees[spin];
 
             // ΔE calculé une seule fois pour les n_bits replicas
             DeltaE_overlaps_all(spin, delta_E);

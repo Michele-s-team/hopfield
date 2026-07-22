@@ -24,6 +24,7 @@ protected:
     vector<int> patterns;                  // index : i * P * n_bits + mu * n_bits + r
 
     vector<vector<int>> couplings;         // couplings[i][k * n_bits + r]
+    vector<vector<int>> couplings_nonneighbors;         // couplingsnonneighbors[i][k * n_bits + r]
     vector<int> overlaps;                  // overlaps[mu * n_bits + r]
         
 public:
@@ -41,11 +42,14 @@ public:
     
     // Couplings initialization (from patterns)
     void initCouplings();
+    void initCouplings_nonNeighbors();
     vector<vector<int>> getCouplingsConfig();
 
     void compute_overlaps();
 
     int neighbor_index(int , int) const;
-};
+    int non_neighbor_index(int , int) const;
+
+}; 
 
 #endif

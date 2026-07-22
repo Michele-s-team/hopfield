@@ -22,10 +22,10 @@
 // canonical spins {-1,+1} -> bit representation {0,1}
 void SpinGlassBits::fromCanonical(){
     Bits_Spins_Set.clear();
-    Neighbor_Count.clear();
+    Degrees.clear();
     Couplings.clear();
     Bits_Spins_Set.reserve(N);
-    Neighbor_Count.reserve(N);
+    Degrees.reserve(N);
     Couplings.reserve(N);
 
     for (int i = 0; i < N; ++i) {
@@ -47,10 +47,10 @@ void SpinGlassBits::fromCanonical(){
             Couplings.back().push_back(coupling_tmp);
         }
 
-        UnsignedInt neighbor_tmp(neighbor_count[i]);
-        neighbor_tmp.SetAll((unsigned long long int) neighbor_count[i]);
+        UnsignedInt neighbor_tmp(degrees[i]);
+        neighbor_tmp.SetAll((unsigned long long int) degrees[i]);
         Bits_Spins_Set.push_back(spin_tmp);
-        Neighbor_Count.push_back(neighbor_tmp);
+        Degrees.push_back(neighbor_tmp);
     }
 }
 
@@ -69,20 +69,20 @@ void SpinGlassBits::toCanonical(){
 // Initialize spins directly in bit-sliced representation.
 // Replaces: initSpins() + fromCanonical() step 1.
 void SpinGlassBits::initSpinsBits(gsl_rng* ran) {
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+    int max_deg = *max_element(degrees.begin(), degrees.end());
 
     Bits_Spins_Set.clear();
     Bits_Spins_Set.resize(N);
-    Neighbor_Count.clear();
-    Neighbor_Count.reserve(N);
+    Degrees.clear();
+    Degrees.reserve(N);
 
     for (int i = 0; i < N; ++i) {
         for (int r = 0; r < n_bits; ++r)
             Bits_Spins_Set[i].Set(r, randomBit(ran));
 
         UnsignedInt nc_tmp((unsigned long long) max_deg);
-        nc_tmp.SetAll((unsigned long long) neighbor_count[i]);
-        Neighbor_Count.push_back(nc_tmp);
+        nc_tmp.SetAll((unsigned long long) degrees[i]);
+        Degrees.push_back(nc_tmp);
     }
 }
 
@@ -174,11 +174,11 @@ void SpinGlassBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // Core simulation loop: N_sweeps sweeps of N random flip attempts each.
 // Saves magnetizations every save_stride sweeps if save=true.
 void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
-    int max_deg = *max_element(neighbor_count.begin(), neighbor_count.end());
+    int max_deg = *max_element(degrees.begin(), degrees.end());
 
     // temporaries allocated once for all sweeps and all flips
     Bits xnor_ij, mask; //used in branch2
-    UnsignedInt sum((unsigned long long int)(max_deg * 2)); // max value of sum= neighbor_count[i] * 2 and all spons have same number of neighbors
+    UnsignedInt sum((unsigned long long int)(max_deg * 2)); // max value of sum= degrees[i] * 2 and all spons have same number of neighbors
     UnsignedInt threshold((unsigned long long int)(max_deg * 2)); // no need for more space allocation
     int rng;
     int i;
@@ -190,11 +190,11 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
-            rng = randomNumber(ran, neighbor_count[i]); //rng does not have to go higher than neighbor_count[i]
+            rng = randomNumber(ran, degrees[i]); //rng does not have to go higher than degrees[i]
             Bits& Bits_Spin_i = Bits_Spins_Set[i];
 
             // 1ST BRANCH: UNCONDITIONNAL FLIP IN EVERY REPLICA
-            if (rng >= neighbor_count[i]) {  
+            if (rng >= degrees[i]) {  
                 Bits_Spin_i.ComplementTo();
                 continue;
             }
@@ -209,7 +209,7 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
             sum.MultiplyByTwoTo();  
 
             threshold.SetAll((unsigned long long int) rng);
-            threshold += &Neighbor_Count[i];
+            threshold += &Degrees[i];
 
             mask = (sum <= threshold);     //at max, sum is equal to 2*neigbohrs_count=8, a higher threshold value is useless
             Bits_Spin_i ^= &mask;
