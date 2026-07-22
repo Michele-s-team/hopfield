@@ -210,13 +210,162 @@ The overall bitwise flip condition is thus:
     \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}.
     \label{eq:bitwise_flip_overlap}
 \end{equation}
-This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas.
+This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$ with $\rho$ the density of the network.
 In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
 \begin{equation}
     \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu \geq  p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
     \label{eq:bitwise_flip_overlap_FC}
 \end{equation}
-and no summation over the non-neighbors is required.
+and no summation over the non-neighbors is required. We present this implementation in \Cref{alg:Hopfield_bitwise_overlaps}.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\caption{Bitwise Hopfield Metropolis using shifted overlaps}
+
+\KwIn{Bit-replicated spins $\{B_i\}$, patterns $\{X_i^\mu\}$, shifted overlaps $\{\tilde{M}^\mu\}$, shifted couplings $\{\tilde{G}_{ij}\}$, neighbor lists $\partial i$, number of patterns $P$}
+\KwOut{Updated spin configurations $\{B_i\}$}
+
+\BlankLine
+
+\textbf{Preallocated variables:}
+
+$\mathtt{Bits}\ C_{ij},\ C_i^\mu,\ \mathtt{mask}$\;
+
+$\mathtt{UnsignedInt}\
+\Sigma_C,\
+\Sigma_{CM},\
+\Sigma_{CG},\
+\Sigma_M,\
+\mathrm{LHS},\
+\mathrm{RHS}$\;
+
+\BlankLine
+
+\For{$\mu=1$ \KwTo $P$}{
+    $\Sigma_M\leftarrow\Sigma_M+\tilde{M}^\mu$
+}
+\tcp*{Precompute shifted overlap sum}
+
+\BlankLine
+
+\For{$i=1$ \KwTo $N$}{
+    $\Sigma_G(i)\leftarrow0$\;
+    \For{$j\notin\partial i,\ j\neq i$}{
+        $\Sigma_G(i)\leftarrow\Sigma_G(i)+\tilde{G}_{ij}$
+    }
+}
+\tcp*{Precompute shifted non-neighbor coupling sums}
+
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+
+\For{$\mathrm{step}=1$ \KwTo $N$}{
+
+    Draw random neuron $k$\;
+
+    Draw $\lfloor\rho\rfloor$ with $\rho\sim\mathcal{E}(2\beta)$\;\;
+
+
+    \eIf{$\lfloor\rho\rfloor\geq p n_k$}{
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
+
+            $\tilde{M}^{\mu}
+            \leftarrow
+            \tilde{M}^{\mu}
+            +2-4C_k^\mu$\;
+        }
+        $\Sigma_M
+        \leftarrow
+        \Sigma_M
+        + 2P
+        - 4\sum_{\mu=1}^{P} C_k^\mu$
+        \tcp*{Update shifted overlaps}
+        $B_k\leftarrow\neg B_k$\;\;
+
+    }{
+
+        $\Sigma_C\leftarrow0$\;
+
+        $\Sigma_{CG}\leftarrow0$\;
+
+
+        \For{$i\notin\partial k,\ i\neq k$}{
+
+            $C_{ik}\leftarrow B_i\odot B_k$\;
+
+            $\Sigma_C\leftarrow\Sigma_C+C_{ik}$\;
+
+            $\Sigma_{CG}
+            \leftarrow
+            \Sigma_{CG}
+            +C_{ik}\odot\tilde{G}_{ki}$
+        }
+
+
+        $\Sigma_{CM}\leftarrow0$\;
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
+
+            $\Sigma_{CM}
+            \leftarrow
+            \Sigma_{CM}
+            +C_k^\mu\odot\tilde{M}^\mu$
+        }
+
+
+        $\mathrm{LHS}
+        \leftarrow
+        \lfloor\rho\rfloor
+        +2N\Sigma_C
+        +\Sigma_M
+        +2\Sigma_{CG}$\;
+
+
+        $\mathrm{RHS}
+        \leftarrow
+        p n_k
+        +2\Sigma_{CM}
+        +\Sigma_G(k)
+        +2p\Sigma_C$\;
+
+
+        $\mathtt{mask}
+        \leftarrow
+        (\mathrm{RHS}\leq\mathrm{LHS})$
+        \tcp*{Bitwise evaluation of Eq.~\eqref{eq:bitwise_flip_overlap}}
+
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu
+            \leftarrow
+            C_k^\mu\land\mathtt{mask}$\;
+
+            $\tilde{M}^{\mu}
+            \leftarrow
+            \tilde{M}^{\mu}
+            +2\mathtt{mask}
+            -4C_k^\mu$
+        }
+        $\Sigma_M \leftarrow \Sigma_M
+        + 2P\mathtt{mask}
+        - 4\sum_{\mu=1}^{P}C_k^\mu\mathtt{mask}$\;
+
+        $B_k
+        \leftarrow
+        B_k\oplus\mathtt{mask}$\;
+    }
+}
+}
+\label{alg:Hopfield_bitwise_overlaps}
+\end{algorithm}
+
 \subsection{Capacity of the network}
 \myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
 
