@@ -143,9 +143,8 @@ int main() {
         cout << "Patterns saved" << endl;
 
         bits.OpenSpinFiles();
-        //bits.SaveSpinConfigurations(0);
         cout << "evolve_save_bits called"<<endl;
-        bits.runSweeps(ran, /*save=*/false, 0, 0);
+        bits.runSweeps(ran, /*save=*/false, 0, /*burn_in=*/N_sweeps/2);
         bits.setNSweeps(N_sweeps);
         bits.runSweeps(ran, /*save=*/true, 1, N_sweeps);
         bits.SaveSpinConfigurations(bits.getNSweeps());

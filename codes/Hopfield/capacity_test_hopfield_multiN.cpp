@@ -74,7 +74,7 @@ int main() {
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
     const double beta       = 5;          // inverse temperature
-    int          N_sweeps    = 1 << 10;    // default / base number of sweeps
+    int          N_sweeps    = 1 << 11;    // default / base number of sweeps
 
     // ── Lattice sizes (N = L*L, fully-connected Hopfield) ────────────────────
     vector<int> N_vals = {1000};
@@ -196,12 +196,7 @@ int main() {
             cout << "evolve_save_bits called" << endl;
 
             // First half: equilibration
-            bits.runSweeps(ran, /*save=*/false, 0, /*shift=*/0);
-            cout << " first half of the simulation done" << endl;
-
-            // Second half: save
-            bits.setNSweeps(N_sweeps);
-            bits.runSweeps(ran, /*save=*/true, 1, /*shift=*/N_sweeps);
+            bits.runSweeps(ran, /*save=*/false, /*freq=*/1, /*burn_in=*/N_sweeps/2);
             bits.SaveSpinConfigurations(bits.getNSweeps());
             bits.CloseSpinFiles();
 
