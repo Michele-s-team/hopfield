@@ -63,10 +63,10 @@ int main(){
     SimulationIO IO;
     struct timespec t_init, t_final, t_start, t_end, t0, t1;
 
-    const int N_sweeps = 1 << 10;
+    const int N_sweeps = 1 << 12;
 
     vector<int> N_vals = {
-        10 * 10
+        32 * 32
     };
 
     vector<double> alpha_vals = {
@@ -137,11 +137,13 @@ int main(){
                 gsl_rng_set(ran, 123);
 
                 bits.initNetwork_random(ran, 0.7);
+                //bits.initNetwork_FullyConnected();
                 gsl_rng_set(ran, 123);
-
                 nobits.initNetwork_random(ran, 0.7);
+                //nobits.initNetwork_FullyConnected();
 
                 cout << "Network initialized" <<endl;
+                gsl_rng_set(ran, 123);
 
                 bits.initSpinsBits(ran);
                 bits.toCanonical();
