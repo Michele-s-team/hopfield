@@ -3,6 +3,11 @@
 //  hopfield
 //
 //  Created by Bastien on 12/05/2026.
+//  Condensed on 23/07/2026: the three ΔE formulations (neighbors / overlaps /
+//  overlaps-non-neighbors) and the shared-RNG / independent-RNG sweep loops
+//  are each merged into a single parameterized implementation, selected by
+//  SweepMode. runSweepsSharedRNG and runSweepsIndependentRNG remain the only
+//  two public entry points.
 //
 
 #include "hopfield_nobits.hpp"
@@ -14,178 +19,67 @@
 #include <algorithm>
 
 // =====================================================
-// ENERGY COMPUTATION
+// ENERGY COMPUTATION (all replicas at once, dispatched by mode)
 // =====================================================
-
-// Local energy cost of flipping spin i in realization r:
-//   ΔE(i, r) = 2 * σ_i(r) * Σ_j J_ij(r) σ_j(r)
-// For Hopfield: J_ij = (1/N) * Σ_p ξ_i^p ξ_j^p
-int HopfieldNoBits::DeltaE(int spin, int r) {
-    int sum = 0.0;
-    for (int k = 0; k < neighbors[spin].size(); ++k) {
-        int j = neighbors[spin][k];
-        sum += couplings[spin][k*n_bits+r] * spins_set[r * N + j];
-    }
-    return spins_set[r * N + spin] * sum;
-}
-
-int HopfieldNoBits::DeltaE_pure_overlaps(int spin, int r) {
-    int sum = 0.0;
-    for (int mu = 0; mu < P; ++mu) {
-        sum += patterns[spin * P * n_bits + mu * n_bits + r]*overlaps[mu * n_bits + r];
-    }
-    return spins_set[r * N + spin] * sum-P;
-}
-
-int HopfieldNoBits::DeltaE_overlaps_non_neighbors(int spin, int r) {
-    int sum = 0.0;
-    for (int mu = 0; mu < P; ++mu) {
-        sum += patterns[spin * P * n_bits + mu * n_bits + r]*overlaps[mu * n_bits + r];
-    }
-    int sum_couplings;
-    for (int i=0; i< non_neighbors[spin].size(); i++){
-        int j = non_neighbors[spin][i];
-        sum_couplings += couplings_nonneighbors[spin][i*n_bits+r] * spins_set[r * N + j];
-
-    }
-    return spins_set[r * N + spin] * (sum-sum_couplings)-P;
-}
-
-// =====================================================
-// ENERGY COMPUTATION (all replicas at once)
-// =====================================================
-// Calcule DeltaE(spin, r) pour tous les réplicas r en une seule passe sur les
-// voisins, au lieu de reboucler sur neighbors[spin] à chaque r séparément.
-// Boucle k externe, r interne : accès contigu à couplings[spin][k][r].
-void HopfieldNoBits::DeltaE_neighbors_all(int spin, vector<int>& delta_E) {
+//   NEIGHBORS              : ΔE from direct neighbor couplings   (sparse graphs)
+//   OVERLAPS               : ΔE from pure pattern overlaps       (dense/fully-connected graphs)
+//   OVERLAPS_NON_NEIGHBORS : overlaps corrected by non-neighbor couplings (dense, non-complete graphs)
+void HopfieldNoBits::DeltaE_all(int spin, SweepMode mode, vector<int>& delta_E) {
     delta_E.assign(n_bits, 0);
-    for (int k = 0; k < neighbors[spin].size(); ++k) {
-        int j = neighbors[spin][k];
-        for (int r = 0; r < n_bits; ++r) {
-            delta_E[r] += couplings[spin][k*n_bits+r] * spins_set[r * N + j];
-        }
-    }
-    for (int r = 0; r < n_bits; ++r) {
-        delta_E[r] *= spins_set[r * N + spin];
-    }
-}
 
-void HopfieldNoBits::DeltaE_pure_overlaps_all(int spin, vector<int>& delta_E) {
-    delta_E.assign(n_bits, 0);
-    for (int mu = 0; mu < P; ++mu) {
-        for (int r = 0; r < n_bits; ++r) {
-            delta_E[r] +=  patterns[spin * P * n_bits + mu * n_bits + r]*overlaps[mu * n_bits + r];
-        }
-    }
-    for (int r = 0; r < n_bits; ++r) {
-        delta_E[r] *= spins_set[r * N + spin];
-        delta_E[r]-=P;
-    }
-}
-
-void HopfieldNoBits::DeltaE_overlaps_non_neighbors_all(int spin, vector<int>& delta_E) {
-    delta_E.assign(n_bits, 0);
-    for (int r = 0; r < n_bits; ++r) {
-
-        for (int mu = 0; mu < P; ++mu) {
-            delta_E[r] +=  patterns[spin * P * n_bits + mu * n_bits + r]*overlaps[mu * n_bits + r];
-        }
-        for (int i=0; i< non_neighbors[spin].size(); i++){
-            int j = non_neighbors[spin][i];
-            delta_E[r] -= couplings_nonneighbors[spin][i*n_bits+r] * spins_set[r * N + j];
-        }
-
-        delta_E[r] *= spins_set[r * N + spin];
-        delta_E[r]-=P;
-    }
-}
-
-// =====================================================
-// SHARED RNG (same random threshold among replicas)
-// =====================================================
-
-void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq){
-     double alpha = (double)P / N;
-
-    double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    double mean_density = mean_degree / (N-1);
-
-    if (alpha + 0.5 <= mean_density) {
-        // Dense graph: overlap formulation over non-neighbors is cheaper
-        compute_overlaps();
-        runSweepsSharedRNG_overlaps_non_neighbors(ran, save, freq);
-    } else {
-        // Sparse graph: direct neighbor-coupling formulation is cheaper
-        initCouplings();
-        runSweepsSharedRNG_neighbors(ran, save, freq);
-    }
-}
-
-void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq){
-     double alpha = (double)P / N;
-
-    double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    double mean_density = mean_degree / (N-1);
-
-    if (alpha + 0.5 <= mean_density) {
-        // Dense graph: overlap formulation over non-neighbors is cheaper
-        compute_overlaps();
-        runSweepsIndependentRNG_overlaps_non_neighbors(ran, save, freq);
-    } else {
-        // Sparse graph: direct neighbor-coupling formulation is cheaper
-        initCouplings();
-        runSweepsIndependentRNG_neighbors(ran, save, freq);
-    }
-}
-
-void HopfieldNoBits::runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq) {
-
-    cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
-
-    const int total_sweeps = getNSweeps();
-    const int progress_stride = std::max(1, total_sweeps / 10);
-    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
-
-    std::vector<int> delta_E(n_bits);
-
-    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-            const int spin = gsl_rng_uniform_int(ran, N);
-            int deg_spin  = degrees[spin];
-            int rng = randomNumber(ran, P * deg_spin, N);
-            // Branch 1: unconditional flip
-            if (rng >= P * deg_spin) {
+    switch (mode) {
+        case SweepMode::NEIGHBORS:
+            for (int k = 0; k < neighbors[spin].size(); ++k) {
+                int j = neighbors[spin][k];
                 for (int r = 0; r < n_bits; ++r)
-                    spins_set[r * N + spin] *= -1;
-            } else {
-
-                // Branch 2: compute all ΔE once
-                DeltaE_neighbors_all(spin, delta_E);
-                for (int r = 0; r < n_bits; ++r) {
-                    const int dE = delta_E[r];
-                    if (dE <= 0 || rng >= dE) {
-                        spins_set[r * N + spin] *= -1;
-                    }
-                }
+                    delta_E[r] += couplings[spin][k * n_bits + r] * spins_set[r * N + j];
             }
-        }
+            for (int r = 0; r < n_bits; ++r)
+                delta_E[r] *= spins_set[r * N + spin];
+            break;
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
+        case SweepMode::OVERLAPS:
+            for (int mu = 0; mu < P; ++mu)
+                for (int r = 0; r < n_bits; ++r)
+                    delta_E[r] += patterns[spin * P * n_bits + mu * n_bits + r] * overlaps[mu * n_bits + r];
+            for (int r = 0; r < n_bits; ++r) {
+                delta_E[r] *= spins_set[r * N + spin];
+                delta_E[r] -= P;
+            }
+            break;
 
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
+        case SweepMode::OVERLAPS_NON_NEIGHBORS:
+            for (int r = 0; r < n_bits; ++r) {
+                for (int mu = 0; mu < P; ++mu)
+                    delta_E[r] += patterns[spin * P * n_bits + mu * n_bits + r] * overlaps[mu * n_bits + r];
+                for (int i = 0; i < non_neighbors[spin].size(); ++i) {
+                    int j = non_neighbors[spin][i];
+                    delta_E[r] -= couplings_nonneighbors[spin][i * n_bits + r] * spins_set[r * N + j];
+                }
+                delta_E[r] *= spins_set[r * N + spin];
+                delta_E[r] -= P;
+            }
+            break;
     }
-
-    std::cout << endl;
 }
 
-void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq) {
+// Flips spin `spin` for replica `r`, updating the pattern overlaps first
+// whenever the mode depends on them (every mode except NEIGHBORS).
+void HopfieldNoBits::FlipSpin(int spin, int r, SweepMode mode) {
+    if (mode != SweepMode::NEIGHBORS) {
+        for (int mu = 0; mu < P; ++mu) {
+            overlaps[mu * n_bits + r] -=
+                2 * patterns[spin * P * n_bits + mu * n_bits + r] * spins_set[r * N + spin];
+        }
+    }
+    spins_set[r * N + spin] *= -1;
+}
 
-    cout << "Shared RNG: Overlaps spin update algorithm" << endl;
+// =====================================================
+// CORE SWEEP LOOPS (mode-agnostic)
+// =====================================================
 
+void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode) {
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
@@ -195,30 +89,18 @@ void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             const int spin = gsl_rng_uniform_int(ran, N);
-            int deg_spin  = degrees[spin];
-            int rng = randomNumber(ran, P * deg_spin, N);
-            // Branch 1: unconditional flip
-            if (rng >= P * deg_spin) {
-                for (int r = 0; r < n_bits; ++r){
-                    for (int mu=0; mu<P; mu++){
-                        overlaps[mu * n_bits + r]-=
-                         2*patterns[spin * P * n_bits + mu * n_bits + r]*spins_set[r * N + spin];
-                    }
-                    spins_set[r * N + spin] *= -1;
-                }
-            } else {
+            const int deg_spin = degrees[spin];
+            const int rng = randomNumber(ran, P * deg_spin, N);
 
-                // Branch 2: compute all ΔE once
-                DeltaE_pure_overlaps_all(spin, delta_E);
+            if (rng >= P * deg_spin) {
+                // Same threshold shared by every replica: unconditional flip
+                for (int r = 0; r < n_bits; ++r)
+                    FlipSpin(spin, r, mode);
+            } else {
+                DeltaE_all(spin, mode, delta_E);
                 for (int r = 0; r < n_bits; ++r) {
-                    const int dE = delta_E[r];
-                    if (dE <= 0 || rng >= dE) {
-                        for (int mu=0; mu<P; mu++){
-                         overlaps[mu * n_bits + r]-=
-                         2*patterns[spin * P * n_bits + mu * n_bits + r]*spins_set[r * N + spin];
-                    }
-                        spins_set[r * N + spin] *= -1;
-                    }
+                    if (delta_E[r] <= 0 || rng >= delta_E[r])
+                        FlipSpin(spin, r, mode);
                 }
             }
         }
@@ -231,21 +113,10 @@ void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double
                       << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                       << std::flush;
     }
-
     std::cout << endl;
 }
 
-void HopfieldNoBits::runSweepsSharedRNG_overlaps_non_neighbors(gsl_rng* ran, bool save, double freq) {
-
-
-    int min_deg = *min_element(degrees.begin(), degrees.end());
-    if (min_deg == N - 1) { runSweepsSharedRNG_overlaps(ran, save, freq); return; }
-
-    cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
-
-    initCouplings_nonNeighbors();
-
-
+void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode) {
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
@@ -255,31 +126,14 @@ void HopfieldNoBits::runSweepsSharedRNG_overlaps_non_neighbors(gsl_rng* ran, boo
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             const int spin = gsl_rng_uniform_int(ran, N);
-            int deg_spin  = degrees[spin];
-            int rng = randomNumber(ran, P * deg_spin, N);
-            // Branch 1: unconditional flip
-            if (rng >= P * deg_spin) {
-                for (int r = 0; r < n_bits; ++r){
-                    for (int mu=0; mu<P; mu++){
-                        overlaps[mu * n_bits + r]-=
-                         2*patterns[spin * P * n_bits + mu * n_bits + r]*spins_set[r * N + spin];
-                    }
-                    spins_set[r * N + spin] *= -1;
-                }
-            } else {
+            const int deg_spin = degrees[spin];
 
-                // Branch 2: compute all ΔE once
-                DeltaE_overlaps_non_neighbors_all(spin, delta_E);
-                for (int r = 0; r < n_bits; ++r) {
-                    const int dE = delta_E[r];
-                    if (dE <= 0 || rng >= dE) {
-                        for (int mu=0; mu<P; mu++){
-                         overlaps[mu * n_bits + r]-=
-                         2*patterns[spin * P * n_bits + mu * n_bits + r]*spins_set[r * N + spin];
-                    }
-                        spins_set[r * N + spin] *= -1;
-                    }
-                }
+            DeltaE_all(spin, mode, delta_E);
+            for (int r = 0; r < n_bits; ++r) {
+                const int rng = randomNumber(ran, P * deg_spin, N);
+                const bool flip = (rng >= P * deg_spin) || (delta_E[r] <= 0 || rng >= delta_E[r]);
+                if (flip)
+                    FlipSpin(spin, r, mode);
             }
         }
 
@@ -291,169 +145,55 @@ void HopfieldNoBits::runSweepsSharedRNG_overlaps_non_neighbors(gsl_rng* ran, boo
                       << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                       << std::flush;
     }
-
     std::cout << endl;
 }
 
 // =====================================================
-// INDEPENDENT RNG (different random threshold among replicas)
+// PUBLIC ENTRY POINTS
 // =====================================================
-void HopfieldNoBits::runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq) {
 
-    cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
+void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
+    const double alpha = (double)P / N;
+    const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
+    const double mean_density = mean_degree / (N - 1);
 
-    const int total_sweeps = getNSweeps();
-    const int progress_stride = std::max(1, total_sweeps / 10);
-    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
-
-    std::vector<int> delta_E(n_bits);
-
-    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-            const int spin = gsl_rng_uniform_int(ran, N);
-            const int deg_spin = degrees[spin];
-
-            // Compute ΔE once per spin
-            DeltaE_neighbors_all(spin, delta_E);
-            for (int r = 0; r < n_bits; ++r) {
-                const int dE = delta_E[r];
-                // tirage indépendant par replica
-                const int rng = randomNumber(ran, P * deg_spin, N);
-
-                bool flip;
-                if (rng >= P * deg_spin) {spins_set[r * N + spin] *= -1;}
-                if (dE <= 0 || rng >= dE){spins_set[r * N + spin] *= -1;}
-                }
-            }
-
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
+    if (alpha + 0.5 <= mean_density) {
+        compute_overlaps();
+        const int min_deg = *std::min_element(degrees.begin(), degrees.end());
+        if (min_deg == N - 1) {
+            cout << "Shared RNG: Overlaps spin update algorithm" << endl;
+            runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS);
+        } else {
+            initCouplings_nonNeighbors();
+            cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+            runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
+        }
+    } else {
+        initCouplings();
+        cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
+        runSweepsSharedRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
     }
-
-    std::cout << endl;
 }
 
+void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
+    const double alpha = (double)P / N;
+    const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
+    const double mean_density = mean_degree / (N - 1);
 
-void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq) {
-
-    cout << "Independent RNG: Overlaps spin update algorithm" << endl;
-
-    const int total_sweeps = getNSweeps();
-    const int progress_stride = std::max(1, total_sweeps / 10);
-    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
-
-    std::vector<int> delta_E(n_bits);
-
-    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-
-            const int spin     = gsl_rng_uniform_int(ran, N);
-            const int deg_spin = degrees[spin];
-
-            // ΔE calculé une seule fois pour les n_bits replicas
-            DeltaE_pure_overlaps_all(spin, delta_E);
-
-            for (int r = 0; r < n_bits; ++r) {
-                const int dE = delta_E[r];
-
-                // tirage indépendant par replica
-                const int rng = randomNumber(ran, P * deg_spin, N);
-
-                bool flip;
-                if (rng >= P * deg_spin) {
-                    // flip inconditionnel pour ce replica
-                    flip = true;
-                } else {
-                    flip = (dE <= 0 || rng >= dE);
-                }
-
-                if (flip) {
-                    for (int mu = 0; mu < P; mu++) {
-                        overlaps[mu * n_bits + r] -=
-                            2 * patterns[spin * P * n_bits + mu * n_bits + r]
-                              * spins_set[r * N + spin];
-                    }
-                    spins_set[r * N + spin] *= -1;
-                }
-            }
+    if (alpha + 0.5 <= mean_density) {
+        compute_overlaps();
+        const int min_deg = *std::min_element(degrees.begin(), degrees.end());
+        if (min_deg == N - 1) {
+            cout << "Independent RNG: Overlaps spin update algorithm" << endl;
+            runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS);
+        } else {
+            initCouplings_nonNeighbors();
+            cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+            runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
         }
-
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
+    } else {
+        initCouplings();
+        cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
+        runSweepsIndependentRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
     }
-
-    std::cout << endl;
-}
-
-
-void HopfieldNoBits::runSweepsIndependentRNG_overlaps_non_neighbors(gsl_rng* ran, bool save, double freq) {
-
-    int min_deg = *min_element(degrees.begin(), degrees.end());
-    if (min_deg == N - 1) { runSweepsIndependentRNG_overlaps(ran, save, freq); return; }
-
-    cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
-
-
-    initCouplings_nonNeighbors();
-
-    const int total_sweeps = getNSweeps();
-    const int progress_stride = std::max(1, total_sweeps / 10);
-    const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
-
-    std::vector<int> delta_E(n_bits);
-
-    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
-        for (int step = 0; step < N; ++step) {
-
-            const int spin     = gsl_rng_uniform_int(ran, N);
-            const int deg_spin = degrees[spin];
-
-            // ΔE calculé une seule fois pour les n_bits replicas
-            DeltaE_overlaps_non_neighbors_all(spin, delta_E);
-
-            for (int r = 0; r < n_bits; ++r) {
-                const int dE = delta_E[r];
-
-                // tirage indépendant par replica
-                const int rng = randomNumber(ran, P * deg_spin, N);
-
-                bool flip;
-                if (rng >= P * deg_spin) {
-                    // flip inconditionnel pour ce replica
-                    flip = true;
-                } else {
-                    flip = (dE <= 0 || rng >= dE);
-                }
-
-                if (flip) {
-                    for (int mu = 0; mu < P; mu++) {
-                        overlaps[mu * n_bits + r] -=
-                            2 * patterns[spin * P * n_bits + mu * n_bits + r]
-                              * spins_set[r * N + spin];
-                    }
-                    spins_set[r * N + spin] *= -1;
-                }
-            }
-        }
-
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
-    }
-
-    std::cout << endl;
 }
