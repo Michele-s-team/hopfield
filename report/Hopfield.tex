@@ -51,7 +51,7 @@ We show in \Cref{fig:architecture} the evolution of the error with the storage l
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.38\linewidth]{phase_transition.png}
-\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes random and the error suddenly jumps to 0.5.}
+\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes totally uncorrelated with the stored patterns and the error suddenly jumps to 0.5.}
 \label{fig:phase_transition}
 \end{figure}
 
@@ -84,6 +84,7 @@ As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can 
 However, it requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
 
 \subsubsection{Optimized implementation}
+\label{sec:base_implementation_hopfield}
 A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
 \begin{equation*}
     \sum_{i \in \partial k} G_{ki} S_i S_k = \sum_{i \in \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
@@ -371,14 +372,14 @@ $\mathtt{UnsignedInt}\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.6\linewidth]{reconstruction_error_vs_alpha.pdf}
-\caption{Evolution of the reconstruction error with the storage load. For this diagram, the configuration is initialized on one of the stored patterns.}
+\includegraphics[width=0.6\linewidth]{reconstruction_error_vs_alpha_multiN.pdf}
+\caption{Evolution of the reconstruction error with the storage load for several lattice sizes. For this diagram, the configuration is initialized on one of the stored patterns.}
 \label{fig:reconstruction_error}
 \end{figure}
-We observe the expected evolution, with a null reconstruction error for the lowest $\alpha$ and an increase before a plateau, where the system fails to retain the memory of the initially stored pattern. However, we do not observe the sudden jump around $\alpha_c$. This can be explained by finite size effects, which smooth the transition. Also, the plateau is not located around $\text{error}=0.5$ as expected but rather out $0.4$. Two explanations exist. The first one is that initializing the network on the exact pattern favors better retrieval. The second is that the system did not evolve for long enough before we start averaging over what we believe to be equilibrium configurations, thus underestimating the obtained error as the first averaged configurations are still correlated with the initial one.
+We observe the expected evolution, with a null reconstruction error for the lowest $\alpha$ and a burst increase around the critical value before a slowly increasing plateau, where the system fails to retain the memory of the initially stored pattern. The increase is steeper for the largest systems, the finite size effects being less and less significant. In this regime, the plateau value tends to increase with the lattice size, approaching the expected reconstruction error of 0.5, obtained when the global orientations of the neurons are totally uncorrelated with that of the stored patterns. The first explanation for this observation is that initializing the network on the exact pattern favors better retrieval. This explanation is however not robust to the increase of the plateau with the storage load. The second is that finite size effects favor a better random alignment, as the reconstruction error is computed based on the best overlap, and that smaller systems favors extreme value, the noise on each overlap being of the order of $\sim 1/\sqrt{N}$. The increase of the plateau with the storage load seems logical: the more patterns are stored, the less efficient the retrieval of any single one becomes.
 
 \subsection{Dynamics visualization: initialization from a random state}
-We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ for all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
+ \myindent We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ for all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
 
 \begin{figure}[htbp]
 \centering
@@ -398,15 +399,15 @@ While in some case the state quickly falls into a stable minimum of energy corre
 Lastly, we can plot the evolution of the mean of maximum overlaps across all replicas $\langle m^* \rangle$ depending on the storage load, see \Cref{fig:mean_mu_star}.
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.7\linewidth]{mean_overlap_N1024_beta=5.0.pdf}
+\includegraphics[width=0.66\linewidth]{mean_overlap_N1024_beta=5.0.pdf}
 \caption{Evolution of $\langle m^* \rangle$ with the storage load. }
 \label{fig:mean_mu_star}
 \end{figure}
 As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly increases to $\langle m^* \rangle \approx 1$ and remains stable. The plateau value decreases as the storage load increases: it is less and less likely for the system to end up in a completely pattern-aligned configuration from a random initialization when the number of spurious states increases.
 
-
+\FloatBarrier
 \subsection{Performance test}
-\myindent We present in \Cref{fig:speedup_hopfield} the performance analysis of the code. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
+\myindent We present in \Cref {fig:speedup_hopfield} the performance analysis of the code obtained with the implementation presented in \Cref{sec:base_implementation_hopfield}. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
 Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 
 Compared to the two previous models, the speedup factor strikingly decreases close to 1 (and in some cases even below) in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
