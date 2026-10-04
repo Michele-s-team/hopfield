@@ -57,7 +57,7 @@ with $C_{ki}={B_k \odot B_i}$ and $n_k$ is the number of neighbor of the spin $k
 
 The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
 
-\begin{algorithm}[H]
+\begin{algorithm}[b]
 \DontPrintSemicolon
 \caption{Bitwise Ising Metropolis}
 
@@ -111,7 +111,7 @@ We now need to make sure the bitwise implementation is consistent. This is first
 \begin{figure}[htbp]
 \centering
 
-\includegraphics[height=9cm]{pictures/magnetizations_multiN.pdf}
+\includegraphics[width=\columnwidth]{pictures/magnetizations_multiN.pdf}
 \caption{Phase diagram of the Ising model for several sizes of square lattices. The network is built with Periodic Boundary Conditions (PBC). The black line corresponds to the exact analytical solution found by Onsager in the case of an infinite square lattice \cite{Onsager1944}: $m(T)=0$ for $T\geq T_c$ and $m(T)_\pm= \pm \left[ 1 - \sinh^{-4}(2K) \right]^{1/8}$ for $T \leq T_c$, with $ K=J/T$ and $ T_c/J=2/\log\left(1+\sqrt 2\right)\approx 2.269$.}
 \label{fig:phase_diagram_ising}
 \end{figure}
@@ -120,7 +120,7 @@ Qualitatively, it appears that the magnetization curves get closer to the exact 
 \begin{figure}[htbp]
 \centering
 
-\includegraphics[height=5cm]{pictures/evolution_ising_T1.5_L100.pdf}
+\includegraphics[width=\columnwidth]{pictures/evolution_ising_T1.5_L100.pdf}
 \caption{Trajectories of the 64 magnetizations over time for $L=100$ and $T/J=1.5$. All those trajectories have been obtained from the same simulation. While some realizations quickly collapse into the equilibrium attractors $m_\pm = \pm 0.953$, some require $\sim 10^2$ times more sweeps to reach the same equilibrium.}
 \label{fig:evolution_ising}
 \end{figure}
@@ -130,43 +130,36 @@ In order to make sure that the phase transition of the network indeed occurs at 
 \end{equation}
 Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, it has been shown that all Binder curves for different lattice sizes $L$ intersect at the same scale-invariant critical point $\left(T_c,\, U^*\right)$ \cite{Binder1981}. This is because at $T_c$, the system becomes scale invariant, making the Binder cumulant independent of the system size at this specific temperature. We show in Figure~\ref{fig:binder} the plot of the Binder cumulants for the different lattice sizes. We obtain the expected curves, with the known asymptotic values and the crossing of the curves in $\left(T_c,\,U^*\right)$, which validates our implementation.
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[height=9cm]{pictures/binder_multiN.pdf}
-\caption{Binder cumulant for the different lattice sizes. The curves approach the two asymptotic limits and intersect at $\left(T_c,\,U^*\right)$, as expected. Insets show the zoomed region around the critical point.}
-\label{fig:binder}
-\end{figure}
-\subsection{Performance test}
-Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to let the system evolve over $2^{16}$ sweeps using both the classical naive and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
-\begin{figure}[htbp]
+\begin{figure*}[t]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.49\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{speedup_curves_ising.pdf}
-    \subcaption{Speedup factor evolution.}
-    \label{fig:speedup_curve_ising}
+\centering
+\includegraphics[width=\linewidth]{speedup_curves_ising.pdf}
+\subcaption{Speedup factor evolution.}
+\label{fig:speedup_curve_ising}
 \end{minipage}
 \hfill
 \begin{minipage}[b]{0.49\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{time_normalized_ising.pdf}
-    \subcaption{Normalized time evolution.}
-    \label{fig:normalised_time_ising}
+\centering
+\includegraphics[width=\linewidth]{time_normalized_ising.pdf}
+\subcaption{Normalized time evolution.}
+\label{fig:normalised_time_ising}
 \end{minipage}
 
 \vspace{0.5em}
 
 % ── Bottom row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{time_total_vs_N_ising.pdf}
-    \subcaption{Sweep time depending on the lattice size for all temperatures.}
-    \label{fig:sweep_time_vs_N_ising}
+\centering
+\includegraphics[width=\linewidth]{time_total_vs_N_ising.pdf}
+\subcaption{Sweep time depending on the lattice size for all temperatures.}
+\label{fig:sweep_time_vs_N_ising}
 \end{minipage}
-\caption{Performance analysis of the bitwise and classical Ising Metropolis implementations. Subfigure~(\subref{fig:speedup_curve_ising}) shows the evolution of the speedup factor with the temperature for several size of square lattices. (\subref{fig:normalised_time_ising}) shows the evolution of the normalized spin uptade time with the temperature, averaged over the different lattice sizes. Finally, (\subref{fig:sweep_time_vs_N_ising}) presents the evolution of the time taken to perform one sweep depending on the lattice size, for different temperatures.}
+
+\caption{Performance analysis of the bitwise and classical Ising Metropolis implementations. Subfigure~(\subref{fig:speedup_curve_ising}) shows the evolution of the speedup factor with the temperature for several sizes of square lattices. (\subref{fig:normalised_time_ising}) shows the evolution of the normalized spin update time with the temperature, averaged over the different lattice sizes. Finally, (\subref{fig:sweep_time_vs_N_ising}) presents the evolution of the time taken to perform one sweep depending on the lattice size, for different temperatures.}
 \label{fig:speedup_ising}
-\end{figure}
+\end{figure*}
 The speedup factor lies between 20 and 45, which is a substantial performance increase. We notice that this speedup factor consistently increases with the temperature. As shown in (\subref{fig:sweep_time_vs_N_ising}), the early increase is mostly the effect of the ordering of the configurations at low temperature: before the phase transition, the state collapses into an ordered phase where all spins are aligned. This makes the unconditional flip condition $\Delta E_k \leq 0$ more frequent in the classical implementation, which is computationally cheaper, thus making it faster. This unconditional flip condition however becomes less probable when we increase the temperature, making the normalised time of the classic implementation and the speedup factor increase (especially near the critical temperature $T_c$) up to a certain value where the normalised time stops increasing, probably as the unconditional flip condition is never met anymore. We also notice that the unconditional flip condition in the bitwise implementation ($\lfloor \rho \rfloor \geq n_k$) becomes more and more probable with the increasing temperature, making the bitwise implementation faster. These two effects combined explain the overall shape of the speedup factor evolution, where the first increase is coming from the classical implementation and the second one is the effect of the bitwise. It should be noted that this overall tendency may not be observed in the case of a comparison with the standard Metropolis algorithm, as the non-naive standard Metropolis implementation possesses the same escape condition $\lfloor \rho \rfloor \geq n_k$, making it faster and thus slowing down (or supressing) the second increase in the speedup factor. \\
 The increase seems to be uncorrelated with the size of the system. In theory, the speedup factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
 The Subfigure~(\subref{fig:sweep_time_vs_N_ising}) shows that the time required grows proportionally to the system size for both implementation. The complexity of the bitwise implementation thus seems to be $\mathcal{O}\left(N_\text{sweeps} \cdot  N \cdot \langle n_\text{neighbor} \rangle \right)$.

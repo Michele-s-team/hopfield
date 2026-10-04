@@ -37,7 +37,9 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 \subsection{Performance test}
  We now test the performance of the implementation, for several lattice sizes and the temperatures, this time with $N_\text{sweeps}=2^{14}$. The results are shown in \Cref{fig:speedup_spinglass}. We notice the same evolution of the normalized time for both implementation as the ones observed for the Ising model. The shape of the speedup factor is similar to this of the Ising model, but its evolution is steadier, with what appears to be a saturation for the highest temperatures. The time per sweep also remains proportional to the system size, the complexities of the implementations thus should be similar to those of the Ising model.
 
-
+\clearpage
+\newpage
+\FloatBarrier
 \begin{figure}[htbp]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
@@ -67,3 +69,4 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 \caption{Performance analysis of the bitwise and classical Spin Glass Metropolis implementations.}
 \label{fig:speedup_spinglass}
 \end{figure}
+\FloatBarrier

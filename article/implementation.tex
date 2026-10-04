@@ -193,7 +193,7 @@ Because all replicas share the same sequence of random number, it is not obvious
 \centering
 
 \includegraphics[width=\columnwidth]{replica_independence.png}
-\caption{Schematic view of the independence of the realizations evolving from the same sequence of random numbers. Because of the unique energy landscape in every replica, and the independent initializations, the same random number yields independent evolutions.}
+\caption{Schematic view of the independence of the realizations evolving from the same sequence of random numbers. Because of the unique energy landscape in every replica and the independent initializations, the same random number yields independent evolutions.}
 \label{fig:replica_independence}
 \end{figure}
 
@@ -250,7 +250,7 @@ Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test. This condition is typically met in the high-temperature regime, where $\rho$ is more likely to be large\\
 We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, provided that the definition of $\kappa$ is adapted to each model.\\
 \vspace{1em}
-\begin{algorithm}[H]
+\begin{algorithm}[b]
 \DontPrintSemicolon
 \caption{Standard Metropolis implementation}
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}

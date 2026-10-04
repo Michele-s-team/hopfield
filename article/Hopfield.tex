@@ -86,11 +86,13 @@ However, it requires summing over the patterns, thus introducing  an additional 
 \subsubsection{Optimized implementation}
 \label{sec:base_implementation_hopfield}
 A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
+\begin{widetext}
 \begin{equation*}
     \sum_{i \in \partial k} G_{ki} S_i S_k = \sum_{i \in \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)
     = -\sum_{i \in \partial k} \tilde{G}_{ki} + 2\sum_{i \in \partial k}
      C_{ik}(\tilde{G}_{ki}-p) + n_k p,
 \end{equation*}
+\end{widetext}
 with $C_{ki}= B_k \odot B_i$.
 The bitwise flip test is then:
 \begin{equation}
@@ -108,8 +110,7 @@ This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 wher
     \label{eq:escape_condition_hopfield_bitwise}
 \end{equation}
 We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network.
-
-\begin{algorithm}[H]
+\begin{algorithm}[b]
 \DontPrintSemicolon
 \caption{Bitwise Hopfield Metropolis}
 
@@ -175,6 +176,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 }
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
+\FloatBarrier
 \subsubsection{Reducing complexity in dense networks using overlaps}
 In the case of a fully-connected network, summing over the neighbors of $k$ amounts to sum over the entirety of the network, yielding a complexity of $\mathcal{O}(N)$ in itself. In order to reduce this complexity, one can also make use of the overlap to compute the neuron flip condition. We define the extensive overlap:
 \begin{equation}
@@ -182,23 +184,26 @@ In the case of a fully-connected network, summing over the neighbors of $k$ amou
     \label{eq:extensive_overlaps}
 \end{equation}
 Then,
+\begin{widetext}
 \begin{align*}
     S_kh_k =
     \sum_{i \in \partial k} G_{ki} S_i S_k &= \sum_{\mu=1}^p \xi_k^\mu  S_k \left(M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}}\xi_i^\mu S_i - \xi_k^\mu S_k \right)\\
     &= \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu -  \sum_{\mu=1}^p \sum_{\substack{i \notin \partial k \\ i \neq k}} \xi_k^\mu \xi_i^\mu S_k S_i - \sum_{\mu=1}^p \left(\xi_k^\mu S_k \right) ^2.
 \end{align*}
+\end{widetext}
 The second sum is simply the sum $G_{ki} S_i S_k$ over the non-neighbors of $k$. Each term of the last sum is equal to 1. The flip condition is thus:
 \begin{equation}
   \lfloor \rho \rfloor +p  \geq \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k.
 \end{equation}
 The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps $ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, writing $S_k \xi_k^\mu = 2 C_k^\mu -1$ with $C_k^\mu = B_k \odot X_k^\mu$, $X_k^\mu $ being the binary counterpart of $\xi_k^\mu$,
 \begin{align*}
-    \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu &= \sum_{\mu=1}^p \xi_k^\mu S_k (\tilde{M}^\mu - N)\\
+    \sum_{\mu=1}^p &\xi_k^\mu S_k M^\mu = \sum_{\mu=1}^p \xi_k^\mu S_k (\tilde{M}^\mu - N)\\
     &= - N \sum_{\mu=1}^p \left(2C_k^\mu - 1 \right) + \sum_{\mu=1}^p \left(2 C_k^\mu-1\right) \tilde{M}^\mu\\
     &= Np - 2N \sum_{\mu=1}^p C_k^\mu + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu- \sum_{\mu=1}^p \tilde{M}^\mu.
 \end{align*}
 
 We also use the previous decomposition of $G_{ki} S_i S_k$:
+\begin{widetext}
 \begin{equation*}
     \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k= -
     \sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} +
@@ -211,15 +216,18 @@ The overall bitwise flip condition is thus:
     \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}.
     \label{eq:bitwise_flip_overlap}
 \end{equation}
+\end{widetext}
 This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$ with $\rho$ the density of the network.
 In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
 \begin{equation}
-    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu \geq  p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
+\begin{aligned}
+    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  &\sum_{\mu=1}^p \tilde{M}^\mu \geq \\ & p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
     \label{eq:bitwise_flip_overlap_FC}
+\end{aligned}
 \end{equation}
 and no summation over the non-neighbors is required. We present this implementation in \Cref{alg:Hopfield_bitwise_overlaps}.
 
-\begin{algorithm}[H]
+\begin{algorithm}[b]
 \DontPrintSemicolon
 \caption{Bitwise Hopfield Metropolis using shifted overlaps}
 
@@ -420,45 +428,50 @@ The main reason for this lack of efficiency in the neighbors loop might the crea
 
 Two other related causes can explain the lack of performances for dense networks. The first one is the data structure and the other one is the memory access. The structure has indeed initially been built for sparse networks, with the use of lists of neighbors instead of direct interaction matrices. This implementation is effective when the network is sparse but becomes inefficient in the case of a dense network: instead of storing a fully filled $N \times N$ triangular interaction matrix containing $N \left(N-1\right)/2$ values (taking advantage of the symmetry), we store twice as many values in $N$ lists of $N-1$ components, thus increasing the memory usage, and potentially reducing the performance if the memory overflows the available RAM.
 
-\begin{figure}[htbp]
+\begin{figure*}[p]
 \centering
-% ── Top row ───────────────────────────────────────────────────────────────
-\begin{minipage}[b]{0.4\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{speedup_curves_hopfield.pdf}
-    \subcaption{Speedup factor evolution.}
-    \label{fig:speedup_curve_hopfield}
-\end{minipage}
-\hfill
-\begin{minipage}[b]{0.4\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{time_normalized_hopfield.pdf}
-    \subcaption{Normalized time evolution.}
-    \label{fig:normalised_time_hopfield}
-\end{minipage}
+% ── Rangée 1 : a et b ────────────────────────────────────────────────
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,height=0.17\textheight,keepaspectratio]{speedup_curves_hopfield.pdf}
+  \caption{Speedup factor evolution.}
+  \label{fig:speedup_curve_hopfield}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,height=0.17\textheight,keepaspectratio]{time_normalized_hopfield.pdf}
+  \caption{Normalized time evolution.}
+  \label{fig:normalised_time_hopfield}
+\end{subfigure}
 
 \vspace{0.5em}
-% ── Middle row ────────────────────────────────────────────────────────────
-\begin{minipage}[b]{0.4\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{speedup_curves_by_alpha_hopfield.pdf}
-    \subcaption{Speedup factor depending on the temperature for different $\alpha$ values.}
-    \label{fig:speedup_by_alpha_hopfield}
-\end{minipage}
+% ── Rangée 2 : c en pleine largeur ───────────────────────────────────
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,height=0.15\textheight,keepaspectratio]{time_total_vs_N_hopfield.pdf}
+  \caption{Sweep time depending on the lattice size for all temperatures.}
+  \label{fig:sweep_time_vs_N_hopfield}
+\end{subfigure}
 
-\begin{minipage}[b]{0.8\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{time_normalized_by_alpha_hopfield.pdf}
-    \subcaption{Sweep time depending on the temperature for different $\alpha$ values.}
-    \label{fig:sweep_time_vs_alpha_hopfield}
-\end{minipage}
-% ── Bottom row ────────────────────────────────────────────────────────────
-\begin{minipage}[b]{0.8\textwidth}
-    \centering
-    \includegraphics[width=\columnwidth]{time_total_vs_N_hopfield.pdf}
-    \subcaption{Sweep time depending on the lattice size for all temperatures.}
-    \label{fig:sweep_time_vs_N_hopfield}
-\end{minipage}
+\vspace{0.5em}
+% ── Rangée 3 : d à gauche ────────────────────────────────────────────
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,height=0.17\textheight,keepaspectratio]{speedup_curves_by_alpha_hopfield.pdf}
+  \caption{Speedup factor depending on the temperature for different $\alpha$ values.}
+  \label{fig:speedup_by_alpha_hopfield}
+\end{subfigure}\hfill
+\hspace*{0.49\textwidth}
+
+\vspace{0.5em}
+% ── Rangée 4 : e en pleine largeur ───────────────────────────────────
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\linewidth,height=0.15\textheight,keepaspectratio]{time_normalized_by_alpha_hopfield.pdf}
+  \caption{Sweep time depending on the temperature for different $\alpha$ values.}
+  \label{fig:sweep_time_vs_alpha_hopfield}
+\end{subfigure}
+
 \caption{Performance analysis of the bitwise and classical Hopfield Metropolis implementations. In Subfigures~(\subref{fig:speedup_curve_hopfield}), (\subref{fig:normalised_time_hopfield}) and (\subref{fig:sweep_time_vs_N_hopfield}), the data has been averaged over the different values of $\alpha$.}
 \label{fig:speedup_hopfield}
-\end{figure}
+\end{figure*}
