@@ -129,7 +129,14 @@ In order to make sure that the phase transition of the network indeed occurs at 
   U_L = 1-\frac{\langle m^4 \rangle_L}{3\langle m^2 \rangle_L^2}
 \end{equation}
 Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, it has been shown that all Binder curves for different lattice sizes $L$ intersect at the same scale-invariant critical point $\left(T_c,\, U^*\right)$ \cite{Binder1981}. This is because at $T_c$, the system becomes scale invariant, making the Binder cumulant independent of the system size at this specific temperature. We show in Figure~\ref{fig:binder} the plot of the Binder cumulants for the different lattice sizes. We obtain the expected curves, with the known asymptotic values and the crossing of the curves in $\left(T_c,\,U^*\right)$, which validates our implementation.
-
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{binder_multiN.pdf}
+\caption{Binder cumulant for the different lattice sizes. The curves approach the two asymptotic limits and intersect at $\left(T_c,\,U^*\right)$, as expected. Insets show the zoomed region around the critical point.}
+\label{fig:binder}
+\end{figure}
+\subsection{Performance test}
+Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to let the system evolve over $2^{16}$ sweeps using both the classical naive and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
 \begin{figure*}[t]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
