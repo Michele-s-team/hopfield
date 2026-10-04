@@ -15,7 +15,7 @@ With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of patterns to be memorized by the
 
 By initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.7\linewidth]{energy_landscape.pdf}
 \caption{Schematic illustration of the Hopfield model, extracted from \cite{nobel2024physics}. The Hopfield network can recover stored patterns from an altered or partial version of them.}
@@ -24,7 +24,7 @@ By initializing the network not far from one of the stored patters, the dynamics
 
 A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram_hopfield} the phase diagram of the Hopfield model on a fully-connected network, which is the reference topology of the model. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s storage capacity, as beyond this threshold the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.4\linewidth]{phase_diagram.png}
 \caption{Phase diagram of the Hopfield model in the thermodynamic limit ($N \to \infty$), extracted from \cite{Mezard2017}. The phase transition value at $T=0$ is indicated by the arrow.}
@@ -48,7 +48,7 @@ All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with 
 
 We show in \Cref{fig:architecture} the evolution of the error with the storage load:
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.38\linewidth]{phase_transition.png}
 \caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes totally uncorrelated with the stored patterns and the error suddenly jumps to 0.5.}
@@ -176,7 +176,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 \label{alg:Hopfield_bitwise}
 \end{algorithm}
 \subsubsection{Reducing complexity in dense networks using overlaps}
-\myindent In the case of a fully-connected network, summing over the neighbors of $k$ amounts to sum over the entirety of the network, yielding a complexity of $\mathcal{O}(N)$ in itself. In order to reduce this complexity, one can also make use of the overlap to compute the neuron flip condition. We define the extensive overlap:
+In the case of a fully-connected network, summing over the neighbors of $k$ amounts to sum over the entirety of the network, yielding a complexity of $\mathcal{O}(N)$ in itself. In order to reduce this complexity, one can also make use of the overlap to compute the neuron flip condition. We define the extensive overlap:
 \begin{equation}
     M^\mu= N m^\mu = \sum_{i=1}^N \xi_i^\mu S_i.
     \label{eq:extensive_overlaps}
@@ -368,7 +368,7 @@ $\mathtt{UnsignedInt}\
 \end{algorithm}
 
 \subsection{Capacity of the network}
-\myindent A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
+A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
 
 \begin{figure}[htbp]
 \centering
@@ -379,7 +379,7 @@ $\mathtt{UnsignedInt}\
 We observe the expected evolution, with a null reconstruction error for the lowest $\alpha$ and a burst increase around the critical value before a slowly increasing plateau, where the system fails to retain the memory of the initially stored pattern. The increase is steeper for the largest systems, the finite size effects being less and less significant. In this regime, the plateau value tends to increase with the lattice size, approaching the expected reconstruction error of 0.5, obtained when the global orientations of the neurons are totally uncorrelated with that of the stored patterns. The first explanation for this observation is that initializing the network on the exact pattern favors better retrieval. This explanation is however not robust to the increase of the plateau with the storage load. The second is that finite size effects favor a better random alignment, as the reconstruction error is computed based on the best overlap, and that smaller systems favors extreme value, the noise on each overlap being of the order of $\sim 1/\sqrt{N}$. The increase of the plateau with the storage load seems logical: the more patterns are stored, the less efficient the retrieval of any single one becomes.
 
 \subsection{Dynamics visualization: initialization from a random state}
- \myindent We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ for all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
+ We now aim at visualizing the evolution of the configurations when initializing the system from a random state. Again, the model is built on a $32 \times 32$ fully connected square lattice and each replica has its own saved patterns and initial state. The temperature is still set to $\beta=5.0$. We give the evolution of $m^\mu$ for all patterns for a given replica in \Cref{fig:all_mu_single_replica}.
 
 \begin{figure}[htbp]
 \centering
@@ -407,7 +407,7 @@ As expected, for the lowest values of $\alpha$, the mean maximum overlap quickly
 
 \FloatBarrier
 \subsection{Performance test}
-\myindent We present in \Cref {fig:speedup_hopfield} the performance analysis of the code obtained with the implementation presented in \Cref{sec:base_implementation_hopfield}. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
+We present in \Cref {fig:speedup_hopfield} the performance analysis of the code obtained with the implementation presented in \Cref{sec:base_implementation_hopfield}. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
 Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 
 Compared to the two previous models, the speedup factor strikingly decreases close to 1 (and in some cases even below) in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
@@ -425,14 +425,14 @@ Two other related causes can explain the lack of performances for dense networks
 % ── Top row ───────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.4\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{speedup_curves_hopfield.pdf}
+    \includegraphics[width=\columnwidth]{speedup_curves_hopfield.pdf}
     \subcaption{Speedup factor evolution.}
     \label{fig:speedup_curve_hopfield}
 \end{minipage}
 \hfill
 \begin{minipage}[b]{0.4\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_normalized_hopfield.pdf}
+    \includegraphics[width=\columnwidth]{time_normalized_hopfield.pdf}
     \subcaption{Normalized time evolution.}
     \label{fig:normalised_time_hopfield}
 \end{minipage}
@@ -441,21 +441,21 @@ Two other related causes can explain the lack of performances for dense networks
 % ── Middle row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.4\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{speedup_curves_by_alpha_hopfield.pdf}
+    \includegraphics[width=\columnwidth]{speedup_curves_by_alpha_hopfield.pdf}
     \subcaption{Speedup factor depending on the temperature for different $\alpha$ values.}
     \label{fig:speedup_by_alpha_hopfield}
 \end{minipage}
 
 \begin{minipage}[b]{0.8\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_normalized_by_alpha_hopfield.pdf}
+    \includegraphics[width=\columnwidth]{time_normalized_by_alpha_hopfield.pdf}
     \subcaption{Sweep time depending on the temperature for different $\alpha$ values.}
     \label{fig:sweep_time_vs_alpha_hopfield}
 \end{minipage}
 % ── Bottom row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.8\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_total_vs_N_hopfield.pdf}
+    \includegraphics[width=\columnwidth]{time_total_vs_N_hopfield.pdf}
     \subcaption{Sweep time depending on the lattice size for all temperatures.}
     \label{fig:sweep_time_vs_N_hopfield}
 \end{minipage}

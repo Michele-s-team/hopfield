@@ -1,7 +1,7 @@
 \section{Implementation of the algorithm}
 We start by presenting the broad implementation of the Metropolis algorithm, before showing how we adapt it to each specific model.
 \subsection{The Metropolis algorithm}
-\myindent In order to make the models evolve in time, which is necessary to observe their dynamics, we use the well-known metropolis algorithm \cite{Metropolis1953}. For models with a defined Hamiltonian, the Metropolis algorithm proceeds as follows:
+In order to make the models evolve in time, which is necessary to observe their dynamics, we use the well-known metropolis algorithm \cite{Metropolis1953}. For models with a defined Hamiltonian, the Metropolis algorithm proceeds as follows:
 \begin{enumerate}
     \item Start from an initial configuration $\{S_i\}$.
     \item Repeat $N$ times:
@@ -20,7 +20,7 @@ $N$ successive single-spin flip attempts.\\
 This algorithm however becomes computationally demanding when one attempts to sample a large number of configurations. This situation occurs, for example, when looking for rare samples in the dynamics, or sampling many different initial conditions -- both of which we will try to explore during this internship. We thus need to find way of optimizing the implementation of the algorithm.
 
 \subsection{First optimization: the bitwise arithmetic}
-\myindent The first optimization in the implementation of the Metropolis algorithm is the use of bitwise arithmetic. The main idea is to leverage the boolean representation as stored in our computers. The typical object that we manipulate is called \Bits: it is a collection of $n_\text{bits}=64$ boolean variables. In that way, we have the possibility to simulate $64$ evolutions of the same variable in parallel.
+The first optimization in the implementation of the Metropolis algorithm is the use of bitwise arithmetic. The main idea is to leverage the boolean representation as stored in our computers. The typical object that we manipulate is called \Bits: it is a collection of $n_\text{bits}=64$ boolean variables. In that way, we have the possibility to simulate $64$ evolutions of the same variable in parallel.
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}
@@ -60,7 +60,7 @@ This algorithm however becomes computationally demanding when one attempts to sa
 
 This structure is very convenient to represent binary variable such as the spins of the system. The boolean representation $b^k \in \{0,1\}$ of a spin $s^k \in \{-1,+1\}$ is given by $b^k = (s^k+1)/2$. In that way, we are able to implement several replicas of the full spin system in a set of \Bits $\{S_i\}$, each encoding the replicas of the associated spin, as shown in Figure~\ref{fig:spins_Bits}.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \def\svgwidth{0.28\linewidth}
 \input{pictures/spins_Bits.pdf_tex}
@@ -176,9 +176,9 @@ In the same way as for \Bits, the \UnsignedInt data structure enables us to add,
 This implementation method has proven efficient when dealing with discrete-value models such as the Ising \cite{HFreund_1988} or the spin glass \cite{palassini1999} models, but it has not yet been employed to study the Hopfield network.
 
 \subsection{Second Optimization: Shared random numbers}
-\myindent The bitwise implementation is a structural optimization of the data representation. On top of this structural optimization can be added a physical one which consists in having all replicas share the same sequence of random numbers, fully parallelizing their evolution. This turns out to be central: random number generation is often the simulation bottleneck, as it involves costly operations such as multiplications and is called at every step of the hot loop. A schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}. Using the same random number among all evolutions raises the questions of the independence of the realizations, this will be the subject of the next subsection.
+The bitwise implementation is a structural optimization of the data representation. On top of this structural optimization can be added a physical one which consists in having all replicas share the same sequence of random numbers, fully parallelizing their evolution. This turns out to be central: random number generation is often the simulation bottleneck, as it involves costly operations such as multiplications and is called at every step of the hot loop. A schematic view of the shared random number is shown in Figure~\ref{fig:shared_rng}. Using the same random number among all evolutions raises the questions of the independence of the realizations, this will be the subject of the next subsection.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 
 \includegraphics[height=5cm]{pictures/random_number.pdf}
@@ -187,12 +187,12 @@ This implementation method has proven efficient when dealing with discrete-value
 \end{figure}
 
 \subsection{Note on the independence of the realizations}
-\myindent Because all replicas share the same sequence of random number, it is not obvious that their evolutions are independent. This is in fact guaranteed by two facts. The first one is that each replica is initialized independently of the others. The second one is that the shape of the energy landscape in each realization is also shaped independently of the others. Thus, the shared random number yields different outcome in each replica. A schematic view of this mechanism is shown in \Cref{fig:replica_independence}.
+Because all replicas share the same sequence of random number, it is not obvious that their evolutions are independent. This is in fact guaranteed by two facts. The first one is that each replica is initialized independently of the others. The second one is that the shape of the energy landscape in each realization is also shaped independently of the others. Thus, the shared random number yields different outcome in each replica. A schematic view of this mechanism is shown in \Cref{fig:replica_independence}.
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 
-\includegraphics[width=\linewidth]{replica_independence.png}
+\includegraphics[width=\columnwidth]{replica_independence.png}
 \caption{Schematic view of the independence of the realizations evolving from the same sequence of random numbers. Because of the unique energy landscape in every replica, and the independent initializations, the same random number yields independent evolutions.}
 \label{fig:replica_independence}
 \end{figure}
@@ -200,18 +200,18 @@ This implementation method has proven efficient when dealing with discrete-value
 In a further analysis, one would be tempted to share the energy landscape across all replicas (this happens for instance if all replicas share the same patterns to be stored in the case of the Hopfield model, see subsection \ref{subsec:hopfield_model}). In this case, the realizations would be correlated through this shared energy landscape.
 
 \subsection{Code structure}
-\myindent We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
-\begin{figure}[H]
+We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
+\begin{figure}[t]
 \centering
 
-\includegraphics[width=\linewidth]{architecture.pdf}
+\includegraphics[width=\columnwidth]{architecture.pdf}
 \caption{Code structure}
 \label{fig:architecture}
 \end{figure}
 The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model considered. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version. This code can be found in \cite{hopfield_code}.
 
 \subsection{Standard implementation of the Metropolis algorithm}
-\myindent We show here the standard implementation of the Metropolis algorithm, which will be broadly shared across all models.\\
+We show here the standard implementation of the Metropolis algorithm, which will be broadly shared across all models.\\
 If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^{-\beta \Delta E_k}$, yields:
 \begin{equation}
 \begin{aligned}

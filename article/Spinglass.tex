@@ -19,7 +19,7 @@ The structure being really similar to that of \eqref{eq:DeltaE_ising}, we can pe
 \end{equation}
 with this time $\rho \sim \mathcal{E}(2\beta)$.
 \subsection{Bitwise Implementation}
-\myindent We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in the previous section, the product $S_kS_i$ can be re-written $(-1+2B_k)(-1+2B_i)=-1+2 C_{ki}$ with $C_{ki}= B_k \odot B_i$. Thus, by writing $J_{ki}=-1+2K_{ki}$ with $K_{ki}$ a \Bits, we have:
+We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in the previous section, the product $S_kS_i$ can be re-written $(-1+2B_k)(-1+2B_i)=-1+2 C_{ki}$ with $C_{ki}= B_k \odot B_i$. Thus, by writing $J_{ki}=-1+2K_{ki}$ with $K_{ki}$ a \Bits, we have:
 \begin{equation*}
   \begin{aligned}
   J_{ik}S_kS_i =& (-1+2K_{ki})(-1+2 C_{ki})\\
@@ -35,7 +35,7 @@ Both the bitwise and the classic implementation are thus similar to this of the 
 The bitwise implementation is not validated here, as the bitwise framework was already tested in the previous section, and the main interest of this model lies in bridging the complexity gap between the Ising model and the Hopfield network. We nonetheless verified that the standard and the bitwise implementations produce identical spin configurations when initialized from the same initial state and driven by the same sequence of random numbers.
 
 \subsection{Performance test}
-\myindent We now test the performance of the implementation, for several lattice sizes and the temperatures, this time with $N_\text{sweeps}=2^{14}$. The results are shown in \Cref{fig:speedup_spinglass}. We notice the same evolution of the normalized time for both implementation as the ones observed for the Ising model. The shape of the speedup factor is similar to this of the Ising model, but its evolution is steadier, with what appears to be a saturation for the highest temperatures. The time per sweep also remains proportional to the system size, the complexities of the implementations thus should be similar to those of the Ising model.
+ We now test the performance of the implementation, for several lattice sizes and the temperatures, this time with $N_\text{sweeps}=2^{14}$. The results are shown in \Cref{fig:speedup_spinglass}. We notice the same evolution of the normalized time for both implementation as the ones observed for the Ising model. The shape of the speedup factor is similar to this of the Ising model, but its evolution is steadier, with what appears to be a saturation for the highest temperatures. The time per sweep also remains proportional to the system size, the complexities of the implementations thus should be similar to those of the Ising model.
 
 
 \begin{figure}[htbp]
@@ -43,14 +43,14 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 % ── Top row ───────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.49\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{speedup_curves_spinglass.pdf}
+    \includegraphics[width=\columnwidth]{speedup_curves_spinglass.pdf}
     \subcaption{Speedup factor evolution.}
     \label{fig:speedup_curve_spinglass}
 \end{minipage}
 \hfill
 \begin{minipage}[b]{0.49\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_normalized_spinglass.pdf}
+    \includegraphics[width=\columnwidth]{time_normalized_spinglass.pdf}
     \subcaption{Normalized time evolution.}
     \label{fig:normalised_time_spinglass}
 \end{minipage}
@@ -60,7 +60,7 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 % ── Bottom row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_total_vs_N_spinglass.pdf}
+    \includegraphics[width=\columnwidth]{time_total_vs_N_spinglass.pdf}
     \subcaption{Sweep time depending on the lattice size for all temperatures.}
     \label{fig:sweep_time_vs_N_spinglass}
 \end{minipage}

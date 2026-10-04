@@ -107,7 +107,7 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 
 
 \subsection{Phase diagram}
-\myindent We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is in agreement with the known analytical results. We show in Figure~\ref{fig:phase_diagram_ising} the obtained phase diagram for several sizes of two-dimensional square lattices with periodic boundary conditions. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization. It aslo prevents the system to get stuck into metastable states such as the strip state for which several (usually two) regions of opposite magnetizations arise when the system is initialized randomly at a low temperature.\\
+We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is in agreement with the known analytical results. We show in Figure~\ref{fig:phase_diagram_ising} the obtained phase diagram for several sizes of two-dimensional square lattices with periodic boundary conditions. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization. It aslo prevents the system to get stuck into metastable states such as the strip state for which several (usually two) regions of opposite magnetizations arise when the system is initialized randomly at a low temperature.\\
 \begin{figure}[htbp]
 \centering
 
@@ -137,20 +137,20 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 \label{fig:binder}
 \end{figure}
 \subsection{Performance test}
-\myindent Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to let the system evolve over $2^{16}$ sweeps using both the classical naive and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
+Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to let the system evolve over $2^{16}$ sweeps using both the classical naive and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
 \begin{figure}[htbp]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
 \begin{minipage}[b]{0.49\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{speedup_curves_ising.pdf}
+    \includegraphics[width=\columnwidth]{speedup_curves_ising.pdf}
     \subcaption{Speedup factor evolution.}
     \label{fig:speedup_curve_ising}
 \end{minipage}
 \hfill
 \begin{minipage}[b]{0.49\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_normalized_ising.pdf}
+    \includegraphics[width=\columnwidth]{time_normalized_ising.pdf}
     \subcaption{Normalized time evolution.}
     \label{fig:normalised_time_ising}
 \end{minipage}
@@ -160,7 +160,7 @@ Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, i
 % ── Bottom row ────────────────────────────────────────────────────────────
 \begin{minipage}[b]{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{time_total_vs_N_ising.pdf}
+    \includegraphics[width=\columnwidth]{time_total_vs_N_ising.pdf}
     \subcaption{Sweep time depending on the lattice size for all temperatures.}
     \label{fig:sweep_time_vs_N_ising}
 \end{minipage}
