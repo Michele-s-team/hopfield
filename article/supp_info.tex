@@ -1,10 +1,9 @@
-\PassOptionsToPackage{pagewise}{lineno}
 \documentclass[%
- reprint,
+ %reprint,                 % retiré : l'en-tête d'origine n'utilisait pas reprint
  superscriptaddress,
  amsmath,amssymb,
  aps,
- pre,
+ pra,                      % pre -> pra (comme l'en-tête d'origine)
  floatfix,
 ]{revtex4-2}
 
@@ -18,14 +17,31 @@
 
 % --- Mathematics and symbols ---
 \usepackage{mathrsfs, stmaryrd}
+\usepackage{amsfonts}
 \usepackage{siunitx}
 \usepackage{bm}
+\DeclareMathOperator\arctanh{arctanh}
 
 % --- Graphics and figures ---
 \usepackage{graphicx}
+\usepackage{float}        % option [H]
+\usepackage{caption}
 \usepackage{subcaption}   % si problème avec revtex, utiliser \usepackage{subfig}
 \graphicspath{{pictures/}}
-\usepackage{placeins}   % pour \FloatBarrier
+\usepackage{placeins}     % pour \FloatBarrier
+
+\captionsetup[figure]{justification=raggedright, singlelinecheck=false, format=plain}
+\captionsetup[subfigure]{justification=centering}
+
+% --- Float placement ---
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{6}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.7}
+\setlength{\parskip}{0.5\baselineskip}
 
 % --- Tables ---
 \usepackage{booktabs}
@@ -42,14 +58,19 @@
 \usepackage{tikz}
 \usetikzlibrary{decorations.pathreplacing}
 
+% --- Text editing / review ---
+\usepackage[normalem]{ulem}
+\usepackage{lineno}
+
 % --- References (hyperref avant cleveref) ---
 \usepackage{hyperref}
 \usepackage{cleveref}
-
 \crefname{algocf}{algorithm}{algorithms}
 \Crefname{algocf}{Algorithm}{Algorithms}
+\bibliographystyle{apsrev4-2}
 
 % --- Macros : annotations (à retirer avant soumission) ---
+\newcommand{\note}[1]{\textcolor{blue}{#1}}
 \newcommand{\noteBastien}[1]{\textcolor{blue}{#1}}
 \newcommand{\noteMichele}[1]{\textcolor{red}{#1}}
 \newcommand{\noteDavid}[1]{\textcolor{green}{#1}}
@@ -62,7 +83,7 @@
 \newcommand{\Bits}{\texttt{Bits}\xspace}
 
 \begin{document}
-\modulolinenumbers[5]
+
 \linenumbers
 
 \title{Dynamical properties of the Hopfield model\\through bitwise arithmetic}
@@ -79,27 +100,18 @@
 
 \date{\today}
 
-\begin{abstract}
-The Hopfield model, introduced in its now-canonical form by J.J. Hopfield in 1982, laid the foundation for the understanding of neural networks, whether they are biological or artificial. This model has become a reference in the statistical mechanics of networks and its equilibrium properties have been extensively studied and are now well understood. Nevertheless, much remains to be discovered about the dynamics leading to those equilibrium properties. Studying such dynamical properties requires the use of optimized algorithms capable of probing large samples of trajectories or initial conditions, as well as potentially rare events. In this internship project, we use a bitwise implementation of the Metropolis algorithm to study the properties of several discrete-value network models such as the Ising model, the Edwards-Anderson model and the Hopfield model. This implementation takes advantage of the native machine-specific binary arithmetic to efficiently simulate the evolution of $n_\text{bits}$ systems in parallel. We show that this approach is well-adapted to simulate discrete value models, and in particular the Hopfield network, and can also yield significant computational gains when properly implemented at the low level.
-\end{abstract}
 %\keywords{Suggested keywords}%Use showkeys class option if keyword
                               %display desired
 \maketitle
-
-%\tableofcontents
-\input{Intro}
-\input{Hopfield}
+\tableofcontents
+\input{supp_info_method}
 \FloatBarrier
-\input{Method}
+\input{ising}
 \FloatBarrier
-\input{Results}
+\input{Spinglass}
 \FloatBarrier
-\input{Discussion}
+\input{supp_info_hopfield}
 \FloatBarrier
-
-
-\input{Conclusion}
-\setlength{\bibsep}{2pt}
 \bibliographystyle{unsrt}
 \bibliography{references}
 

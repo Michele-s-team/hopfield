@@ -1,0 +1,150 @@
+\section{The Hopfield model}
+\begin{algorithm}[b]
+\nolinenumbers
+\DontPrintSemicolon
+\caption{Bitwise Hopfield Metropolis using shifted overlaps}
+
+\KwIn{Bit-replicated spins $\{B_i\}$, patterns $\{X_i^\mu\}$, shifted overlaps $\{\tilde{M}^\mu\}$, shifted couplings $\{\tilde{G}_{ij}\}$, neighbor lists $\partial i$, number of patterns $P$}
+\KwOut{Updated spin configurations $\{B_i\}$}
+
+\BlankLine
+
+\textbf{Preallocated variables:}
+
+$\mathtt{Bits}\ C_{ij},\ C_i^\mu,\ \mathtt{mask}$\;
+
+$\mathtt{UnsignedInt}\
+\Sigma_C,\
+\Sigma_{CM},\
+\Sigma_{CG},\
+\Sigma_M,\
+\mathrm{LHS},\
+\mathrm{RHS}$\;
+
+\BlankLine
+
+\For{$\mu=1$ \KwTo $P$}{
+    $\Sigma_M\leftarrow\Sigma_M+\tilde{M}^\mu$
+}
+\tcp*{Precompute shifted overlap sum}
+
+\BlankLine
+
+\For{$i=1$ \KwTo $N$}{
+    $\Sigma_G(i)\leftarrow0$\;
+    \For{$j\notin\partial i,\ j\neq i$}{
+        $\Sigma_G(i)\leftarrow\Sigma_G(i)+\tilde{G}_{ij}$
+    }
+}
+\tcp*{Precompute shifted non-neighbor coupling sums}
+
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+
+\For{$\mathrm{step}=1$ \KwTo $N$}{
+
+    Draw random neuron $k$\;
+
+    Draw $\lfloor\rho\rfloor$ with $\rho\sim\mathcal{E}(2\beta)$\;\;
+
+
+    \eIf{$\lfloor\rho\rfloor\geq p n_k$}{
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
+
+            $\tilde{M}^{\mu}
+            \leftarrow
+            \tilde{M}^{\mu}
+            +2-4C_k^\mu$\;
+        }
+        $\Sigma_M
+        \leftarrow
+        \Sigma_M
+        + 2P
+        - 4\sum_{\mu=1}^{P} C_k^\mu$
+        \tcp*{Update shifted overlaps}
+        $B_k\leftarrow\neg B_k$\;\;
+
+    }{
+
+        $\Sigma_C\leftarrow0$\;
+
+        $\Sigma_{CG}\leftarrow0$\;
+
+
+        \For{$i\notin\partial k,\ i\neq k$}{
+
+            $C_{ik}\leftarrow B_i\odot B_k$\;
+
+            $\Sigma_C\leftarrow\Sigma_C+C_{ik}$\;
+
+            $\Sigma_{CG}
+            \leftarrow
+            \Sigma_{CG}
+            +C_{ik}\odot\tilde{G}_{ki}$
+        }
+
+
+        $\Sigma_{CM}\leftarrow0$\;
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
+
+            $\Sigma_{CM}
+            \leftarrow
+            \Sigma_{CM}
+            +C_k^\mu\odot\tilde{M}^\mu$
+        }
+
+
+        $\mathrm{LHS}
+        \leftarrow
+        \lfloor\rho\rfloor
+        +2N\Sigma_C
+        +\Sigma_M
+        +2\Sigma_{CG}$\;
+
+
+        $\mathrm{RHS}
+        \leftarrow
+        p n_k
+        +2\Sigma_{CM}
+        +\Sigma_G(k)
+        +2p\Sigma_C$\;
+
+
+        $\mathtt{mask}
+        \leftarrow
+        (\mathrm{RHS}\leq\mathrm{LHS})$
+        \tcp*{Bitwise evaluation of Eq.~\eqref{eq:bitwise_flip_overlap}}
+
+
+        \For{$\mu=1$ \KwTo $P$}{
+
+            $C_k^\mu
+            \leftarrow
+            C_k^\mu\land\mathtt{mask}$\;
+
+            $\tilde{M}^{\mu}
+            \leftarrow
+            \tilde{M}^{\mu}
+            +2\mathtt{mask}
+            -4C_k^\mu$
+        }
+        $\Sigma_M \leftarrow \Sigma_M
+        + 2P\mathtt{mask}
+        - 4\sum_{\mu=1}^{P}C_k^\mu\mathtt{mask}$\;
+
+        $B_k
+        \leftarrow
+        B_k\oplus\mathtt{mask}$\;
+    }
+}
+}
+\label{alg:Hopfield_bitwise_overlaps}
+\end{algorithm}
+\linenumbers

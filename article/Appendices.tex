@@ -9,87 +9,11 @@
 \renewcommand{\thesubsection}{\Alph{subsection}}
 
 % Appendix A
-\subsection{Naive implementation of the classic Metropolis algorithm}
-\begin{algorithm}[H]
-\DontPrintSemicolon
 
-\caption{Standard Metropolis implementation  (naive)}
-
-\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
-\KwOut{Updated lattice spins $\{S_i\}$}
-\BlankLine
-\BlankLine
-\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
-    \For{$\mathrm{step}=1$ \KwTo $N$}{
-        Draw $k$ among $N$\;
-      \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k^{(r)}$\;
-          \BlankLine
-          \tcp{Unconditional flip: energy is lowered}
-          \eIf{$\Lambda_k^{(r)} \leq 0$}{
-              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-          }{
-              \tcp{Conditional flip: draw Poisson threshold}
-              Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(\beta \kappa)$\;
-              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
-                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
-              }
-          }
-      }
-    }
-}
-\label{alg:ising_classic_naive}
-\end{algorithm}
-
+\linenumbers
 \subsection{Bitwise implementation of the Metropolis algorithm for the spin glass model}
+\nolinenumbers
 
-\begin{algorithm}[t]
-\DontPrintSemicolon
-\caption{Bitwise spin glass Metropolis}
-
-\KwIn{Bit-replicated spins $\{B_i\}$, couplings $\texttt{Couplings}$, neighbor lists $\partial i$, inverse temperature $\beta$}
-\KwOut{Updated spin configurations $\{B_i\}$}
-
-\BlankLine
-\textbf{Preallocated variables:} $\mathtt{Bits}\ \texttt{xnor},\ \texttt{mask}$\;
-\phantom{\textbf{Preallocated variables:}} $\mathtt{UnsignedInt}\ T_i,\ \texttt{threshold}$\;
-
-\BlankLine
-
-\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
-    \For{$\mathrm{step}=1$ \KwTo $N$}{
-        Draw $k$ among $N$\;
-        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$
-
-        \eIf{$\lfloor \rho \rfloor \ge n_k$}{
-            $B_k \leftarrow \neg B_k$ \tcp*{escape condition: unconditional flip across all replicas}
-        }{
-            $T_k \leftarrow \mathbf{0}$
-
-            $\mathtt{threshold} \leftarrow \mathbf{0}$
-
-            \For{$i \in \partial k$}{
-                $\mathtt{xnor}\ \leftarrow K_{ki} \oplus B_k \oplus B_i$
-                \tcp*{bitwise XNOR across replicas}
-
-                $T_k \mathrel{+}= \mathtt{xnor}$
-                \tcp*{increment agreement count per replica}
-            }
-
-            $T_k \leftarrow 2T_k$
-
-            $\mathtt{threshold} \leftarrow \lfloor \rho \rfloor +n_k$
-
-            $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
-            \tcp*{per-replica flip condition}
-
-        $B_k \leftarrow B_k \oplus \mathtt{mask}$ \tcp*{bitwise spin flip (XOR operation): only replicas}
-        \tcp*[r]{for which $\mathtt{mask}^{(\ell)}=1$ are flipped}
-        }
-    }
-}
-
-\label{alg:SG_bitwise}
-\end{algorithm}
+\linenumbers
 \FloatBarrier
 \end{appendix}

@@ -28,6 +28,8 @@ Remembering that $S_i$ is actually an array containing $64$ replicas of the same
 \end{aligned}
 \end{equation*}
 We show in Table~\ref{tab:XNOR} that the term in the sum can be re-written using the XNOR ($\odot$) logical operator.
+
+\nolinenumbers
 \begin{table}[h]
 \centering
 \begin{tabular}{cc||c|c|c}
@@ -43,6 +45,8 @@ $b_k$ & $b_i$ & $1- 2 (b_k+b_i) +4 b_k.b_i$ &  ${b_k \odot b_i}$ & $2{b_k \odot 
 \caption{The summed term can be simplified using a XNOR operator.}
 \label{tab:XNOR}
 \end{table}
+\linenumbers
+
 Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odot$ denotes the bitwise XNOR operation applied to the corresponding bits of each \Bits. The sum can thus be written:
 \begin{equation*}
   \sum_{i \in \partial k}S_k S_i=2\sum_{i \in \partial k} C_{ki} - n_k,
@@ -56,7 +60,7 @@ with $C_{ki}={B_k \odot B_i}$ and $n_k$ is the number of neighbor of the spin $k
  In addition, this integer flip condition can be applied to the bitwise algorithm and avoids the bitwise flipping test calculations for each replica: when it is met, all replicas are flipped simultaneously. A simple integer comparison suffices.\\
 
 The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
-
+\nolinenumbers
 \begin{algorithm}[b]
 \DontPrintSemicolon
 \caption{Bitwise Ising Metropolis}
@@ -103,11 +107,13 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 
 \label{alg:ising_bitwise}
 \end{algorithm}
+\linenumbers
 
-
-
+\FloatBarrier
 \subsection{Phase diagram}
 We now need to make sure the bitwise implementation is consistent. This is firstly done by checking that it yields exactly the same spin configurations as the standard implementation with shared random numbers when starting from the exact same initial condition and using the same generative seed. Secondly, we can plot the phase diagram of the model and verify that it is in agreement with the known analytical results. We show in Figure~\ref{fig:phase_diagram_ising} the obtained phase diagram for several sizes of two-dimensional square lattices with periodic boundary conditions. This phase diagram is obtained by successive cooling the system: starting from the highest temperature, we progressively decrease it, using the final state of each step as the initial configuration for the next. This reduces the computational cost compared to reinitializing the network randomly at each temperature point, since the equilibrium state at each temperature lies close to that of the previous one, requiring fewer sweeps to reach thermalization. It aslo prevents the system to get stuck into metastable states such as the strip state for which several (usually two) regions of opposite magnetizations arise when the system is initialized randomly at a low temperature.\\
+
+\nolinenumbers
 \begin{figure}[htbp]
 \centering
 
@@ -115,8 +121,11 @@ We now need to make sure the bitwise implementation is consistent. This is first
 \caption{Phase diagram of the Ising model for several sizes of square lattices. The network is built with Periodic Boundary Conditions (PBC). The black line corresponds to the exact analytical solution found by Onsager in the case of an infinite square lattice \cite{Onsager1944}: $m(T)=0$ for $T\geq T_c$ and $m(T)_\pm= \pm \left[ 1 - \sinh^{-4}(2K) \right]^{1/8}$ for $T \leq T_c$, with $ K=J/T$ and $ T_c/J=2/\log\left(1+\sqrt 2\right)\approx 2.269$.}
 \label{fig:phase_diagram_ising}
 \end{figure}
+\linenumbers
+
 Qualitatively, it appears that the magnetization curves get closer to the exact solution when the lattice size is increased. This was to be expected as we gradually get closer to the infinite size case. We also notice an excellent agreement between the exact analytical magnetization and the obtained ones in the ferromagnetic part of the phase diagram. In this plot, each point corresponds to the mean over the $n_\text{bits}=64$ independent realizations. We show in Figure~\ref{fig:evolution_ising} the trajectories over time of the magnetizations for those 64 realizations at a given temperature.
 
+\nolinenumbers
 \begin{figure}[htbp]
 \centering
 
@@ -124,19 +133,27 @@ Qualitatively, it appears that the magnetization curves get closer to the exact 
 \caption{Trajectories of the 64 magnetizations over time for $L=100$ and $T/J=1.5$. All those trajectories have been obtained from the same simulation. While some realizations quickly collapse into the equilibrium attractors $m_\pm = \pm 0.953$, some require $\sim 10^2$ times more sweeps to reach the same equilibrium.}
 \label{fig:evolution_ising}
 \end{figure}
+\linenumbers
+
 In order to make sure that the phase transition of the network indeed occurs at $T_c=2.269$ for all lattice sizes, we plot the Binder cumulant $U_L$, defined as:
 \begin{equation}
   U_L = 1-\frac{\langle m^4 \rangle_L}{3\langle m^2 \rangle_L^2}
 \end{equation}
 Its limit values are $U_L(0)=2/3$ and $U_L(T \to \infty)=0$. Most importantly, it has been shown that all Binder curves for different lattice sizes $L$ intersect at the same scale-invariant critical point $\left(T_c,\, U^*\right)$ \cite{Binder1981}. This is because at $T_c$, the system becomes scale invariant, making the Binder cumulant independent of the system size at this specific temperature. We show in Figure~\ref{fig:binder} the plot of the Binder cumulants for the different lattice sizes. We obtain the expected curves, with the known asymptotic values and the crossing of the curves in $\left(T_c,\,U^*\right)$, which validates our implementation.
+
+\nolinenumbers
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{binder_multiN.pdf}
 \caption{Binder cumulant for the different lattice sizes. The curves approach the two asymptotic limits and intersect at $\left(T_c,\,U^*\right)$, as expected. Insets show the zoomed region around the critical point.}
 \label{fig:binder}
 \end{figure}
+\linenumbers
+
 \subsection{Performance test}
 Now that our algorithm has been shown to produce correct results, we wish to estimate its performance compared to the usual naive implementation. To this end, we measure the ratio of the computational time required to let the system evolve over $2^{16}$ sweeps using both the classical naive and the bitwise implementation, for various square lattice sizes and temperatures. The result of this performance test is shown in \Cref{fig:speedup_ising}.
+
+\nolinenumbers
 \begin{figure*}[t]
 \centering
 % ── Top row ───────────────────────────────────────────────────────────────
@@ -167,6 +184,8 @@ Now that our algorithm has been shown to produce correct results, we wish to est
 \caption{Performance analysis of the bitwise and classical Ising Metropolis implementations. Subfigure~(\subref{fig:speedup_curve_ising}) shows the evolution of the speedup factor with the temperature for several sizes of square lattices. (\subref{fig:normalised_time_ising}) shows the evolution of the normalized spin update time with the temperature, averaged over the different lattice sizes. Finally, (\subref{fig:sweep_time_vs_N_ising}) presents the evolution of the time taken to perform one sweep depending on the lattice size, for different temperatures.}
 \label{fig:speedup_ising}
 \end{figure*}
+\linenumbers
+
 The speedup factor lies between 20 and 45, which is a substantial performance increase. We notice that this speedup factor consistently increases with the temperature. As shown in (\subref{fig:sweep_time_vs_N_ising}), the early increase is mostly the effect of the ordering of the configurations at low temperature: before the phase transition, the state collapses into an ordered phase where all spins are aligned. This makes the unconditional flip condition $\Delta E_k \leq 0$ more frequent in the classical implementation, which is computationally cheaper, thus making it faster. This unconditional flip condition however becomes less probable when we increase the temperature, making the normalised time of the classic implementation and the speedup factor increase (especially near the critical temperature $T_c$) up to a certain value where the normalised time stops increasing, probably as the unconditional flip condition is never met anymore. We also notice that the unconditional flip condition in the bitwise implementation ($\lfloor \rho \rfloor \geq n_k$) becomes more and more probable with the increasing temperature, making the bitwise implementation faster. These two effects combined explain the overall shape of the speedup factor evolution, where the first increase is coming from the classical implementation and the second one is the effect of the bitwise. It should be noted that this overall tendency may not be observed in the case of a comparison with the standard Metropolis algorithm, as the non-naive standard Metropolis implementation possesses the same escape condition $\lfloor \rho \rfloor \geq n_k$, making it faster and thus slowing down (or supressing) the second increase in the speedup factor. \\
 The increase seems to be uncorrelated with the size of the system. In theory, the speedup factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
 The Subfigure~(\subref{fig:sweep_time_vs_N_ising}) shows that the time required grows proportionally to the system size for both implementation. The complexity of the bitwise implementation thus seems to be $\mathcal{O}\left(N_\text{sweeps} \cdot  N \cdot \langle n_\text{neighbor} \rangle \right)$.

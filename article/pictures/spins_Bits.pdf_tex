@@ -51,15 +51,36 @@
   \global\let\svgscale\undefined%
   \makeatother%
   \begin{picture}(1,0.77827828)%
-    \lineheight{1}%
-    \setlength\tabcolsep{0pt}%
-    \put(0,0){\includegraphics[width=\unitlength,page=1]{spins_Bits.pdf}}%
-    \put(0.055,0.47){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_1$ \end{tabular}}}}%
-    \put(0.435,0.47){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_2$ \end{tabular}}}}%
-    \put(0.82,0.47){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_3$ \end{tabular}}}}%
-    \put(0.055,0.085){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_4$ \end{tabular}}}}%
-    \put(0.435,0.085){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_5$ \end{tabular}}}}%
-    \put(0.82,0.085){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$S_6$ \end{tabular}}}}%
-    \put(0,0){\includegraphics[width=\unitlength,page=2]{spins_Bits.pdf}}%
-  \end{picture}%
+  \lineheight{1}%
+  \setlength\tabcolsep{0pt}%
+
+  % Labels first: they will be in the background
+  \put(0.05,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_1$\end{tabular}}}}
+
+  \put(0.325,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_2$\end{tabular}}}}
+
+  \put(0.6,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_3$\end{tabular}}}}
+
+  \put(0.05,0.05){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_4$\end{tabular}}}}
+
+  \put(0.325,0.05){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_5$\end{tabular}}}}
+
+  \put(0.6,0.05){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+    \fontsize{15pt}{15pt}\selectfont
+    \smash{\begin{tabular}[t]{l}$S_6$\end{tabular}}}}
+
+  % Shapes afterwards: they will cover the labels
+  \put(0,0){\includegraphics[width=\unitlength,page=1]{spins_Bits.pdf}}
+
+\end{picture}%
 \endgroup%

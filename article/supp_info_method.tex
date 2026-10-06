@@ -1,0 +1,48 @@
+\section{Method}
+We start by presenting the broad implementation of the Metropolis algorithm, before showing how we adapt it to each specific model.
+
+
+\subsection{Code structure}
+We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
+\nolinenumbers
+\begin{figure}[t]
+\centering
+
+\includegraphics[width=\columnwidth]{architecture.pdf}
+\caption{Code structure}
+\label{fig:architecture}
+\end{figure}
+\linenumbers
+The code is built around hierarchical classes. We first implement the topology of the network, which is independent of the type of spin interaction and of the dynamical model considered. On this lattice, we set up the evolution rules (\textit{i.e.} the Metropolis algorithm in our case), and the input/output file management. Then, the combination (topology, dynamics) is applied to one of the three models implemented (Ising, Spin glass or Hopfield) and is implemented either in its standard or bitwise version. This code can be found in \cite{hopfield_code}.
+\subsection{Naive implementation of the classic Metropolis algorithm}
+\nolinenumbers
+\begin{algorithm}[b]
+\DontPrintSemicolon
+
+\caption{Standard Metropolis implementation  (naive)}
+
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+\BlankLine
+\BlankLine
+\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+        Draw $k$ among $N$\;
+      \For{$r = 1$ \KwTo $n_\text{bits}$}{
+          Compute $\Lambda_k^{(r)}$\;
+          \BlankLine
+          \tcp{Unconditional flip: energy is lowered}
+          \eIf{$\Lambda_k^{(r)} \leq 0$}{
+              $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+          }{
+              \tcp{Conditional flip: draw Poisson threshold}
+              Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(\beta \kappa)$\;
+              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+                  $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+              }
+          }
+      }
+    }
+}
+\label{alg:ising_classic_naive}
+\end{algorithm}
