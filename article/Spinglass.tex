@@ -14,10 +14,10 @@ Under a spin flip ($S_k \to - S_k$), the energy shift is:
 \end{equation}
 The structure being really similar to that of \eqref{eq:DeltaE_ising}, we can perform the same derivation as for the Ising model and find the spin flip condition:
 \begin{equation}
-  \lfloor \rho \rfloor \geq S_k  \sum_{i \in \partial k}J_{ki}S_i,\\
+ q\geq S_k  \sum_{i \in \partial k}J_{ki}S_i,\\
   \label{eq:flip_EA_int}
 \end{equation}
-with this time $\rho \sim \mathcal{E}(2\beta)$.
+with this time $\theta \sim \mathcal{E}(2\beta)$.
 \subsection{Bitwise Implementation}
 We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in the previous section, the product $S_kS_i$ can be re-written $(-1+2B_k)(-1+2B_i)=-1+2 C_{ki}$ with $C_{ki}= B_k \odot B_i$. Thus, by writing $J_{ki}=-1+2K_{ki}$ with $K_{ki}$ a \Bits, we have:
 \begin{equation*}
@@ -28,7 +28,7 @@ We now need to express the product $J_{ik}S_kS_i$ in a binary way. As shown in t
 \end{equation*}
 with $D_{ki}=K_{ki}\odot C_{ki}= K_{ki} \odot B_k \odot B_i =  K_{ki} \oplus B_k \oplus B_i$. As in the previous section, the flip condition is then:
 \begin{equation}
-  \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}D_{ki}.
+ q+ n_k \geq 2 \sum_{i \in \partial k}D_{ki}.
   \label{eq:flip_SG_bitwise}
 \end{equation}
 Both the bitwise and the classic implementation are thus similar to this of the Ising model, and we will not present them further in this report. The bitwise algorithm for the spin glass model can be found in the appendix, see \Cref{alg:SG_bitwise}.\\
@@ -49,9 +49,9 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 \For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$\mathrm{step}=1$ \KwTo $N$}{
         Draw $k$ among $N$\;
-        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta)$
 
-        \eIf{$\lfloor \rho \rfloor \ge n_k$}{
+        \eIf{$m \ge n_k$}{
             $B_k \leftarrow \neg B_k$ \tcp*{escape condition: unconditional flip across all replicas}
         }{
             $T_k \leftarrow \mathbf{0}$
@@ -68,7 +68,7 @@ The bitwise implementation is not validated here, as the bitwise framework was a
 
             $T_k \leftarrow 2T_k$
 
-            $\mathtt{threshold} \leftarrow \lfloor \rho \rfloor +n_k$
+            $\mathtt{threshold} \leftarrow q+n_k$
 
             $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
             \tcp*{per-replica flip condition}

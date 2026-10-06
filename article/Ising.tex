@@ -18,7 +18,7 @@ When flipping the spin $S_k$ ($S_k \to - S_k$), the associated energy shift is
 \end{aligned}
 \label{eq:DeltaE_ising}
 \end{equation}
-where $i \in \partial k$ denotes the summation over the neighbors of $k$. Thus, here, $\kappa=2J$. We now need to implement the flip condition $\lfloor \rho \rfloor \geq \Lambda_k$ in a bitwise formalism in order to properly parallelize the evolutions.
+where $i \in \partial k$ denotes the summation over the neighbors of $k$. Thus, here, $\kappa=2J$. We now need to implement the flip condition $m \geq \Lambda_k$ in a bitwise formalism in order to properly parallelize the evolutions.
 \subsection{Bitwise Implementation}
 Remembering that $S_i$ is actually an array containing $64$ replicas of the same spin, we write $S_i = -1 + 2B_i$, with $B_i$ a \Bits. The sum hence becomes:
 \begin{equation*}
@@ -53,10 +53,10 @@ Thus, the term in the sum is simply equal to $2{B_k \odot B_i} -1 $, where $\odo
 \end{equation*}
 with $C_{ki}={B_k \odot B_i}$ and $n_k$ is the number of neighbor of the spin $k$. The bitwise flip condition is then:
 \begin{equation}
-  \lfloor \rho \rfloor + n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
+ q+ n_k \geq 2 \sum_{i \in \partial k}C_{ki}.
   \label{eq:flip_ising_bitwise}
 \end{equation}
- Moreover, the integer escape flip condition \eqref{eq:flip_escape_condition} (which translates in $\lfloor \rho \rfloor \geq n_k$) constrains the range of values taken by $\lfloor \rho \rfloor$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively (with $\max \Lambda_k = n_k$ in the case of the Ising network). This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.
+ Moreover, the integer escape flip condition \eqref{eq:flip_escape_condition} (which translates in $m \geq n_k$) constrains the range of values taken by $q$ and $ 2 \sum_{i \in \partial k}C_{ki}$ to $n_k$ and $2n_k$, respectively (with $\max \Lambda_k = n_k$ in the case of the Ising network). This is particularly convenient, as it allows the \UnsignedInt objects to be allocated with static sizes at initialization, removing the need for dynamic resizing during the simulation.
  In addition, this integer flip condition can be applied to the bitwise algorithm and avoids the bitwise flipping test calculations for each replica: when it is met, all replicas are flipped simultaneously. A simple integer comparison suffices.\\
 
 The pseudocode for the bitwise implementation of the Metropolis algorithm on this Ising network is presented in the \cref{alg:ising_bitwise}.\\
@@ -75,9 +75,9 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 \For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweep}}$}{
     \For{$\mathrm{step}=1$ \KwTo $N$}{
         Draw $k$ among $N$\;
-        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta J)$
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta J)$
 
-        \eIf{$\lfloor \rho \rfloor \ge n_k$}{
+        \eIf{$m \ge n_k$}{
             $B_k \leftarrow \neg B_k$ \tcp*{escape condition: unconditional flip across all replicas}
         }{
             $T_k \leftarrow \mathbf{0}$
@@ -94,7 +94,7 @@ The pseudocode for the bitwise implementation of the Metropolis algorithm on thi
 
             $T_k \leftarrow 2T_k$
 
-            $\mathtt{threshold} \leftarrow \lfloor \rho \rfloor +n_k$
+            $\mathtt{threshold} \leftarrow q+n_k$
 
             $\mathtt{mask} \leftarrow (T_k \le \mathtt{threshold})$
             \tcp*{per-replica flip condition}
@@ -186,7 +186,7 @@ Now that our algorithm has been shown to produce correct results, we wish to est
 \end{figure*}
 \linenumbers
 
-The speedup factor lies between 20 and 45, which is a substantial performance increase. We notice that this speedup factor consistently increases with the temperature. As shown in (\subref{fig:sweep_time_vs_N_ising}), the early increase is mostly the effect of the ordering of the configurations at low temperature: before the phase transition, the state collapses into an ordered phase where all spins are aligned. This makes the unconditional flip condition $\Delta E_k \leq 0$ more frequent in the classical implementation, which is computationally cheaper, thus making it faster. This unconditional flip condition however becomes less probable when we increase the temperature, making the normalised time of the classic implementation and the speedup factor increase (especially near the critical temperature $T_c$) up to a certain value where the normalised time stops increasing, probably as the unconditional flip condition is never met anymore. We also notice that the unconditional flip condition in the bitwise implementation ($\lfloor \rho \rfloor \geq n_k$) becomes more and more probable with the increasing temperature, making the bitwise implementation faster. These two effects combined explain the overall shape of the speedup factor evolution, where the first increase is coming from the classical implementation and the second one is the effect of the bitwise. It should be noted that this overall tendency may not be observed in the case of a comparison with the standard Metropolis algorithm, as the non-naive standard Metropolis implementation possesses the same escape condition $\lfloor \rho \rfloor \geq n_k$, making it faster and thus slowing down (or supressing) the second increase in the speedup factor. \\
+The speedup factor lies between 20 and 45, which is a substantial performance increase. We notice that this speedup factor consistently increases with the temperature. As shown in (\subref{fig:sweep_time_vs_N_ising}), the early increase is mostly the effect of the ordering of the configurations at low temperature: before the phase transition, the state collapses into an ordered phase where all spins are aligned. This makes the unconditional flip condition $\Delta E_k \leq 0$ more frequent in the classical implementation, which is computationally cheaper, thus making it faster. This unconditional flip condition however becomes less probable when we increase the temperature, making the normalised time of the classic implementation and the speedup factor increase (especially near the critical temperature $T_c$) up to a certain value where the normalised time stops increasing, probably as the unconditional flip condition is never met anymore. We also notice that the unconditional flip condition in the bitwise implementation ($m \geq n_k$) becomes more and more probable with the increasing temperature, making the bitwise implementation faster. These two effects combined explain the overall shape of the speedup factor evolution, where the first increase is coming from the classical implementation and the second one is the effect of the bitwise. It should be noted that this overall tendency may not be observed in the case of a comparison with the standard Metropolis algorithm, as the non-naive standard Metropolis implementation possesses the same escape condition $m \geq n_k$, making it faster and thus slowing down (or supressing) the second increase in the speedup factor. \\
 The increase seems to be uncorrelated with the size of the system. In theory, the speedup factor can even be larger than 64, as the structural optimization alone can potentially yield a speedup of 64 by itself, as it enables us to make 64 realizations evolve in parallel. However, this structural optimization comes with the cost of creating and storing the bitwise objects used to parallelize the evolution, thus reducing the net performance improvement.\\
 The Subfigure~(\subref{fig:sweep_time_vs_N_ising}) shows that the time required grows proportionally to the system size for both implementation. The complexity of the bitwise implementation thus seems to be $\mathcal{O}\left(N_\text{sweeps} \cdot  N \cdot \langle n_\text{neighbor} \rangle \right)$.
 It must be noted that, while we here measure an increase in the speed of the code for a fixed number of outputs, the true advantage of the bitwise implementation is to produce more independent results within the same computational time.

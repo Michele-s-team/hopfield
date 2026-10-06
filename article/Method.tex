@@ -201,7 +201,7 @@ Because all replicas share the same sequence of random number, it is not obvious
 \label{fig:replica_independence}
 \end{figure}
 \linenumbers
-In a further analysis, one would be tempted to share the energy landscape across all replicas (this happens for instance if all replicas share the same patterns to be stored in the case of the Hopfield model, see subsection \ref{subsec:hopfield_model}). In this case, the realizations would be correlated through this shared energy landscape.
+In a further analysis, one would be tempted to share the energy landscape across all replicas. This happens for instance if all replicas share the same patterns to be stored in the case of the Hopfield model, see subsection \ref{subsec:hopfield_model}. In this case, the realizations would be correlated through this shared energy landscape.
 \FloatBarrier
 \subsection{Standard implementation of the Metropolis algorithm}
 
@@ -222,30 +222,34 @@ with
 where  $\kappa$ corresponds to the constants of the model (\textit{i.e.} $2J$ in the case of the Hopfield model).
 With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$ , thus:
 \begin{equation}
-   \rho \equiv -\frac{1}{\beta \kappa}\log r  \sim \mathcal{E}(\beta \kappa).
+   \theta \equiv -\frac{1}{\beta \kappa}\log r  \sim \mathcal{E}(\beta \kappa).
 \end{equation}
- The left-hand side of \Cref{eq:flip_condition} is a random variable of probability density $p(\rho)=\beta  \kappa e^{-\beta  \kappa \rho}$ and mean $(\beta  \kappa)^{-1}$.
-The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition:
+The left-hand side of \Cref{eq:flip_condition} is a random variable of probability density $p(\theta)=\beta  \kappa e^{-\beta  \kappa \theta}$ and mean $(\beta \kappa)^{-1}$.
+The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. 
+The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition, 
+defining $q := \lfloor \theta \rfloor $:
 \begin{equation}
-  \lfloor \rho \rfloor \geq \Lambda_k,
+ q\geq \Lambda_k.
   \label{eq:flip_int}
 \end{equation}
 
-A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number. A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
+A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number. 
+A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
 \begin{equation*}
  -\max\Lambda_k \leq \Lambda_k \leq \max\Lambda_k ,
 \end{equation*}
 where $\max\Lambda_k $ only depend on the topology of the network.
 Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
 \begin{equation}
- \lfloor \rho \rfloor \geq \max\Lambda_k
+q \geq \max\Lambda_k
  \label{eq:flip_escape_condition}
 \end{equation}
-When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test. This condition is typically met in the high-temperature regime, where $\rho$ is more likely to be large\\
+When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test.
+This condition is typically met in the high-temperature regime, where $\theta$ is more likely to be large.\\
 We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, provided that the definition of $\kappa$ is adapted to each model.\\
 \vspace{1em}
 \nolinenumbers
-\begin{algorithm}[b]
+\begin{algorithm}[t]
 \DontPrintSemicolon
 \caption{Standard Metropolis implementation}
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
@@ -254,17 +258,17 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \BlankLine
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$k = 1$ \KwTo $N$}{
-      Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(\beta \kappa)$\;
-      \eIf{$\lfloor \rho \rfloor \geq \max\Lambda_k$}{
+      Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
+      \eIf{$q \geq \max\Lambda_k$}{
         \For{$r = 1$ \KwTo $n_\text{bits}$}{
             $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
             }
         }{
             \For{$r = 1$ \KwTo $n_\text{bits}$}{
                 Compute $\Lambda_k^{(r)} $\;
-                \If{$\Lambda_k^{(r)} \leq 0$ \textbf{or} $\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+                \If{$\Lambda_k^{(r)} \leq 0$ \textbf{or} $q \geq \Lambda_k^{(r)}$}{
                     \BlankLine
-                    \tcp{the test $\Lambda_k^{(r)} \leq 0$ is not necessary as $\lfloor \rho \rfloor$ has already been drawn, but is shown for pedagogy}
+                    \tcp{the test $\Lambda_k^{(r)} \leq 0$ is not necessary as $q$ has already been drawn, but is shown for pedagogy}
                     $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
                 }
             }
@@ -277,7 +281,7 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \vspace{1em}
 This reduces the number of random draws per $n_\text{bits}$ cycle update to just one, shared among all replicas. This optimization is possible even though the structure is not fully parallelized across replicas. The only case for which this parallelized random number optimization might not be as efficient as expected is when $\Lambda_k^{(r)} \leq 0$  for all replicas simultaneously, in which case a random threshold is drawn but never used.
 The complexity of this algorithm on a given network is $\mathcal{O}\left(N_\text{sweeps}\cdot N \cdot \langle n_\text{neighbor} \rangle \cdot n_\text{bits} \right)$.
-\subsection{Bitwise Implementation}
+\subsection{Bitwise Implementation of the Metropolis algorithm on the Hopfield network}
 Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the neuron $S_k$ is:
 \begin{equation}
   \begin{aligned}
@@ -292,22 +296,23 @@ We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variabl
 
 And the flip condition becomes:
 \begin{equation}
-  \lfloor \rho \rfloor \geq S_k h_k,
+ q \geq S_k h_k,
   \label{eq:flip_condition_hopfield}
 \end{equation}
-with $h_k =  \sum_{i \in \partial k }G_{ki}S_i$ the local field and $\rho =-\frac{N}{2\beta} \log r$.
+with $h_k =  \sum_{i \in \partial k }G_{ki}S_i$ the local field and $q = \lfloor \theta \rfloor =-\frac{N}{2\beta} \log r$.
 \subsubsection{Naive implementation}
 A first naive implementation would be to unfold $G_{ki}$ into its pattern components in order to deal with \Bits only objects. The flip condition would then be:
 
 \begin{equation}
-  \lfloor \rho \rfloor \geq \sum_{i \in \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i.
+ q\geq \sum_{i \in \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i.
 \end{equation}
 As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
 However, it requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
 
 \subsubsection{Optimized implementation}
 \label{sec:base_implementation_hopfield}
-A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
+A more effective approach would be to retain the integer factor $G_{ki}$, which is suitably stored into an \UnsignedInt in the bitwise implementation. 
+We operate the shift $\tilde{G}_{ki} = p + G_{ki}$, $\tilde{G}_{ki} \in [0, 2p]$ in order to deal with positive only integers, as required by the \UnsignedInt format. Then:
 \begin{align*}
     \sum_{i \in \partial k} G_{ki} S_i S_k &= \sum_{i \in \partial k}(\tilde{G}_{ki}-p)(2C_{ik}-1)\\
     &= -\sum_{i \in \partial k} \tilde{G}_{ki} + 2\sum_{i \in \partial k}
@@ -316,7 +321,7 @@ A more effective approach would be to retain the integer factor $G_{ki}$, which 
 with $C_{ki}= B_k \odot B_i$.
 The bitwise flip test is then:
 \begin{equation}
-    \lfloor \rho \rfloor + \sum_{i \in \partial k} \tilde{G}_{ki} + 2p\sum_{i \in \partial k} C_{ki} \geq  pn_k+
+   q+ \sum_{i \in \partial k} \tilde{G}_{ki} + 2p\sum_{i \in \partial k} C_{ki} \geq  pn_k+
     2\sum_{i \in \partial k} C_{ki}\, \oplus \tilde{G}_{ki}
 \end{equation}
 Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{ki}$ and every \Bits composing the \UnsignedInt $\tilde{G}_{ki}$:
@@ -324,9 +329,13 @@ Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{
   \left(C_{ki}\, \oplus \tilde{G}_{ki}\right)_l = C_{ki} \oplus \left(\tilde{G}_{ki}\right)_l,
 \end{equation*}
 where $l$ denotes the $l$-th \Bits of $\tilde{G}_{ki}$ (associated with the power $2^l$).
-This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave the other ones untouched. This method thus requires the creation of several \UnsignedInt objects, whose sizes are fixed throughout the evolution of the system. Also, $\tilde{G}_{ki}$ is simply determined by the pattern initialization of the system and does not depend on the spin configuration. It can thus be computed once before letting the system evolve, saving significant computation time. Looking at \Cref{eq:flip_condition_hopfield}, the escape condition that enables us to flip all replicas of the spin without considering each configuration becomes:
+This is strictly equivalent to setting the columns of $\tilde{G}_{ik}$ to 0 where $C_{ki}$ is zero and leave the other ones untouched. 
+This method thus requires the creation of several \UnsignedInt objects, whose sizes are fixed throughout the evolution of the system. 
+Also, $\tilde{G}_{ki}$ is simply determined by the pattern initialization of the system and does not depend on the spin configuration. 
+It can thus be computed once before letting the system evolve, saving significant computation time. Looking at \Cref{eq:flip_condition_hopfield}, 
+the escape condition that enables us to flip all replicas of the spin without considering each configuration becomes:
 \begin{equation}
-    \lfloor \rho \rfloor \geq p\,n_k
+   q\geq p\,n_k
     \label{eq:escape_condition_hopfield_bitwise}
 \end{equation}
 We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network.
@@ -360,9 +369,9 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
         Draw a random neuron $i$\;
 
-        Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(2\beta)$\;
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta)$\;
 
-        \eIf{$\lfloor \rho \rfloor \geq p\,n_k$}{
+        \eIf{$q \geq p\,n_k$}{
             $B_i\leftarrow\neg B_i$
             \tcp*{Unconditional flip}
         }{
@@ -414,9 +423,10 @@ Then,
 \end{align*}
 The second sum is simply the sum $G_{ki} S_i S_k$ over the non-neighbors of $k$. Each term of the last sum is equal to 1. The flip condition is thus:
 \begin{equation}
-  \lfloor \rho \rfloor +p  \geq \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k.
+ q+p  \geq \sum_{\mu=1}^p \xi_k^\mu S_k M^\mu - \sum_{\substack{i \notin \partial k \\ i \neq k}} G_{ki} S_i S_k.
 \end{equation}
-The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps $ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, writing $S_k \xi_k^\mu = 2 C_k^\mu -1$ with $C_k^\mu = B_k \odot X_k^\mu$, $X_k^\mu $ being the binary counterpart of $\xi_k^\mu$,
+The bitwise implementation of this condition requires that all quantities are positive. We thus define the shifted extensive overlaps 
+$ \tilde{M}^\mu = M^\mu + N$, $\tilde{M}^\mu \in[0, 2N]$. Then, writing $S_k \xi_k^\mu = 2 C_k^\mu -1$ with $C_k^\mu = B_k \odot X_k^\mu$, $X_k^\mu $ being the binary counterpart of $\xi_k^\mu$,
 \begin{align*}
     \sum_{\mu=1}^p &\xi_k^\mu S_k M^\mu = \sum_{\mu=1}^p \xi_k^\mu S_k (\tilde{M}^\mu - N)\\
     &= - N \sum_{\mu=1}^p \left(2C_k^\mu - 1 \right) + \sum_{\mu=1}^p \left(2 C_k^\mu-1\right) \tilde{M}^\mu\\
@@ -434,15 +444,16 @@ We also use the previous decomposition of $G_{ki} S_i S_k$:
 \end{equation*}
 The overall bitwise flip condition is thus:
 \begin{equation}
-    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}.
+   q+ 2N \sum_{\mu=1}^p C_k^\mu +  \sum_{\mu=1}^p \tilde{M}^\mu +   2 \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik} \oplus \tilde{G}_{ki} \geq  p n_k + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu +\sum_{\substack{i \notin \partial k \\ i \neq k}} \tilde{G}_{ki} + 2p \sum_{\substack{i \notin \partial k \\ i \neq k}} C_{ik}.
     \label{eq:bitwise_flip_overlap}
 \end{equation}
 \end{widetext}
-This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\partial k|)=\mathcal{O}(\alpha N+ |\partial k|)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$ with $\rho$ the density of the network.
+This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood. 
+In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\overline{\partial k} |)=\mathcal{O}(\alpha N+ |\overline{\partial k} |)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$ with $\rho$ the density of the network.
 In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
 \begin{equation}
 \begin{aligned}
-    \lfloor \rho \rfloor + 2N \sum_{\mu=1}^p C_k^\mu +  &\sum_{\mu=1}^p \tilde{M}^\mu \geq \\ & p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
+   q+ 2N \sum_{\mu=1}^p C_k^\mu +  &\sum_{\mu=1}^p \tilde{M}^\mu \geq \\ & p (N-1) + 2 \sum_{\mu=1}^p C_k^\mu \oplus \tilde{M}^\mu,
     \label{eq:bitwise_flip_overlap_FC}
 \end{aligned}
 \end{equation}

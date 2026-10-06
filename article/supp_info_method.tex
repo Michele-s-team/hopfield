@@ -36,8 +36,8 @@ The code is built around hierarchical classes. We first implement the topology o
               $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
           }{
               \tcp{Conditional flip: draw Poisson threshold}
-              Draw $\lfloor \rho \rfloor$ with $\rho \sim \mathcal{E}(\beta \kappa)$\;
-              \If{$\lfloor \rho \rfloor \geq \Lambda_k^{(r)}$}{
+              Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
+              \If{$m \geq \Lambda_k^{(r)}$}{
                   $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
               }
           }

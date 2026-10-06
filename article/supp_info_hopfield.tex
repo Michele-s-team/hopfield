@@ -46,10 +46,10 @@ $\mathtt{UnsignedInt}\
 
     Draw random neuron $k$\;
 
-    Draw $\lfloor\rho\rfloor$ with $\rho\sim\mathcal{E}(2\beta)$\;\;
+    Draw $q$ with $\theta\sim\mathcal{E}(2\beta)$\;\;
 
 
-    \eIf{$\lfloor\rho\rfloor\geq p n_k$}{
+    \eIf{$m \geq p n_k$}{
 
         \For{$\mu=1$ \KwTo $P$}{
 
@@ -103,7 +103,7 @@ $\mathtt{UnsignedInt}\
 
         $\mathrm{LHS}
         \leftarrow
-        \lfloor\rho\rfloor
+        m
         +2N\Sigma_C
         +\Sigma_M
         +2\Sigma_{CG}$\;
