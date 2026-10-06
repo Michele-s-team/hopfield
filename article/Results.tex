@@ -1,3 +1,5 @@
+\section{Results}
+\subsection{Independence of the realizations}
 \subsection{Capacity of the network}
 A first validation test of the implementation is to reproduce the evolution of the reconstruction error shown in \Cref{fig:phase_transition}. To this end, we choose the simplest case that is to initialize the system directly on one of the stored patterns and checking whether the network is able to retain the memory of that pattern throughout its evolution. This avoids having to fix, as an additional parameter, the initial distance between the system and the stored pattern. The model is initialized on a $32 \times 32$ fully connected square lattice. Each replica possess its own independend stored patterns. We fix the temperature at $\beta=5.0$ in order to approach the $T\to 0$ limit case and we let the system evolve for $2^{14}$ sweeps, averaging on the second half of the evolution. We show in \Cref{fig:reconstruction_error} the obtained reconstruction error depending on $\alpha$.
 \nolinenumbers
@@ -105,3 +107,4 @@ Two other related causes can explain the lack of performances for dense networks
 \label{fig:speedup_hopfield}
 \end{figure*}
 \linenumbers
+\subsection{Comparison of the two methods}
