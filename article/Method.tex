@@ -315,6 +315,7 @@ The bitwise flip test is then:
 \begin{equation}
    q+ \sum_{i \in \partial k} \tilde{G}_{ki} + 2p\sum_{i \in \partial k} C_{ki} \geq  pn_k+
     2\sum_{i \in \partial k} C_{ki}\, \oplus \tilde{G}_{ki}
+    \label{eq:flip_condition_hopfield_bitwise}
 \end{equation}
 Where $C_{ki}\, \oplus \tilde{G}_{ik}$ consists in the XOR operator between $C_{ki}$ and every \Bits composing the \UnsignedInt $\tilde{G}_{ki}$:
 \begin{equation*}
@@ -330,9 +331,9 @@ the escape condition that enables us to flip all replicas of the spin without co
    q\geq p\,n_k
     \label{eq:escape_condition_hopfield_bitwise}
 \end{equation}
-We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network.
+We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network, with $\mathrm{LHS}$ and $\mathrm{RHS}$ referring to the left and right-hand sides of eq~\eqref{eq:flip_condition_hopfield_bitwise}.
 \linenumbers
-\begin{algorithm}[b]
+\begin{algorithm}[H]
 \DontPrintSemicolon
 \caption{Bitwise Hopfield Metropolis}
 
