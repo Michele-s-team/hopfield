@@ -216,17 +216,17 @@ If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^
 \end{equation}
 with
 \begin{equation}
-  \Lambda_k \equiv \frac{\Delta E_k}{\kappa}.
+  \Lambda_k := \frac{\Delta E_k}{\kappa}.
   \label{eq:def_lambda}
 \end{equation}
-where  $\kappa$ corresponds to the constants of the model (\textit{i.e.} $2J$ in the case of the Hopfield model).
-With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$ , thus:
+where  $\kappa$ corresponds to the constants of the model (\textit{i.e.} $2J$ in the case of the Ising model or $2/N$ for the Hopfield model).
+With this normalization, $\Lambda_k$ is an integer and can be expressed using \UnsignedInts. With $r \sim \mathcal{U}([0,1])$, we know that $-\log r \sim \mathcal{E}(1)$ , thus:
 \begin{equation}
-   \theta \equiv -\frac{1}{\beta \kappa}\log r  \sim \mathcal{E}(\beta \kappa).
+   \theta := -\frac{1}{\beta \kappa}\log r  \sim \mathcal{E}(\beta \kappa).
 \end{equation}
 The left-hand side of \Cref{eq:flip_condition} is a random variable of probability density $p(\theta)=\beta  \kappa e^{-\beta  \kappa \theta}$ and mean $(\beta \kappa)^{-1}$.
-The right-hand side of the equation is an integer which can be positive of negative. However, due to the first escape condition of the algorithm, we know that it is strictly positive. 
-The left-hand side is thus compared with a positive integer. We can thus only consider the whole part of it without changing the inequality in order to obtain an integer-only flip condition, 
+$\Lambda_k$ is an integer and is guaranteed to be positive by the first escape condition of the algorithm.
+We can thus consider only its integer part without changing the inequality, which yields an integer-only flip condition,
 defining $q := \lfloor \theta \rfloor $:
 \begin{equation}
  q\geq \Lambda_k.
