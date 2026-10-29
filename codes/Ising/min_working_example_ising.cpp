@@ -132,8 +132,8 @@ int main() {
     IsingBits bits_test(L_test * L_test, BJ_test, N_sweeps_test);
     IsingNoBits classic_test(L_test * L_test, BJ_test, N_sweeps_test);
 
-    bits_test.initNetwork2D_PBC();
-    classic_test.initNetwork2D_PBC();
+    bits_test.initNetwork_2D_PBC();
+    classic_test.initNetwork_2D_PBC();
     cout << "Network initialized\n" << endl;
     
     bits_test.initSpins(ran_test);

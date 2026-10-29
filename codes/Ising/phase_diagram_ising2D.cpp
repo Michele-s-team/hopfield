@@ -127,7 +127,7 @@ int main() {
     cout << "##############################################\n";
 
     IsingBits bits(N_spins, 1, N_sweeps);
-    bits.initNetwork2D_PBC();
+    bits.initNetwork_2D_PBC();
     cout << "Network initialized\n" << endl;
 
     bits.initSpinsBits(ran);
