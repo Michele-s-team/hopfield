@@ -426,18 +426,38 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
             sum_couplings[spin] += &Couplings[spin][k];
     }
 
+    // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
+    // the escape condition boundary
+    vector<int> max_escape_bound(N);
+    int max_escape_bound_spin;
+    int escape_bound_spin;
+    for (int spin = 0; spin < N; ++spin) {
+        max_escape_bound_spin=0;
+        
+        for (int r=0; r<n_bits; ++r){
+            escape_bound_spin=0;
+
+            for (int k = 0; k < degrees[spin] ; ++k) {
+                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
+            }
+            if (escape_bound_spin > max_escape_bound_spin){max_escape_bound_spin=escape_bound_spin;}
+        }
+        max_escape_bound[spin]=max_escape_bound_spin;
+    }
+     
+
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
 
             int spin     = gsl_rng_uniform_int(ran, N);
             int deg_spin = degrees[spin];
-            int random   = randomNumber(ran, deg_spin * P, N);
+            int random   = randomNumber(ran, max_escape_bound[spin], N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= P * deg_spin) {
+            if (random >= max_escape_bound[spin]) {
                 S_i.ComplementTo();
                 continue;
             }
@@ -580,6 +600,25 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 
     int max_size_non_neighbors = N - 1 - min_deg;
 
+    // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
+    // the escape condition boundary
+    vector<int> max_escape_bound(N);
+    int max_escape_bound_spin;
+    int escape_bound_spin;
+    for (int spin = 0; spin < N; ++spin) {
+        max_escape_bound_spin=0;
+        
+        for (int r=0; r<n_bits; ++r){
+            escape_bound_spin=0;
+
+            for (int k = 0; k < degrees[spin] ; ++k) {
+                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
+            }
+            if (escape_bound_spin > max_escape_bound_spin){max_escape_bound_spin=escape_bound_spin;}
+        }
+        max_escape_bound[spin]=max_escape_bound_spin;
+    }
+
     Bits mask;
     Bits c_ij;
     Bits carry_g, borrow_g;  // carry/borrow for Shifted_Overlaps[mu]
@@ -640,12 +679,12 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
             int deg_spin            = degrees[spin];
             int non_neighbors_size = N - 1 - deg_spin;
             CST.SetAll(deg_spin * P);
-            int random = randomNumber(ran, deg_spin * P, N);
+            int random = randomNumber(ran, max_escape_bound[spin], N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= P * deg_spin) {
+            if (random >= max_escape_bound[spin]) {
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
 
@@ -826,6 +865,25 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     cout << "initialization done" << endl;
 
+    // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
+    // the escape condition boundary
+    vector<int> max_escape_bound(N);
+    int max_escape_bound_spin;
+    int escape_bound_spin;
+    for (int spin = 0; spin < N; ++spin) {
+        max_escape_bound_spin=0;
+        
+        for (int r=0; r<n_bits; ++r){
+            escape_bound_spin=0;
+
+            for (int k = 0; k < degrees[spin] ; ++k) {
+                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
+            }
+            if (escape_bound_spin > max_escape_bound_spin){max_escape_bound_spin=escape_bound_spin;}
+        }
+        max_escape_bound[spin]=max_escape_bound_spin;
+    }
+
     // Precompute Σ_mu L^mu
     for (int mu = 0; mu < P; ++mu) {
         sum_shifted_overlaps += &Shifted_Overlaps[mu];
@@ -836,12 +894,12 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         for (int step = 0; step < N; ++step) {
 
             int spin     = gsl_rng_uniform_int(ran, N);
-            int random   = randomNumber(ran, (N-1) * P, N);
+            int random   = randomNumber(ran, max_escape_bound[spin], N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= P * (N-1)) {
+            if (random >= max_escape_bound[spin]) {
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
 
