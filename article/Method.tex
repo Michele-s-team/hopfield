@@ -244,6 +244,7 @@ Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
 q \geq \max\Lambda_k
  \label{eq:flip_escape_condition}
 \end{equation}
+\noteBastien{ça c'est le max théorique, il est possible de resserer les bornes en considérant le max effectif sur les réalisations (ne dépend pas du temps). remarque valable uniquement pour Hopfield, cela vient des patterns stockés à l'avance. peut-être un gain à espérer ?}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test.
 This condition is typically met in the high-temperature regime, where $\theta$ is more likely to be large.\\
 We show in the \Cref{alg:ising_classic} the shared random number implementation of the Metropolis algorithm. This implementation is valid for all models, provided that the definition of $\kappa$ is adapted to each model.\\
