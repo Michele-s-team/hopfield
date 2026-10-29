@@ -29,15 +29,15 @@ The code is built around hierarchical classes. We first implement the topology o
     \For{$\mathrm{step}=1$ \KwTo $N$}{
         Draw $k$ among $N$\;
       \For{$r = 1$ \KwTo $n_\text{bits}$}{
-          Compute $\Lambda_k^{(r)}$\;
+          Compute $\Delta_k^{(r)}$\;
           \BlankLine
           \tcp{Unconditional flip: energy is lowered}
-          \eIf{$\Lambda_k^{(r)} \leq 0$}{
+          \eIf{$\Delta_k^{(r)} \leq 0$}{
               $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
           }{
               \tcp{Conditional flip: draw Poisson threshold}
               Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
-              \If{$m \geq \Lambda_k^{(r)}$}{
+              \If{$m \geq \Delta_k^{(r)}$}{
                   $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
               }
           }
