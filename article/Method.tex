@@ -209,8 +209,8 @@ We show here the standard implementation of the Metropolis algorithm, which will
 If $\Delta E_k \leq 0$ the flip is accepted. Else, the flip condition $r \leq e^{-\beta \Delta E_k}$, yields:
 \begin{equation}
 \begin{aligned}
-  \frac{-1}{\beta}\log r &\geq \Delta E_k\\
-  \frac{-1}{\beta \kappa}\log r &\geq \Delta_k,\\
+  -\frac{1}{\beta}\log r &\geq \Delta E_k\\
+  -\frac{1}{\beta \kappa}\log r &\geq \Delta_k,\\
 \end{aligned}
 \label{eq:flip_condition}
 \end{equation}
@@ -236,12 +236,12 @@ defining $q := \lfloor \theta \rfloor $:
 A first naive implementation of the classical algorithm is given in the \Cref{alg:ising_classic_naive} in the appendix, where each of the $n_\text{bits}$ branch possesses its own random number.
 A more efficient implementation would be to share the drawn random threshold across the replicas. This shared random number version yields a fast escape condition, taking advantage of the inequality
 \begin{equation*}
- -\max\Delta_k \leq \Delta_k \leq \max\Delta_k ,
+    \Delta_k \leq \Delta_k^\text{max} ,
 \end{equation*}
-where $\max\Delta_k $ only depend on the topology of the network.
+where $\Delta_k^\text{max} $ only depend on the topology of the network.
 Plugging this into Eq~\eqref{eq:flip_int} yields the flip escape condition:
 \begin{equation}
-q \geq \max\Delta_k
+q \geq \Delta_k^\text{max}
  \label{eq:flip_escape_condition}
 \end{equation}
 When satisfied, this guarantees that Eq.~\eqref{eq:flip_int} holds for every replica regardless of its local configuration, so that all replicas are flipped simultaneously without computing the per-replica test.
@@ -259,7 +259,7 @@ We show in the \Cref{alg:ising_classic} the shared random number implementation 
 \For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
     \For{$k = 1$ \KwTo $N$}{
       Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
-      \eIf{$q \geq \max\Delta_k$}{
+      \eIf{$q \geq \Delta_k^\text{max}$}{
         \For{$r = 1$ \KwTo $n_\text{bits}$}{
             $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
             }
@@ -284,10 +284,7 @@ The complexity of this algorithm on a given network is $\mathcal{O}\left(N_\text
 \subsection{Bitwise Implementation of the Metropolis algorithm on the Hopfield network}
 Given the Hamiltonian~\eqref{eq:Hopfield}, the energy shift when flipping the neuron $S_k$ is:
 \begin{equation}
-  \begin{aligned}
-  \Delta E_k&= 2\sum_{i\partial k}w_{ki}S_kS_i\\
-            &= \frac{2}{N}  \sum_{i \in \partial k}\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu S_k S_i
-  \end{aligned}
+  \Delta E_k= 2\sum_{i\partial k}w_{ki}S_kS_i
 \end{equation}
 We write $w_{ki} = \frac{1}{N}G_{ki}$ in order to deal with integer-only variables. Thus:
 \begin{equation*}
@@ -367,7 +364,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
         Draw a random neuron $i$\;
 
-        Draw $q$ with $\theta \sim \mathcal{E}(2\beta)$\;
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta/N)$\;
 
         \eIf{$q \geq  \Delta_k^{esc}$}{
             $B_i\leftarrow\neg B_i$
