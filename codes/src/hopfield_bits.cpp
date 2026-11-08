@@ -429,6 +429,7 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
     for (int spin = 0; spin < N; ++spin) {
@@ -603,6 +604,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
     for (int spin = 0; spin < N; ++spin) {
@@ -868,6 +870,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
     for (int spin = 0; spin < N; ++spin) {
