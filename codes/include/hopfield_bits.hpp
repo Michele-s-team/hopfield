@@ -53,14 +53,14 @@ public:
 
     vector<Bits> corruptPattern(const vector<Bits>& Patterns, int mu, double flip_fraction, gsl_rng* ran) const; // Corrupt a single pattern by flipping each bit independently with
                                                                                                                       // probability flip_fraction.
-
-
     void compute_shifted_overlaps();
     bool check_shifted_overlaps_consistency(int sweep, int step);
 
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
     void fromCanonical();                                          // convert ±1 spins → Bits representation
+
+    void patternsToCanonical();
     
     void runSweeps(gsl_rng* ran, bool save, double freq, int burn_in);
     void runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in);

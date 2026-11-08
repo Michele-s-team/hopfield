@@ -67,123 +67,105 @@ void make_dir(const string& path) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 int main() {
-
     SimulationIO IO;
 
+    // ── Parameters scanned ───────────────────────────────────────────────────
+    // Load alpha = P / N (number of patterns per neuron)
     vector<double> alpha_vals = {
-        0.01,
-        0.025,
-        0.05,
-        0.1,
-        0.138,
-        0.15,
-        0.2,
-        0.3
+        0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
     };
-
-    vector<double> temperatures = { 
+    // Temperatures (beta = 1 / T)
+    vector<double> temperatures = {
         0.1, 0.2, 0.3, 0.5, 0.75,
-        1.0,2.0,3.0,4.0,5.0,
-        6.0,7.0,8.0,9.0,10.0
+        1.0, 2.0, 3.0, 4.0, 5.0,
+        6.0, 7.0, 8.0, 9.0, 10.0
     };
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L         = 128;           // lattice size (L×L spins)
-    const int N         = L * L;
-    const int N_sweeps  = 1 << 13;       // number of Metropolis sweeps
+    const int L        = 128;       // lattice size (L x L spins)
+    const int N        = L * L;    // number of neurons
+    const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
+    // Random number generator (GSL, gfsr4); it is reseeded at each point below
     gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
-    gsl_rng_set(ran, 123);  // fixed seed for reproducibility
-
 
     clock_t start_all = clock();
+    int k   = 0;  // alpha counter (for display)
+    int run = 0;  // index of the current (alpha, beta) point, used in the seeds
 
-    int k=0;
-
+    // ── Loop over alpha ──────────────────────────────────────────────────────
     for (double alpha : alpha_vals) {
+        int l = 0;  // temperature counter (for display)
+        k += 1;
 
-        int l=0;
-        k+=1;
+        // ── Loop over temperature ────────────────────────────────────────────
+        for (double temperature : temperatures) {
+            l += 1;
+            run += 1;
+            double beta = 1 / temperature;
+            int P = static_cast<int>(round(L * L * alpha));  // number of patterns
 
-        for (double temperature : temperatures){
-
-            l+=1;
-
-            double beta= 1/temperature;
-            int P = static_cast<int>(round(L * L * alpha)); // number of patterns
-
-            // Build folder name using alpha value directly
+            // Output folder names (built from alpha, N and beta)
             ostringstream folder_name_bits;
             ostringstream folder_name_nobits;
 
-            // ── Model initialization ────────────────────────────────────────────
-
+            // ── Model initialization ─────────────────────────────────────────
             HopfieldBits bits(L * L, beta, N_sweeps, P);
             HopfieldNoBits nobits(L * L, beta, N_sweeps, P);
 
-            folder_name_bits << "../results/Hopfield/indep/bits/alpha_"
-                        << std::fixed << std::setprecision(3)
-                        << alpha
-                        << "/N"
-                        << L*L
-                        << "/"
-                        << "beta"
-                        << SimulationBase::format_beta(beta);
+            folder_name_bits << "../../results/Hopfield/indep/bits/alpha_"
+                             << std::fixed << std::setprecision(3) << alpha
+                             << "/N" << L * L << "/" << "beta"
+                             << SimulationBase::format_beta(beta);
+            folder_name_nobits << "../../results/Hopfield/indep/nobits/alpha_"
+                               << std::fixed << std::setprecision(3) << alpha
+                               << "/N" << L * L << "/" << "beta"
+                               << SimulationBase::format_beta(beta);
 
-            folder_name_nobits << "../results/Hopfield/indep/nobits/alpha_"
-                        << std::fixed << std::setprecision(3)
-                        << alpha
-                        << "/N"
-                        << L*L
-                        << "/"
-                        << "beta"
-                        << SimulationBase::format_beta(beta);
-
-            string base_folder_bits = folder_name_bits.str();
+            string base_folder_bits   = folder_name_bits.str();
             string base_folder_nobits = folder_name_nobits.str();
 
+            // Create the output folders and give them to the models
             make_dir(base_folder_bits);
             make_dir(base_folder_nobits);
-
             bits.SetBaseFolder(base_folder_bits.c_str());
             nobits.SetBaseFolder(base_folder_nobits.c_str());
 
+            // Run summary
             cout << "\n==============================================\n";
-            cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    ("<< k <<"/"<<alpha_vals.size() << ")\n";
-            cout << "  Lattice:       " << L << " x " << L << " = " << L*L << " neurons\n";
-            cout << "  Temperature:   " << temperature    <<"    ("<< l <<"/"<<temperatures.size() << ")\n";;
+            cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    (" << k << "/" << alpha_vals.size() << ")\n";
+            cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons\n";
+            cout << "  Temperature:   " << temperature << "    (" << l << "/" << temperatures.size() << ")\n";;
             cout << "  Sweeps:        " << N_sweeps << "\n";
             cout << "  Base folder:   " << base_folder_bits << "\n";
-            cout << "==============================================\n\n";      
+            cout << "==============================================\n\n";
 
-            // Build the 2D square lattice with periodic boundary conditions
+            // Build the network (fully connected) for both models
             bits.initNetwork_FullyConnected();
             nobits.initNetwork_FullyConnected();
+            cout << "Network initialized" << endl;
 
-            cout << "Network initialized" <<endl;
-            gsl_rng_set(ran, 123);
-
+            // ── Initial spin configuration (same for both models) ────────────
+            gsl_rng_set(ran, 123 + run);  // seed specific to this (alpha, beta) point
             bits.initSpinsBits(ran);
-            bits.toCanonical();
-
+            bits.toCanonical();  // bit representation {0,1} -> canonical {-1,+1}
             auto initial_config_bits = bits.getSpinsConfig();
             nobits.initSpinsFromConfig(initial_config_bits);
-
-            cout << "Initial Configuration initialized" <<endl;
-
+            cout << "Initial Configuration initialized" << endl;
+            // Check that both models start from the same configuration
             IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), initial_config_bits, N);
 
-            bits.initPatternsBits(ran);                       
-
+            // ── Patterns (drawn once by bits, then given to nobits) ──────────
+            bits.initPatternsBits(ran);
             auto patterns = bits.getPatternsBitsToCanonical();
             nobits.initPatternsFromConfig(patterns);
-            bits.SavePatterns(patterns, P);                
+            bits.SavePatterns(patterns, P);
             cout << "Patterns initialized and saved\n" << endl;
 
-            // ── Evolution: HopfieldBits ──────────────────────────────────────────
-            gsl_rng_set(ran, 42);                                // seed fixe pour la dynamique
+            // ── Evolution: HopfieldBits ──────────────────────────────────────
+            gsl_rng_set(ran, 42 + run);  // seed of the dynamics, same for bits and nobits
 
-            /* Initialisation sur un pattern (optionnel) :
+            /* Initialization on a pattern (optional):
             auto Patterns = bits.getPatternsBits();
             int mu = gsl_rng_uniform_int(ran, P);
             vector<Bits> Config(N);
@@ -194,40 +176,43 @@ int main() {
             */
 
             cout << "bitwise: " << endl;
-
             bits.OpenSpinFiles();
             clock_t start_bits = clock();
             bits.runSweeps(ran, /*save=*/true, /*freq=*/0.2, /*burn_in=*/0);
             bits.SaveSpinConfigurations(bits.getNSweeps());
             bits.CloseSpinFiles();
-            cout << "evolve_save_bits terminated"<<endl;
+            //bits.toCanonical();
+            cout << "evolve_save_bits terminated" << endl;
             clock_t end_bits = clock();
             double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
-            cout << "\nHopfieldBits done for alpha = " << alpha
-                << ". Time: " << clock_bits << " s\n";
+            cout << "HopfieldBits done for alpha = " << alpha
+                 << ". Time: " << clock_bits << " s\n";
 
-            cout << "nobits independent RNG: "<<endl;
-
+            // ── Evolution: HopfieldNoBits (same seed as bits) ────────────────
+            cout << "\nnobits independent RNG: " << endl;
+            gsl_rng_set(ran, 42 + run);  // exactly the same value as for bits
             nobits.OpenSpinFiles();
             clock_t start_nobits = clock();
             nobits.runSweepsIndependentRNG(ran, /*save=*/true, /*freq=*/0.2);
             nobits.SaveSpinConfigurations(bits.getNSweeps());
             nobits.CloseSpinFiles();
-            cout << "evolve_save_nobits terminated"<<endl;
+            cout << "evolve_save_nobits terminated" << endl;
             clock_t end_nobits = clock();
             double clock_nobits = double(end_nobits - start_nobits) / CLOCKS_PER_SEC;
-            cout << "\nHopfieldNoBits done for alpha = " << alpha
-                << ". Time: " << clock_nobits << " s\n";
+            cout << "HopfieldNoBits done for alpha = " << alpha
+                 << ". Time: " << clock_nobits << " s\n";
+
+            // Compare the final configurations of the two models (disabled)
+            //IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), bits.getSpinsConfig(), N);
         }
     }
-    
+
+    // ── Total time ───────────────────────────────────────────────────────────
     clock_t end_all = clock();
     double clock_all = double(end_all - start_all) / CLOCKS_PER_SEC;
-
     cout << "\nSimulation Complete. \n"
-             << "Total Time: " << clock_all << " s\n";
-    
-    gsl_rng_free(ran);
+         << "Total Time: " << clock_all << " s\n";
 
+    gsl_rng_free(ran);  // free the RNG
     return 0;
 }

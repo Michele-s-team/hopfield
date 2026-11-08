@@ -100,6 +100,14 @@ void HopfieldBits::toCanonical() {
             spins_set[r * N + spin] = -1 + 2 * Bits_Spins_Set[spin].Get(r);
 }
 
+// Sets the element patterns[spin * P * n_bits + mu * n_bits + r] to {-1,+1}
+void HopfieldBits::patternsToCanonical() {
+    for (int spin = 0; spin < N; ++spin)
+        for (int mu = 0; mu < P; ++mu)
+            for (int r = 0; r < n_bits; ++r)
+                patterns[spin * P * n_bits + mu * n_bits + r] =
+                    -1 + 2 * Patterns[spin * P + mu].Get(r);
+}
 // =====================================================
 // DIRECT BITWISE INITIALIZATION
 // =====================================================
@@ -429,6 +437,7 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    patternsToCanonical();
     initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
@@ -445,6 +454,7 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
         }
         max_escape_bound[spin]=max_escape_bound_spin;
     }
+    cout << "mean escape condition across all spins: " << accumulate(max_escape_bound.begin(), max_escape_bound.end(), 0LL) / (double)max_escape_bound.size() <<endl;
      
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
@@ -604,6 +614,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    patternsToCanonical();
     initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
@@ -620,6 +631,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
         }
         max_escape_bound[spin]=max_escape_bound_spin;
     }
+    cout << "mean escape condition across all spins: " << accumulate(max_escape_bound.begin(), max_escape_bound.end(), 0LL) / (double)max_escape_bound.size() <<endl;
 
     Bits mask;
     Bits c_ij;
@@ -788,7 +800,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     }
 
     cout << endl;
-    cout << " bitwise done" << endl;
+    cout << "bitwise done" << endl;
 }
 
 // Runs Monte Carlo sweeps on 64 parallel Hopfield network instances using a
@@ -870,6 +882,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
+    patternsToCanonical();
     initCouplings();
     int max_escape_bound_spin;
     int escape_bound_spin;
@@ -886,6 +899,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         }
         max_escape_bound[spin]=max_escape_bound_spin;
     }
+    cout << "mean escape condition across all spins: " << accumulate(max_escape_bound.begin(), max_escape_bound.end(), 0LL) / (double)max_escape_bound.size() <<endl;
 
     // Precompute Σ_mu L^mu
     for (int mu = 0; mu < P; ++mu) {
@@ -982,7 +996,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     }
 
     cout << endl;
-    cout << " bitwise done" << endl;
+    cout << "bitwise done" << endl;
 }
 
 void HopfieldBits::runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in) {
