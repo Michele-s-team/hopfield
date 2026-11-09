@@ -884,7 +884,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     
     vector<int> max_escape_threshold(N);
 
-    double max=degrees[0]*P*1000;
+    double max=degrees[0]*P;
 
     /*
     auto t1 = std::chrono::steady_clock::now();
@@ -914,7 +914,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     for (int mu = 0; mu < P; ++mu) {
         sum_shifted_overlaps += &Shifted_Overlaps[mu];
     }
-
+    int escape=0;
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
@@ -926,6 +926,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
             // Unconditional flip: unbiased spin, always accepted
             if (random >= max) {
+                escape+=1;
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
 
@@ -1004,7 +1005,8 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
                  << flush;
     }
 
-    cout << endl;
+    cout << "number of escapes: " << escape << endl;
+    cout << "ratio: " << 100*escape/N/total_sweeps<< "%" << endl;
     cout << "bitwise done" << endl;
 }
 
