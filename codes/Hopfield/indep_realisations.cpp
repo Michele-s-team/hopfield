@@ -72,7 +72,7 @@ int main() {
     // ── Parameters scanned ───────────────────────────────────────────────────
     // Load alpha = P / N (number of patterns per neuron)
     vector<double> alpha_vals = {
-        0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
+        0.3, 0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
     };
     // Temperatures (beta = 1 / T)
     vector<double> temperatures = {
@@ -82,7 +82,7 @@ int main() {
     };
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L        = 64;       // lattice size (L x L spins)
+    const int L        = 32;       // lattice size (L x L spins)
     const int N        = L * L;    // number of neurons
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
