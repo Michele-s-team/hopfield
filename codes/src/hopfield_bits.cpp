@@ -437,24 +437,28 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_threshold(N);
-    patternsToCanonical();
-    initCouplings();
-    int max_escape_threshold_spin;
-    int escape_bound_spin;
+    
+    auto t1 = std::chrono::steady_clock::now();
+    initCouplingsBits();
+    
+    auto t2 = std::chrono::steady_clock::now();
     for (int spin = 0; spin < N; ++spin) {
-        max_escape_threshold_spin=0;
-        
-        for (int r=0; r<n_bits; ++r){
-            escape_bound_spin=0;
-
-            for (int k = 0; k < degrees[spin] ; ++k) {
-                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
+        vector<int> acc(n_bits, 0);
+        for (int k = 0; k < degrees[spin]; ++k)
+            for (int r = 0; r < n_bits; ++r) {
+                int g = Couplings[spin][k].Get(r);  
+                acc[r] += abs(g - P);                  
             }
-            if (escape_bound_spin > max_escape_threshold_spin){max_escape_threshold_spin=escape_bound_spin;}
-        }
-        max_escape_threshold[spin]=max_escape_threshold_spin;
+        max_escape_threshold[spin] = *max_element(acc.begin(), acc.end());
     }
+
+    auto t3 = std::chrono::steady_clock::now();
+    auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
+    std::cerr << "couplings " << ms(t1,t2)
+            << " ms, escape " << ms(t2,t3) << " ms\n";
+
     cout << "mean escape condition across all spins: " << accumulate(max_escape_threshold.begin(), max_escape_threshold.end(), 0LL) / (double)max_escape_threshold.size() <<endl;
+
      
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
@@ -614,24 +618,28 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_threshold(N);
-    patternsToCanonical();
-    initCouplings();
-    int max_escape_threshold_spin;
-    int escape_bound_spin;
+    
+    auto t1 = std::chrono::steady_clock::now();
+    initCouplingsBits();
+    
+    auto t2 = std::chrono::steady_clock::now();
     for (int spin = 0; spin < N; ++spin) {
-        max_escape_threshold_spin=0;
-        
-        for (int r=0; r<n_bits; ++r){
-            escape_bound_spin=0;
-
-            for (int k = 0; k < degrees[spin] ; ++k) {
-                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
+        vector<int> acc(n_bits, 0);
+        for (int k = 0; k < degrees[spin]; ++k)
+            for (int r = 0; r < n_bits; ++r) {
+                int g = Couplings[spin][k].Get(r);  
+                acc[r] += abs(g - P);                  
             }
-            if (escape_bound_spin > max_escape_threshold_spin){max_escape_threshold_spin=escape_bound_spin;}
-        }
-        max_escape_threshold[spin]=max_escape_threshold_spin;
+        max_escape_threshold[spin] = *max_element(acc.begin(), acc.end());
     }
+
+    auto t3 = std::chrono::steady_clock::now();
+    auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
+    std::cerr << "couplings " << ms(t1,t2)
+            << " ms, escape " << ms(t2,t3) << " ms\n";
+
     cout << "mean escape condition across all spins: " << accumulate(max_escape_threshold.begin(), max_escape_threshold.end(), 0LL) / (double)max_escape_threshold.size() <<endl;
+
 
     Bits mask;
     Bits c_ij;
@@ -883,32 +891,28 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     // the escape condition boundary
     
     vector<int> max_escape_threshold(N);
-
-    double max=degrees[0]*P;
-
-    /*
+    
     auto t1 = std::chrono::steady_clock::now();
     initCouplingsBits();
+    
     auto t2 = std::chrono::steady_clock::now();
-
     for (int spin = 0; spin < N; ++spin) {
-    vector<int> acc(n_bits, 0);
-    for (int k = 0; k < degrees[spin]; ++k)
-        for (int r = 0; r < n_bits; ++r) {
-            int g = Couplings[spin][k].Get(r);  
-            acc[r] += abs(g - P);                  
-        }
-    max_escape_threshold[spin] = *max_element(acc.begin(), acc.end());
+        vector<int> acc(n_bits, 0);
+        for (int k = 0; k < degrees[spin]; ++k)
+            for (int r = 0; r < n_bits; ++r) {
+                int g = Couplings[spin][k].Get(r);  
+                acc[r] += abs(g - P);                  
+            }
+        max_escape_threshold[spin] = *max_element(acc.begin(), acc.end());
     }
-
-    cout << "mean escape condition across all spins: " << accumulate(max_escape_threshold.begin(), max_escape_threshold.end(), 0LL) / (double)max_escape_threshold.size() <<endl;
 
     auto t3 = std::chrono::steady_clock::now();
     auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
     std::cerr << "couplings " << ms(t1,t2)
             << " ms, escape " << ms(t2,t3) << " ms\n";
 
-    */
+    cout << "mean escape condition across all spins: " << accumulate(max_escape_threshold.begin(), max_escape_threshold.end(), 0LL) / (double)max_escape_threshold.size() <<endl;
+
 
     // Precompute Σ_mu L^mu
     for (int mu = 0; mu < P; ++mu) {
@@ -920,12 +924,13 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         for (int step = 0; step < N; ++step) {
 
             int spin     = gsl_rng_uniform_int(ran, N);
-            int random   = randomNumber(ran, max, N);
+            int random   = randomNumber(ran, max_escape_threshold[spin], N);
+
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= max) {
+            if (random >= max_escape_threshold[spin]) {
                 escape+=1;
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
@@ -1004,7 +1009,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
                  << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
-
+    cout << endl;
     cout << "number of escapes: " << escape << endl;
     cout << "ratio: " << 100*escape/N/total_sweeps<< "%" << endl;
     cout << "bitwise done" << endl;
