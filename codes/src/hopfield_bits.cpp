@@ -884,7 +884,9 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     
     vector<int> max_escape_threshold(N);
 
-    //double max=degrees[0]*P;
+    double max=degrees[0]*P*1000;
+
+    /*
     auto t1 = std::chrono::steady_clock::now();
     initCouplingsBits();
     auto t2 = std::chrono::steady_clock::now();
@@ -903,9 +905,11 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     auto t3 = std::chrono::steady_clock::now();
     auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
-    std::cerr << " couplings " << ms(t1,t2)
+    std::cerr << "couplings " << ms(t1,t2)
             << " ms, escape " << ms(t2,t3) << " ms\n";
-            
+
+    */
+
     // Precompute Σ_mu L^mu
     for (int mu = 0; mu < P; ++mu) {
         sum_shifted_overlaps += &Shifted_Overlaps[mu];
@@ -916,12 +920,12 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         for (int step = 0; step < N; ++step) {
 
             int spin     = gsl_rng_uniform_int(ran, N);
-            int random   = randomNumber(ran, max_escape_threshold[spin], N);
+            int random   = randomNumber(ran, max, N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            if (random >= max_escape_threshold[spin]) {
+            if (random >= max) {
                 sum_c_k_mu.SetAll(0);
                 for (int mu = 0; mu < P; mu++) {
 
