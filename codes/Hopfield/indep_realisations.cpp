@@ -76,13 +76,13 @@ int main() {
     };
     // Temperatures (beta = 1 / T)
     vector<double> temperatures = {
-        0.1, 0.2, 0.3, 0.5, 0.75,
+        0.1, 0.25, 0.5, 0.75,
         1.0, 2.0, 3.0, 4.0, 5.0,
-        6.0, 7.0, 8.0, 9.0, 10.0
+        7.0, 10.0
     };
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L        = 128;       // lattice size (L x L spins)
+    const int L        = 32;       // lattice size (L x L spins)
     const int N        = L * L;    // number of neurons
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
@@ -178,7 +178,7 @@ int main() {
             cout << "bitwise: " << endl;
             bits.OpenSpinFiles();
             clock_t start_bits = clock();
-            bits.runSweeps(ran, /*save=*/true, /*freq=*/0.2, /*burn_in=*/0);
+            bits.runSweeps(ran, /*save=*/true, /*freq=*/0.1, /*burn_in=*/0);
             bits.SaveSpinConfigurations(bits.getNSweeps());
             bits.CloseSpinFiles();
             //bits.toCanonical();
@@ -193,7 +193,7 @@ int main() {
             gsl_rng_set(ran, 42 + run);  // exactly the same value as for bits
             nobits.OpenSpinFiles();
             clock_t start_nobits = clock();
-            nobits.runSweepsIndependentRNG(ran, /*save=*/true, /*freq=*/0.2);
+            nobits.runSweepsIndependentRNG(ran, /*save=*/true, /*freq=*/0.1);
             nobits.SaveSpinConfigurations(bits.getNSweeps());
             nobits.CloseSpinFiles();
             cout << "evolve_save_nobits terminated" << endl;
