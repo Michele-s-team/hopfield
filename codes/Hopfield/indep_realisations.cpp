@@ -82,7 +82,7 @@ int main() {
     };
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L        = 128;       // lattice size (L x L spins)
+    const int L        = 64;       // lattice size (L x L spins)
     const int N        = L * L;    // number of neurons
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 

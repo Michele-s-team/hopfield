@@ -440,6 +440,7 @@ void UnsignedInt::AddTo(const Bits* addend, Bits* carry){
     }
 }
 
+/*
 // Subtracts container components evaluating borrow patterns progressively across rows.
 void UnsignedInt::SubtractTo(UnsignedInt* subtrahend, Bits* borrow){
 
@@ -475,30 +476,35 @@ void UnsignedInt::SubtractTo(UnsignedInt* subtrahend, Bits* borrow){
     }
 }
 
-// Deducts a isolated track profile tracking borrow transitions downwards.
-void UnsignedInt::SubtractTo(Bits* subtrahend, Bits* borrow){
+*/
 
+// Deducts items directly transforming internal profiles via two-complement additions.
+//Subtract m to *this and write the result in *this
+//DOES NOT WORK (PROBABLY)
+// Subtract subtrahend from *this, store result in *this.
+// Requires this->GetSize() >= subtrahend->GetSize().
+// borrow is set to 1 (per replica) where the result would be negative (this < subtrahend).
+void UnsignedInt::SubtractTo(UnsignedInt* subtrahend, Bits* borrow){
+    Bits d, a, s, bw;
     unsigned int p;
-    const unsigned int size= GetSize();
-    Bits a, t;
+    const unsigned int size_sub = subtrahend->GetSize();
+    const unsigned int size     = GetSize();
 
-    a = b[0];
+    for (p = 0, borrow->Clear(); p < size_sub; p++) {
+        a.Set(b[p]);
+        s.Set(subtrahend->b[p]);
+        bw.Set(*borrow);
 
-    t.Set(a ^ (*subtrahend));
-
-    borrow->Set((~a) & (*subtrahend));
-
-    b[0].Set(t);
-
-    for(p = 1; p <size; ++p)
-    {
-        a = b[p];
-
-        t.Set(a ^ (*borrow));
-
-        borrow->Set((~a) & (*borrow));
-
-        b[p].Set(t);
+        d.Set(a ^ s ^ bw);
+        borrow->Set((~a & s) | (~(a ^ s) & bw));
+        b[p].Set(d);
+    }
+    // propagate the borrow through the higher planes of *this
+    for (p = size_sub; p < size && borrow->Get() != 0; p++) {
+        a.Set(b[p]);
+        bw.Set(*borrow);
+        b[p].Set(a ^ bw);
+        borrow->Set(~a & bw);
     }
 }
 
@@ -602,55 +608,10 @@ void UnsignedInt::operator += (UnsignedInt* addend){
     //if (b.size() > 1) Normalize();
 }
 
-// Deducts items directly transforming internal profiles via two-complement additions.
-//Subtract m to *this and write the result in *this
-//DOES NOT WORK (PROBABLY)
-void UnsignedInt::operator -= (UnsignedInt* subtrahend) {
-    
-    UnsignedInt subtrahend_t;
-    
-    subtrahend_t = (*subtrahend);
-    
-//    cout << "this:";
-//    this->Print();
-//
-//    cout << "subtrahend:";
-//    subtrahend.Print();
-    
-    //GIVEN THAT *THIS HAS BEEN RESIZED WITH ONE ADDITIONAL ENTRY AND THAT I WANT TO COMPUTE THE COMPLEMENT WITH RESPECT TO THE ACTUAL SIZE OF THIS (WITHOUT THE ADDITIONAL ENTRY) HERE I CALL  ComplementTo with argument (this->GetSize())-1 RATHER THAN WITH ARGUMENT (this->GetSize())
-    subtrahend_t.ComplementTo((this->GetSize()));
-    
-//    cout << "subtrahend complement:";
-//    subtrahend.Print();
-
-    
-    (*this) += (&subtrahend_t);
-    
-//    cout << "*this + subtrahend complement:";
-//    this->Print();
- 
-    (*this) += (&UnsignedInt_one);
-    
-//    cout << "*this + subtrahend complement + 1:";
-//    this->Print();
-
-    
-//    minuend = (minuend + subtrahend.Complement(minuend.GetSize()) + one);
-    
-//    cout << "minuend + subtrahend.Complement + 1 ";
-//    minuend.Print();
- 
-    
-    this->RemoveFirstSignificantBit();
-
-//    cout << "[*this + subtrahend complement + 1 ]_ removed first significant bit:";
-//    this->Print();
-
-    
-//    cout << "(minuend + ~subtrahend + 1 ).remove first digit";
-//    minuend.Print();
- 
-    
+void UnsignedInt::operator -= (UnsignedInt* subtrahend){
+    Bits borrow;
+    SubtractTo(subtrahend, &borrow);
+    // borrow != 0 means underflow in at least one replica: the result is wrapped modulo 2^size
 }
 
 // Expands value states tracking consecutive shifts inside active profiles.
@@ -855,24 +816,4 @@ UnsignedInt UnsignedInt::PositionOfFirstSignificantBit() {
     }
     
     return result;
-}
-
-void UnsignedInt::CSAdd(const UnsignedInt& a, const UnsignedInt& b, const UnsignedInt& c,
-                         UnsignedInt* sum, UnsignedInt* carry) {
-    sum->SetAll(0);
-    carry->SetAll(0);
-
-    int width = std::max({(int)a.GetSize(), (int)b.GetSize(), (int)c.GetSize()});
-
-    for (int i = 0; i < width; ++i) {
-        Bits ai = (i < (int)a.GetSize()) ? a[i] : Bits(0);
-        Bits bi = (i < (int)b.GetSize()) ? b[i] : Bits(0);
-        Bits ci = (i < (int)c.GetSize()) ? c[i] : Bits(0);
-        Bits ab = ai ^ bi;
-
-        if (i < (int)sum->GetSize())
-            (*sum)[i] = ab ^ ci;
-        if (i + 1 < (int)carry->GetSize())
-            (*carry)[i + 1] = (ai & bi) | (ab & ci);
-    }
 }

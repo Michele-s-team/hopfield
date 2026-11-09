@@ -882,30 +882,24 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
     vector<int> max_escape_bound(N);
-    auto t0 = std::chrono::steady_clock::now();
-    patternsToCanonical();
-    auto t1 = std::chrono::steady_clock::now();
-    initCouplings();
-    auto t2 = std::chrono::steady_clock::now();
-    int max_escape_bound_spin;
-    int escape_bound_spin;
-    for (int spin = 0; spin < N; ++spin) {
-        max_escape_bound_spin=0;
-        
-        for (int r=0; r<n_bits; ++r){
-            escape_bound_spin=0;
 
-            for (int k = 0; k < degrees[spin] ; ++k) {
-                escape_bound_spin+=abs(couplings[spin][k*n_bits+r]);
-            }
-            if (escape_bound_spin > max_escape_bound_spin){max_escape_bound_spin=escape_bound_spin;}
+    auto t1 = std::chrono::steady_clock::now();
+    initCouplingsBits();
+    auto t2 = std::chrono::steady_clock::now();
+
+    for (int spin = 0; spin < N; ++spin) {
+    vector<int> acc(n_bits, 0);
+    for (int k = 0; k < (int)neighbors[spin].size(); ++k)
+        for (int r = 0; r < n_bits; ++r) {
+            int g = Couplings[spin][k].Get(r);  
+            acc[r] += abs(g - P);                  
         }
-        max_escape_bound[spin]=max_escape_bound_spin;
-    }
+    max_escape_bound[spin] = *max_element(acc.begin(), acc.end());
+}
 
     auto t3 = std::chrono::steady_clock::now();
     auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
-    std::cerr << "canon " << ms(t0,t1) << " ms, couplings " << ms(t1,t2)
+    std::cerr << " ms, couplings " << ms(t1,t2)
             << " ms, escape " << ms(t2,t3) << " ms\n";
     cout << "mean escape condition across all spins: " << accumulate(max_escape_bound.begin(), max_escape_bound.end(), 0LL) / (double)max_escape_bound.size() <<endl;
 
