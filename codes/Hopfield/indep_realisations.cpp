@@ -75,14 +75,14 @@ int main() {
         0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
     };
     // Temperatures (beta = 1 / T)
-    vector<double> temperatures = {
+    vector<double> temperatures = {10,
         0.1, 0.25, 0.5, 0.75,
         1.0, 2.0, 3.0, 4.0, 5.0,
         7.0, 10.0
     };
 
     // ── Fixed simulation parameters ──────────────────────────────────────────
-    const int L        = 64;       // lattice size (L x L spins)
+    const int L        = 128;       // lattice size (L x L spins)
     const int N        = L * L;    // number of neurons
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
@@ -193,7 +193,7 @@ int main() {
             gsl_rng_set(ran, 42 + run);  // exactly the same value as for bits
             nobits.OpenSpinFiles();
             clock_t start_nobits = clock();
-            nobits.runSweepsIndependentRNG(ran, /*save=*/true, /*freq=*/0.1);
+            nobits.runSweepsSharedRNG(ran, /*save=*/true, /*freq=*/0.1);
             nobits.SaveSpinConfigurations(bits.getNSweeps());
             nobits.CloseSpinFiles();
             cout << "evolve_save_nobits terminated" << endl;
@@ -201,7 +201,7 @@ int main() {
             double clock_nobits = double(end_nobits - start_nobits) / CLOCKS_PER_SEC;
             cout << "HopfieldNoBits done for alpha = " << alpha
                  << ". Time: " << clock_nobits << " s\n";
-
+            cout <<endl;
             // Compare the final configurations of the two models (disabled)
             //IO.check_equality_configs(initial_config_bits, nobits.getSpinsConfig(), bits.getSpinsConfig(), N);
         }
