@@ -372,7 +372,6 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
     
     auto t2 = std::chrono::steady_clock::now();
     for (int spin = 0; spin < N; ++spin) {
-        cout <<spin <<endl;
         vector<int> acc(n_bits, 0);
         for (int k = 0; k < degrees[spin]; ++k)
             for (int r = 0; r < n_bits; ++r) {
