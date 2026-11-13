@@ -172,8 +172,6 @@ int main() {
                 //bits.toCanonical();
                 clock_t end_bits = clock();
                 double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
-                cout << "HopfieldBits done "
-                    << ". Time: " << clock_bits << " s\n";
             }
         }
     }
