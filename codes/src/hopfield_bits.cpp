@@ -996,6 +996,10 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
             sum_shifted_overlaps.SubtractTo(&fourSum, &borrow_delta);
 
             S_i ^= &mask;
+
+            normal_time += std::chrono::duration<double>(
+            Clock::now() - branch_start
+             ).count();
         }
 
         if (save && sweep > burn_in && (sweep % save_stride == 0))
