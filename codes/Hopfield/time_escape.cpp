@@ -83,7 +83,7 @@ int main() {
         7.0, 10.0
     };
 
-    const int nb_runs = sizes.size()+ alpha_vals.size()+temperatures.size();
+    const int nb_runs = sizes.size()*alpha_vals.size()*temperatures.size();
 
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
