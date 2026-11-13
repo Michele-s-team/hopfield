@@ -386,7 +386,11 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
     std::cerr << "couplings " << ms(t1,t2)
             << " ms, escape " << ms(t2,t3) << " ms\n";
 
-    cout << "mean escape condition across all spins: " << accumulate(max_escape_threshold.begin(), max_escape_threshold.end(), 0LL) / (double)max_escape_threshold.size() <<endl;
+    int mean_escape_threshold = static_cast<int>(  accumulate(max_escape_threshold.begin(),
+                                                   max_escape_threshold.end(), 0LL)
+                                                   / static_cast<double>(max_escape_threshold.size()));
+
+    cout << "mean escape condition across all spins: " << mean_escape_threshold;
   }
 
 // Dispatches to the fastest sweep variant depending on the mean density
@@ -903,8 +907,6 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     long long escape_count = 0;
     long long normal_count = 0;
 
-    double normal_time = 0.0;
-
     auto simulation_start = Clock::now();
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
@@ -918,8 +920,6 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
             // Unconditional flip: unbiased spin, always accepted
             if (random >= max_escape_threshold[spin]) {
-
-                escape_count++;
 
                 sum_c_k_mu.SetAll(0);
 
@@ -943,8 +943,6 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
                 continue;
             }
-
-            normal_count++;
 
             auto branch_start = Clock::now();
 
@@ -996,10 +994,6 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
             sum_shifted_overlaps.SubtractTo(&fourSum, &borrow_delta);
 
             S_i ^= &mask;
-
-            normal_time += std::chrono::duration<double>(
-                Clock::now() - branch_start
-            ).count();
         }
 
         if (save && sweep > burn_in && (sweep % save_stride == 0))
@@ -1017,24 +1011,9 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         Clock::now() - simulation_start
     ).count();
 
-    // Timing estimates
-    double mean_normal = normal_count > 0
-        ? normal_time / normal_count : 0.0;
 
     double escape_ratio = 100.0 * escape_count /
         (escape_count + normal_count);
-
-    double estimated_escape_time =
-        total_time - normal_time;
-
-    double mean_escape = escape_count > 0
-        ? estimated_escape_time / escape_count : 0.0;
-
-    double estimated_time_without_escape =
-        mean_normal * (escape_count + normal_count);
-
-    double estimated_gain =
-        estimated_time_without_escape / total_time;
 
     cout << "\n========== TIMING RESULTS ==========\n";
 
@@ -1042,23 +1021,11 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     cout << "\nEscape branch:\n";
     cout << "  Count: " << escape_count << "\n";
-    cout << "  Mean time (estimated): " << mean_escape * 1e6 << " us\n";
-    cout << "  Total time (estimated): " << estimated_escape_time << " s\n";
 
     cout << "\nNormal branch:\n";
     cout << "  Count: " << normal_count << "\n";
-    cout << "  Mean time (measured): " << mean_normal * 1e6 << " us\n";
-    cout << "  Total time (measured): " << normal_time << " s\n";
 
     cout << "\nEscape ratio: " << escape_ratio << " %\n";
-
-    cout << "\nEstimated time without escape: "
-        << estimated_time_without_escape << " s\n";
-
-    cout << "Estimated speedup: " << estimated_gain << "x\n";
-
-    cout << "Estimated time saved: "
-        << estimated_time_without_escape - total_time << " s\n";
 
     cout << "====================================\n";
 }
