@@ -129,8 +129,7 @@ int main() {
                 bits.SetBaseFolder(base_folder_bits.c_str());
 
                 // Run summary
-                cout << "\n==============================================\n";
-                cout << "===== Hopfield 2D Model =====\n";
+                cout << "\n================Hopfield 2D Model=======================\n";
                 cout << "  run " << run <<"/" << nb_runs <<endl;
                 cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons   (" << k << "/" << sizes.size() << ")\n";;
                 cout << "  alpha = " << alpha << " (P = " << P << ")    (" << l << "/" << alpha_vals.size() << ")\n";
@@ -141,21 +140,16 @@ int main() {
 
                 // Build the network (fully connected) for both models
                 bits.initNetwork_FullyConnected();
-                cout << "Network initialized" << endl;
 
                 // ── Initial spin configuration (same for both models) ────────────
                 gsl_rng_set(ran, 123 + run);  // seed specific to this (alpha, beta) point
                 bits.initSpinsBits(ran);
-                bits.toCanonical();  // bit representation {0,1} -> canonical {-1,+1}
-                auto initial_config_bits = bits.getSpinsConfig();
-                cout << "Initial Configuration initialized" << endl;
                 // Check that both models start from the same configuration
 
                 // ── Patterns (drawn once by bits, then given to nobits) ──────────
                 bits.initPatternsBits(ran);
                 auto patterns = bits.getPatternsBitsToCanonical();
                 bits.SavePatterns(patterns, P);
-                cout << "Patterns initialized and saved\n" << endl;
 
                 // ── Evolution: HopfieldBits ──────────────────────────────────────
                 gsl_rng_set(ran, 42 + run);  // seed of the dynamics, same for bits and nobits
@@ -170,17 +164,15 @@ int main() {
                 cout << "Bitwise initialization done" << endl;
                 */
 
-                cout << "bitwise: " << endl;
                 bits.OpenSpinFiles();
                 clock_t start_bits = clock();
                 bits.runSweeps(ran, /*save=*/false, /*freq=*/0.1, /*burn_in=*/0);
                 bits.SaveSpinConfigurations(bits.getNSweeps());
                 bits.CloseSpinFiles();
                 //bits.toCanonical();
-                cout << "evolve_save_bits terminated" << endl;
                 clock_t end_bits = clock();
                 double clock_bits = double(end_bits - start_bits) / CLOCKS_PER_SEC;
-                cout << "HopfieldBits done for alpha = " << alpha
+                cout << "HopfieldBits done "
                     << ". Time: " << clock_bits << " s\n";
             }
         }
