@@ -887,6 +887,9 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
+
+    using Clock = std::chrono::steady_clock;
+    auto simulation_start = Clock::now();
     
     vector<int> max_escape_threshold(N);
 
@@ -902,12 +905,9 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     for (int mu = 0; mu < P; ++mu) {
         sum_shifted_overlaps += &Shifted_Overlaps[mu];
     }
-    using Clock = std::chrono::steady_clock;
 
     long long escape_count = 0;
     long long normal_count = 0;
-
-    auto simulation_start = Clock::now();
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
