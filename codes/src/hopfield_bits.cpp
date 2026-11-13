@@ -898,34 +898,31 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     for (int mu = 0; mu < P; ++mu) {
         sum_shifted_overlaps += &Shifted_Overlaps[mu];
     }
-    int escape=0;
-
     using Clock = std::chrono::steady_clock;
 
     long long escape_count = 0;
     long long normal_count = 0;
 
-    double escape_time = 0.0;
     double normal_time = 0.0;
 
-    double total_time = 0.0;
-
     auto simulation_start = Clock::now();
+
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
 
-            int spin     = gsl_rng_uniform_int(ran, N);
-            int random   = randomNumber(ran, max_escape_threshold[spin], N);
-
+            int spin   = gsl_rng_uniform_int(ran, N);
+            int random = randomNumber(ran, max_escape_threshold[spin], N);
 
             Bits& S_i = Bits_Spins_Set[spin];
 
             // Unconditional flip: unbiased spin, always accepted
-            auto branch_start = Clock::now();
             if (random >= max_escape_threshold[spin]) {
-                escape++;
+
+                escape_count++;
+
                 sum_c_k_mu.SetAll(0);
+
                 for (int mu = 0; mu < P; mu++) {
 
                     c_cache[mu] = ~(S_i ^ Patterns[spin * P + mu]);
@@ -934,19 +931,22 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
                     Shifted_Overlaps[mu] += &Two;
                     Shifted_Overlaps[mu].SubtractShifted(&c_cache[mu], 2, &borrow_g);
                 }
+
                 sum_shifted_overlaps += &TwoP;
+
                 fourSum.CopyValues(sum_c_k_mu);
                 fourSum.MultiplyByPowerOfTwo(2);
 
                 sum_shifted_overlaps.SubtractTo(&fourSum, &borrow_delta);
 
                 S_i.ComplementTo();
-                escape_time += std::chrono::duration<double>(
-                Clock::now() - branch_start).count();
+
                 continue;
-                    
             }
+
             normal_count++;
+
+            auto branch_start = Clock::now();
 
             sum_c_k_mu.SetAll(0);
             sum_c_shifted_overlap.SetAll(0);
@@ -998,8 +998,8 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
             S_i ^= &mask;
 
             normal_time += std::chrono::duration<double>(
-            Clock::now() - branch_start
-             ).count();
+                Clock::now() - branch_start
+            ).count();
         }
 
         if (save && sweep > burn_in && (sweep % save_stride == 0))
@@ -1007,24 +1007,28 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
         if ((sweep + 1) % progress_stride == 0)
             cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+                << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
+                << flush;
     }
 
     cout << endl;
 
-    total_time = std::chrono::duration<double>(
-    Clock::now() - simulation_start
+    double total_time = std::chrono::duration<double>(
+        Clock::now() - simulation_start
     ).count();
 
-    double mean_escape = escape_count > 0
-        ? escape_time / escape_count : 0.0;
-
+    // Timing estimates
     double mean_normal = normal_count > 0
         ? normal_time / normal_count : 0.0;
 
     double escape_ratio = 100.0 * escape_count /
         (escape_count + normal_count);
+
+    double estimated_escape_time =
+        total_time - normal_time;
+
+    double mean_escape = escape_count > 0
+        ? estimated_escape_time / escape_count : 0.0;
 
     double estimated_time_without_escape =
         mean_normal * (escape_count + normal_count);
@@ -1038,13 +1042,13 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     cout << "\nEscape branch:\n";
     cout << "  Count: " << escape_count << "\n";
-    cout << "  Mean time: " << mean_escape * 1e6 << " us\n";
-    cout << "  Total time: " << escape_time << " s\n";
+    cout << "  Mean time (estimated): " << mean_escape * 1e6 << " us\n";
+    cout << "  Total time (estimated): " << estimated_escape_time << " s\n";
 
     cout << "\nNormal branch:\n";
     cout << "  Count: " << normal_count << "\n";
-    cout << "  Mean time: " << mean_normal * 1e6 << " us\n";
-    cout << "  Total time: " << normal_time << " s\n";
+    cout << "  Mean time (measured): " << mean_normal * 1e6 << " us\n";
+    cout << "  Total time (measured): " << normal_time << " s\n";
 
     cout << "\nEscape ratio: " << escape_ratio << " %\n";
 
