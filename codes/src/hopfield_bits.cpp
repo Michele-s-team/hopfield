@@ -946,6 +946,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
                 continue;
                     
             }
+            normal_count++;
 
             sum_c_k_mu.SetAll(0);
             sum_c_shifted_overlap.SetAll(0);
