@@ -77,7 +77,7 @@ int main() {
         0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
     };
     // Temperatures (beta = 1 / T)
-    vector<double> temperatures = {10,
+    vector<double> temperatures = {
         0.1, 0.25, 0.5, 0.75,
         1.0, 2.0, 3.0, 4.0, 5.0,
         7.0, 10.0
