@@ -180,6 +180,7 @@ int main() {
                     << ". Time: " << clock_bits << " s\n";
             }
         }
+    }
 
     // ── Total time ───────────────────────────────────────────────────────────
     clock_t end_all = clock();
