@@ -119,7 +119,7 @@ int main() {
 
                 folder_name_bits << "../../results/Hopfield/time_escape/bits/alpha_"
                                 << std::fixed << std::setprecision(3) << alpha
-                                << "/N" << L * L << "/" << "beta"
+                                << "/N" << static_cast<int>(L * L) << "/" << "beta"
                                 << SimulationBase::format_beta(beta);
 
                 string base_folder_bits   = folder_name_bits.str();
