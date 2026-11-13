@@ -139,10 +139,11 @@ int main() {
                 nobits.SetBaseFolder(base_folder_nobits.c_str());
 
                 // Run summary
-                cout << "\n==============================================\n";
-                cout << "Hopfield 2D Model - alpha = " << alpha << " (P = " << P << ")    (" << k << "/" << alpha_vals.size() << ")\n";
-                cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons\n";
-                cout << "  Temperature:   " << temperature << "    (" << l << "/" << temperatures.size() << ")\n";;
+                cout << "\n============ Hopfield 2D Model ============\n";
+                cout << "  run " << run <<"/" << nb_runs <<endl;
+                cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons   (" << k << "/" << sizes.size() << ")\n";;
+                cout << "  alpha = " << alpha << " (P = " << P << ")    (" << l << "/" << alpha_vals.size() << ")\n";
+                cout << "  Temperature:   " << temperature << "    (" << m << "/" << temperatures.size() << ")\n";
                 cout << "  Sweeps:        " << N_sweeps << "\n";
                 cout << "  Base folder:   " << base_folder_bits << "\n";
                 cout << "==============================================\n\n";
