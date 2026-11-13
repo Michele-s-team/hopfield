@@ -71,7 +71,7 @@ int main() {
 
     // ── Parameters scanned ───────────────────────────────────────────────────
 
-    vector<int> sizes={8, 16, 32, 64};
+    vector<int> sizes={64, 32, 16, 8};
     // Load alpha = P / N (number of patterns per neuron)
     vector<double> alpha_vals = {
         0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
