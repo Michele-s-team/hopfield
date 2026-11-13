@@ -173,7 +173,7 @@ int main() {
                 cout << "bitwise: " << endl;
                 bits.OpenSpinFiles();
                 clock_t start_bits = clock();
-                bits.runSweeps(ran, /*save=*/true, /*freq=*/0.1, /*burn_in=*/0);
+                bits.runSweeps(ran, /*save=*/false, /*freq=*/0.1, /*burn_in=*/0);
                 bits.SaveSpinConfigurations(bits.getNSweeps());
                 bits.CloseSpinFiles();
                 //bits.toCanonical();
