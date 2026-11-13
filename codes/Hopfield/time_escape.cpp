@@ -111,7 +111,7 @@ int main() {
             // ── Model initialization ─────────────────────────────────────────
             HopfieldBits bits(L * L, beta, N_sweeps, P);
 
-            folder_name_bits << "../../results/Hopfield/indep/bits/alpha_"
+            folder_name_bits << "../../results/Hopfield/time_escape/bits/alpha_"
                              << std::fixed << std::setprecision(3) << alpha
                              << "/N" << L * L << "/" << "beta"
                              << SimulationBase::format_beta(beta);
