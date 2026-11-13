@@ -129,7 +129,7 @@ int main() {
                 bits.SetBaseFolder(base_folder_bits.c_str());
 
                 // Run summary
-                cout << "\n================Hopfield 2D Model=======================\n";
+                cout << "\n============ Hopfield 2D Model ============\n";
                 cout << "  run " << run <<"/" << nb_runs <<endl;
                 cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons   (" << k << "/" << sizes.size() << ")\n";;
                 cout << "  alpha = " << alpha << " (P = " << P << ")    (" << l << "/" << alpha_vals.size() << ")\n";
