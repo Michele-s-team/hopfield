@@ -921,6 +921,8 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
             // Unconditional flip: unbiased spin, always accepted
             if (random >= max_escape_threshold[spin]) {
 
+                escape_count++;
+
                 sum_c_k_mu.SetAll(0);
 
                 for (int mu = 0; mu < P; mu++) {
@@ -943,8 +945,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
                 continue;
             }
-
-            auto branch_start = Clock::now();
+            normal_count++;
 
             sum_c_k_mu.SetAll(0);
             sum_c_shifted_overlap.SetAll(0);
