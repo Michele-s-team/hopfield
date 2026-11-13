@@ -893,7 +893,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     
     vector<int> max_escape_threshold(N);
 
-    if (0>1){
+    if (1>0){
         cout <<"compute tight escape conditions"<<endl;
         compute_escapes(max_escape_threshold);
     }
