@@ -372,6 +372,7 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
     
     auto t2 = std::chrono::steady_clock::now();
     for (int spin = 0; spin < N; ++spin) {
+        cout <<spin <<endl;
         vector<int> acc(n_bits, 0);
         for (int k = 0; k < degrees[spin]; ++k)
             for (int r = 0; r < n_bits; ++r) {
@@ -887,6 +888,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     vector<int> max_escape_threshold(N);
 
     if (1>0){
+        cout <<"compute tight escape conditions"<<endl;
         compute_escapes(max_escape_threshold);
     }
     else{
@@ -1004,7 +1006,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
                  << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
                  << flush;
     }
-    
+
     cout << endl;
 
     total_time = std::chrono::duration<double>(
