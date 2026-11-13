@@ -70,6 +70,8 @@ int main() {
     SimulationIO IO;
 
     // ── Parameters scanned ───────────────────────────────────────────────────
+
+    vector<int> sizes={8, 16, 32, 64};
     // Load alpha = P / N (number of patterns per neuron)
     vector<double> alpha_vals = {
         0.01, 0.025, 0.05, 0.1, 0.138, 0.15, 0.2, 0.3
@@ -81,7 +83,7 @@ int main() {
         7.0, 10.0
     };
 
-    vector<int> sizes={8, 16, 32, 64};
+    const int nb_runs = sizes.size()+ alpha_vals.size()+temperatures.size();
 
     const int N_sweeps = 1 << 13;  // number of Metropolis sweeps
 
@@ -95,6 +97,7 @@ int main() {
     int k=0;  // size counter (for display)
 
     for (double L: sizes){
+        k+=1;
         int l   = 0;  // alpha counter (for display)
     // ── Loop over alpha ──────────────────────────────────────────────────────
         for (double alpha : alpha_vals) {
@@ -127,7 +130,8 @@ int main() {
 
                 // Run summary
                 cout << "\n==============================================\n";
-                cout << "Hopfield 2D Model\n";
+                cout << "===== Hopfield 2D Model =====\n";
+                cout << "  run " << run <<"/" << nb_runs <<endl;
                 cout << "  Lattice:       " << L << " x " << L << " = " << L * L << " neurons   (" << k << "/" << sizes.size() << ")\n";;
                 cout << "  alpha = " << alpha << " (P = " << P << ")    (" << l << "/" << alpha_vals.size() << ")\n";
                 cout << "  Temperature:   " << temperature << "    (" << m << "/" << temperatures.size() << ")\n";
