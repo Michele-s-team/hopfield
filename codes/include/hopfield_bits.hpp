@@ -61,6 +61,8 @@ public:
     void fromCanonical();                                          // convert ±1 spins → Bits representation
 
     void patternsToCanonical();
+
+    void HopfieldBits::compute_escapes(vector<int>&);
     
     void runSweeps(gsl_rng* ran, bool save, double freq, int burn_in);
     void runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in);
