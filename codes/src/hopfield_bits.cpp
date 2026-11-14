@@ -370,8 +370,8 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
     auto beta = getBeta();
 
     double gamma =0.35;
-    double rho = accumulate(degrees.begin(), degrees.end(), 0.0)
-           / (double(degrees.size()) * (degrees.size() - 1)); 
+    double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
+    double rho = mean_degree / (N-1); 
     double desired_escape_ratio=0.05;
 
     bool condition = beta*rho*pow(P, gamma)<= log(1.0 / desired_escape_ratio)/2;
@@ -413,14 +413,14 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
 // Dispatches to the fastest sweep variant depending on the mean density
 // of the interaction graph, compared against the pattern-loading ratio
 // alpha = P/N (see report theory: overlap formulation pays off once
-// alpha + 1/2 <= mean_density).
+// alpha + 1/2 <= rho).
 void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) {
     double alpha = (double)P / N;
 
     double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    double mean_density = mean_degree / (N-1);
+    double rho = mean_degree / (N-1);
 
-    if (alpha + 0.5 <= mean_density) {
+    if (alpha + 0.5 <= rho) {
         // Dense graph: overlap formulation over non-neighbors is cheaper
         compute_shifted_overlaps();
         runSweeps_overlaps(ran, save, freq, burn_in);
