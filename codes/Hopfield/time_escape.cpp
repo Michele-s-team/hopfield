@@ -117,16 +117,6 @@ int main() {
                 // ── Model initialization ─────────────────────────────────────────
                 HopfieldBits bits(L * L, beta, N_sweeps, P);
 
-                folder_name_bits << "../../results/Hopfield/time_escape/"
-                                << "alpha_" << std::fixed << std::setprecision(3) << alpha
-                                << "/N" << static_cast<int>(L * L) << "/" << "beta"
-                                << SimulationBase::format_beta(beta);
-
-                string base_folder_bits   = folder_name_bits.str();
-
-                // Create the output folders and give them to the models
-                make_dir(base_folder_bits);
-                bits.SetBaseFolder(base_folder_bits.c_str());
 
                 // Run summary
                 cout << "\n============ Hopfield 2D Model ============\n";
@@ -135,7 +125,6 @@ int main() {
                 cout << "  alpha = " << alpha << " (P = " << P << ")    (" << l << "/" << alpha_vals.size() << ")\n";
                 cout << "  Temperature:   " << temperature << "    (" << m << "/" << temperatures.size() << ")\n";
                 cout << "  Sweeps:        " << N_sweeps << "\n";
-                cout << "  Base folder:   " << base_folder_bits << "\n";
                 cout << "==============================================\n\n";
 
                 // Build the network (fully connected) for both models
