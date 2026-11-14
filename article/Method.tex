@@ -331,11 +331,15 @@ This bound only depends on the architecture of the network, and is generally muc
    q \geq \max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr).
 \label{eq:escape_condition_hopfield_bitwise_tight}
 \end{equation}
-We call this new threshold $\Delta_k^{esc}$. It is typically smaller than the worst-case one (\noteBastien{by a factor of order $\sqrt{p}$, à verifier}), since the couplings $G_{ki}$ are rarely of order $p$. Lowering the escape threshold makes the escape condition trigger more often, making the algorithm faster.
+We call this new threshold $\Delta_k^\text{esc}$. It is typically smaller than the worst-case one (\noteBastien{by a factor of order $\sqrt{p}$, à verifier}), since the couplings $G_{ki}$ are rarely of order $p$. Lowering the escape threshold makes the escape condition trigger more often, making the algorithm faster. The probability of an escape can thus be approximated as
+\begin{equation}
+    P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2\beta\rho (\alpha N)^\gamma},
+\end{equation}
+with $\rho$ the density of the network and $\gamma$ the effective scaling exponent of the escape threshold $(0 < \gamma < 1)$. The detailed calculations are presented in the Supplementary material. The probability of escape decreases with the size of the network, its density and the number of stored patterns, and increases with temperature, as might be expected.
 
 We show in \Cref{alg:Hopfield_bitwise} the bitwise implementation of the Metropolis algorithm on the Hopfield network, with $\mathrm{LHS}$ and $\mathrm{RHS}$ referring to the left and right-hand sides of eq~\eqref{eq:flip_condition_hopfield_bitwise}.
 \linenumbers
-\begin{algorithm}[H]
+\begin{algorithm}[t]
 \DontPrintSemicolon
 \caption{Bitwise Hopfield Metropolis}
 
@@ -366,7 +370,7 @@ $\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathr
 
         Draw $q$ with $\theta \sim \mathcal{E}(2\beta/N)$\;
 
-        \eIf{$q \geq  \Delta_k^{esc}$}{
+        \eIf{$q \geq  \Delta_k^\text{esc}$}{
             $B_i\leftarrow\neg B_i$
             \tcp*{Unconditional flip}
         }{
@@ -444,7 +448,7 @@ The overall bitwise flip condition is thus:
 \end{equation}
 \end{widetext}
 This flip condition only requires summing over the patterns and over the non-neighbors of the considered neuron, rather than over its full neighborhood.
-In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\overline{\partial k} |)=\mathcal{O}(\alpha N+ |\overline{\partial k} |)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$ with $\rho$ the density of the network.
+In a dense network, where $|\partial k| \gg p$, this is significantly faster than the direct computation, reducing the computational cost from $\mathcal{O}(N)$ to $\mathcal{O}(P+ |\overline{\partial k} |)=\mathcal{O}(\alpha N+ |\overline{\partial k} |)$. The downside of this method is that it requires another summation on the patterns after the flip condition computation to update the overlaps, if the neuron should be flipped: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu - 2 \xi_k^\mu S_k$, with the bitwise equivalent: $\tilde{M}^\mu \leftarrow \tilde{M}^\mu + \text{mask}_k (2-4C_k^\mu)$ with $\text{mask}_k$ the \Bits object obtained from the computation of the flip condition across the $n_\text{bits}$ replicas. This implementation is thus faster than the original one when $\rho \geq \alpha + 1/2$.
 In the case of a fully-connected network, the flip condition \eqref{eq:bitwise_flip_overlap} becomes:
 \begin{equation}
 \begin{aligned}

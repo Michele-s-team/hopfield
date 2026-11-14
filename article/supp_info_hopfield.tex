@@ -157,3 +157,12 @@ $\mathtt{UnsignedInt}\
 \label{alg:Hopfield_bitwise_overlaps}
 \end{algorithm}
 \linenumbers
+\subsection{Probability of the escape condition}
+With $q=\lfloor \theta \rfloor$ and $\theta \sim \mathcal{E}(\beta \kappa)$, $P(q \leq \Delta_k^\text{esc}) = 1 - e^{-\beta \kappa \Delta_k^\text{esc}}$. In the case of the Hopfield model, $\kappa = 2/N$. One can approximate the threshold:
+\begin{equation}
+    \Delta_k^\text{esc}=\max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr) \sim d_k p^\gamma \sim \rho N p^\gamma
+\end{equation}
+with $d_k$ the coordination number of spin $k$ and $\gamma$ the effective scaling exponent of the escape threshold $(0<\gamma<1)$. With $p=\alpha N$ the number of stored patterns, this leads to the escape probability approximation:
+\begin{equation}
+    P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2\beta\rho (\alpha N)^\gamma},
+\end{equation}
