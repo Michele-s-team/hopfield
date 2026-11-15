@@ -331,7 +331,7 @@ This bound only depends on the architecture of the network, and is generally muc
    q \geq \max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr).
 \label{eq:escape_condition_hopfield_bitwise_tight}
 \end{equation}
-We call this new threshold $\Delta_k^\text{esc}$. It is typically smaller than the worst-case one (\noteBastien{by a factor of order $\sqrt{p}$, à verifier}), since the couplings $G_{ki}$ are rarely of order $p$. Lowering the escape threshold makes the escape condition trigger more often, making the algorithm faster. The probability of an escape can thus be approximated as
+We call this new threshold $\Delta_k^\text{esc}$. It is typically smaller than the worst-case one since the couplings $G_{ki}$ are rarely of order $p$. Lowering the escape threshold makes the escape condition trigger more often, making the algorithm faster. The probability of an escape can thus be approximated as
 \begin{equation}
     P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2 \beta \frac{d_k}{N} \sqrt{\frac{2\alpha N}{\pi}}},
 \end{equation}
