@@ -28,6 +28,8 @@ root_dir = Path("../results/Hopfield/indep/")
 
 MODES = ["bits", "nobits"]
 
+CORR_DIRNAME = "corr"
+
 N_TARGET = 4096
 ALPHA_SELECTION = None
 SKIP_EXISTING = True
@@ -169,11 +171,9 @@ for mode in MODES:
                 print(f"  [SKIP] fewer than 2 replicas in {mode}/{beta_dir.name}")
                 continue
 
-            out_dir = beta_dir / "overlaps_replicas"
-            out_dir.mkdir(parents=True, exist_ok=True)
-            out_file = out_dir / "q_pairs.csv"
-
-            print(f"\n[{mode.upper()}] alpha={alpha:.4f} N={N} beta={beta_str} -> {out_dir.name}")
+            # <mode>/corr/q_pairs_alpha_*_N4096_beta*_.csv
+            out_dir = mode_dir / CORR_DIRNAME
+            out_file = out_dir / f"q_pairs_{alpha_dir.name}_N{N}_{beta_dir.name}.csv"
 
             if SKIP_EXISTING and out_file.exists():
                 print("  skipped")
