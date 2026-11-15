@@ -369,12 +369,11 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
 
     auto beta = getBeta();
 
-    double gamma =0.35;
     double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
     double rho = mean_degree / (N-1); 
     double desired_escape_ratio=0.05;
 
-    bool condition = beta*rho*pow(P, gamma)<= log(1.0 / desired_escape_ratio)/2;
+    bool condition = beta*rho*sqrt(P)<= log(1.0 / desired_escape_ratio)* sqrt(M_PI/2)/2;
 
     if (condition){
         cout <<"compute tight escape conditions"<<endl;
