@@ -160,9 +160,15 @@ $\mathtt{UnsignedInt}\
 \subsection{Probability of the escape condition}
 With $q=\lfloor \theta \rfloor$ and $\theta \sim \mathcal{E}(\beta \kappa)$, $P(q \leq \Delta_k^\text{esc}) = 1 - e^{-\beta \kappa \Delta_k^\text{esc}}$. In the case of the Hopfield model, $\kappa = 2/N$. One can approximate the threshold:
 \begin{equation}
-    \Delta_k^\text{esc}=\max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr) \sim d_k p^\gamma \sim \rho N p^\gamma
+    \sum_{i \in \partial k}|G_{ki}^{(r)}| \sim d_k \sqrt{\frac{2p}{\pi}}
 \end{equation}
-with $d_k$ the coordination number of spin $k$ and $\gamma$ the effective scaling exponent of the escape threshold $(0<\gamma<1)$. With $p=\alpha N$ the number of stored patterns, this leads to the escape probability approximation:
+with $d_k$ the degree of spin $k$.
+\noteBastien{$G_{ki}$ etant une somme de gaussiennes si patterns indépendants}
+The maximum over the replicas only brings a correction of order $\mathcal{o}\bigl(\log(n_\text{bits}/d_k)\bigr)$, the asymptotic dependence of $ \Delta_k^\text{esc}=\max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr)$ is thus
 \begin{equation}
-    P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2\beta\rho (\alpha N)^\gamma},
+    \Delta_k^\text{esc} \sim d_k \sqrt{\frac{2p}{\pi}}
+\end{equation}
+With $p=\alpha N$ the number of stored patterns, this leads to the escape probability approximation:
+\begin{equation}
+    P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2 \beta \frac{d_k}{N} \sqrt{\frac{2\alpha N}{\pi}}},
 \end{equation}
