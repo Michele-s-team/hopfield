@@ -74,12 +74,12 @@ int main() {
     vector<int> sizes={64};
     // Load alpha = P / N (number of patterns per neuron)
     vector<double> alpha_vals = {
-        0.3
+        0.2
     };
     // Temperatures (beta = 1 / T)
     vector<double> temperatures = {
-        0.1, 0.25, 0.5, 0.75,
-        1.0 //, 2.0, 3.0, 4.0, 5.0,        7.0, 10.0
+       // 0.1, 0.25, 0.5, 0.75, 1.0, 
+        2.0, 3.0, 4.0, 5.0, 7.0, 10.0
     };
 
     const int nb_runs = sizes.size()*alpha_vals.size()*temperatures.size();
