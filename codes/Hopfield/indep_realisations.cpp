@@ -188,8 +188,7 @@ int main() {
         auto start_bits = chrono::steady_clock::now();
 
         bits.OpenSpinFiles();
-        bits.runSweeps(ran, true, 1, 0);
-        bits.SaveSpinConfigurations(bits.getNSweeps());
+        bits.runSweeps(ran, /*save=*/true, /*freq=*/1, /*burn_in=*/0);
         bits.CloseSpinFiles();
 
         auto end_bits = chrono::steady_clock::now();
@@ -203,8 +202,7 @@ int main() {
         auto start_nobits = chrono::steady_clock::now();
 
         nobits.OpenSpinFiles();
-        nobits.runSweepsSharedRNG(ran, true, 1);
-        nobits.SaveSpinConfigurations(nobits.getNSweeps());
+        nobits.runSweepsSharedRNG(ran, /*save=*/true, /*freq=*/1);
         nobits.CloseSpinFiles();
 
         auto end_nobits = chrono::steady_clock::now();
