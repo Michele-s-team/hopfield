@@ -107,8 +107,7 @@ void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double fre
             }
         }
 
-                saveAndReport(sweep + 1, save, save_stride,
-                      total_sweeps, progress_stride);
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
     std::cout << endl;
 }
@@ -136,8 +135,7 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
             }
         }
 
-                saveAndReport(sweep + 1, save, save_stride,
-                      total_sweeps, progress_stride);
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
     std::cout << endl;
 }
