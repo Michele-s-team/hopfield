@@ -481,9 +481,10 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
-    vector<int> max_escape_threshold(N);     
+    vector<int> max_escape_threshold(N);
+    compute_escapes(max_escape_threshold);
 
-    
+    if (save and burn_in<=0){SaveSpinConfigurations(0);}         
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
@@ -532,13 +533,7 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
             S_i ^= &mask;
         }
 
-        if (save && sweep > burn_in && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
     cout << endl;
@@ -644,6 +639,8 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     vector<int> max_escape_threshold(N);
     compute_escapes(max_escape_threshold);
     vector<vector<UnsignedInt>>().swap(Couplings);  //free Couplings from memory as no longer required
+
+    if (save and burn_in<=0){SaveSpinConfigurations(0);}   
 
     Bits mask;
     Bits c_ij;
@@ -802,13 +799,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
             S_i ^= &mask;
         }
 
-        if (save && sweep > burn_in && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
     cout << endl;
@@ -900,6 +891,8 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
     vector<int> max_escape_threshold(N);
     compute_escapes(max_escape_threshold);
     vector<vector<UnsignedInt>>().swap(Couplings);  //free Couplings from memory as no longer required
+
+    if (save and burn_in<=0){SaveSpinConfigurations(0);}   
     
     // Precompute Σ_mu L^mu
     for (int mu = 0; mu < P; ++mu) {
@@ -997,13 +990,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
             S_i ^= &mask;
         }
 
-        if (save && sweep > burn_in && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                << flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
     cout << endl;

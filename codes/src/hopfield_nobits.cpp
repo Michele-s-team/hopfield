@@ -86,6 +86,8 @@ void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double fre
 
     std::vector<int> delta_E(n_bits);
 
+    if (save){SaveSpinConfigurations(0);} 
+
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             const int spin = gsl_rng_uniform_int(ran, N);
@@ -105,13 +107,8 @@ void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double fre
             }
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
+                saveAndReport(sweep + 1, save, save_stride,
+                      total_sweeps, progress_stride);
     }
     std::cout << endl;
 }
@@ -122,6 +119,8 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
 
     std::vector<int> delta_E(n_bits);
+
+    if (save){SaveSpinConfigurations(0);}   
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
@@ -137,13 +136,8 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
             }
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << (sweep + 1)
-                      << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                      << std::flush;
+                saveAndReport(sweep + 1, save, save_stride,
+                      total_sweeps, progress_stride);
     }
     std::cout << endl;
 }

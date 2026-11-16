@@ -128,6 +128,17 @@ void SimulationBase::SavePatterns(const vector<int>& patterns, int P){
     m_io.SavePatterns(m_base_folder, patterns, N, P);
 }
 
+void SimulationBase::saveAndReport(int done, bool save, int save_stride,
+                                 int total_sweeps, int progress_stride, int burn_in) {
+    if (save && done > burn_in && (done % save_stride == 0))
+        SaveSpinConfigurations(done);
+
+    if (done % progress_stride == 0)
+        cout << "\rSweep: " << done
+             << " (" << done * 100 / total_sweeps << "%)    "
+             << flush;
+}
+
 // =====================================================
 // METROPOLIS
 // =====================================================

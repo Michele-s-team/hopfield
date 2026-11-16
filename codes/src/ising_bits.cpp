@@ -121,7 +121,7 @@ void IsingBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
 // METROPOLIS DYNAMICS
 // =====================================================
 
-// Core simulation loop: N_sweeps sweeps of N random flip attempts each.
+// Core simulation loop: total_sweeps sweeps of N random flip attempts each.
 void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
     int max_deg = *max_element(degrees.begin(), degrees.end());
     // temporaries allocated once for all sweeps and all flips
@@ -131,11 +131,11 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
     int rng;
     int spin;
 
-    const int N_sweeps = getNSweeps();  // Use base class method
-    const int progress_stride = max(1, N_sweeps / 10);
+    const int total_sweeps = getNSweeps();  // Use base class method
+    const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride = (save && freq > 0) ? max(1, (int)round(1.0 / freq)) : 0;
 
-    for (int sweep = 0; sweep < N_sweeps; ++sweep) {
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             spin = gsl_rng_uniform_int(ran, N);
             // Use base class randomNumber method
@@ -163,13 +163,7 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
             Bits_Spin_i ^= &mask;
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(shift + sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / N_sweeps << "%)    "
-                 << flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
     cout << "\n";
 }

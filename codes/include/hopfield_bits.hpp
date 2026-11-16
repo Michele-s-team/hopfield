@@ -65,12 +65,12 @@ public:
     void compute_escapes(vector<int>&);
     
     void runSweeps(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in);
+    void runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in=0);
+    void runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in=0);
+    void runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in=0);
     
-    void runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in);
-    void runSweeps_overlaps_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in);
+    void runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in=0);
+    void runSweeps_overlaps_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in=0);
 };
 
 #endif

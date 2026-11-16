@@ -54,12 +54,15 @@ void IsingNoBits::DeltaE_all(int spin, std::vector<int>& delta_E) {
 
 void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 
-    const int progress_stride = std::max(1, getNSweeps() / 10);
+    const int total_sweeps = getNSweeps();  
+    const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
 
     std::vector<int> delta_E(n_bits);
 
-    for (int sweep = 0; sweep < getNSweeps(); ++sweep) {
+    if (save){SaveSpinConfigurations(0);} 
+
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
 
@@ -78,13 +81,7 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
             }
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << sweep + 1
-                      << " (" << (sweep + 1) * 100 / getNSweeps() << "%)    "
-                      << std::flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
 
     std::cout << "\n";
@@ -96,12 +93,15 @@ void IsingNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
 
 void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
 
-    const int progress_stride = std::max(1, getNSweeps() / 10);
+    const int total_sweeps = getNSweeps();  
+    const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
 
     std::vector<int> delta_E(n_bits);
 
-    for (int sweep = 0; sweep < getNSweeps(); ++sweep) {
+    if (save){SaveSpinConfigurations(0);} 
+
+    for (int sweep = 0; sweep < total_sweeps; ++sweep) {
 
         for (int step = 0; step < N; ++step) {
 
@@ -123,13 +123,7 @@ void IsingNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) 
             }
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            std::cout << "\rSweep: " << sweep + 1
-                      << " (" << (sweep + 1) * 100 / getNSweeps() << "%)    "
-                      << std::flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
 
     std::cout << "\n";

@@ -187,6 +187,8 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
     const int progress_stride = max(1, total_sweeps / 10);
     const int save_stride = save ? max(1, (int)round(1.0 / freq)) : 0;
 
+    if (save){SaveSpinConfigurations(0);} 
+
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
             i = gsl_rng_uniform_int(ran, N);  // pick a random spin
@@ -215,13 +217,7 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
             Bits_Spin_i ^= &mask;
         }
 
-        if (save && (sweep % save_stride == 0))
-            SaveSpinConfigurations(sweep);
-
-        if ((sweep + 1) % progress_stride == 0)
-            cout << "\rSweep: " << sweep + 1
-                 << " (" << (sweep + 1) * 100 / total_sweeps << "%)    "
-                 << flush;
+        saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
     cout << "\n";
 }
