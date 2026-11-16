@@ -35,7 +35,7 @@ import re
 # ============================================================
 
 # folder that contains bits/ and nobits/  (adjust to your layout)
-root_dir = Path("../../results/Hopfield/phase_transition/")
+root_dir = Path("../../results/Hopfield/indep/")
 
 MODES = ["bits", "nobits"]
 CORR_DIRNAME = "corr"
