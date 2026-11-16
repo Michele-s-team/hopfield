@@ -143,7 +143,8 @@ def process_task(task):
         return f"{tag}: SKIP (missing spins/)"
 
     out_dir = mode_dir / CORR_DIRNAME
-    out_file = out_dir / f"q_pairs_{alpha_name}_N{N}_{beta_name}_.csv"
+    alpha_tag = alpha_name.replace("alpha_", "alpha")
+    out_file = out_dir / f"q_pairs_{alpha_tag}_N{N}_{beta_name}_.csv"
 
     if SKIP_EXISTING and out_file.exists():
         return f"{tag}: skipped (exists)"
