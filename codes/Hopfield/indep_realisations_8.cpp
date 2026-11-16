@@ -79,8 +79,7 @@ int main() {
     // Temperatures (beta = 1 / T)
     vector<double> temperatures = {
         0.1, 0.25, 0.5, 0.75,
-        1.0, 2.0, 3.0, 4.0, 5.0,
-        7.0, 10.0
+        1.0 //, 2.0, 3.0, 4.0, 5.0,        7.0, 10.0
     };
 
     const int nb_runs = sizes.size()*alpha_vals.size()*temperatures.size();
