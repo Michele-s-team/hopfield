@@ -5,16 +5,19 @@ For each mode in {bits, nobits} and each alpha_* / N4096 / beta* directory:
   - computes the bit-safe overlap between every pair of replicas (r < s)
     at the same sweep:  q_rs(t) = (1/N) sum_i s_i^r(t) s_i^s(t)
   - saves ONE file per (mode, alpha, N, beta):
-        beta*/overlaps_replicas/q_pairs.csv
+        <mode>/corr/q_pairs_alpha*_N4096_beta*_.csv
 
 Output DataFrame columns: sweep | q_0_1 | q_0_2 | ... | q_{R-2}_{R-1}
 
 bits and nobits are processed independently (never compared to each other).
+Tasks (mode, alpha, beta) are processed one after the other (no parallelism).
+
 Existing files are skipped (set SKIP_EXISTING = False to overwrite).
 """
 
 from pathlib import Path
 from functools import reduce
+import time
 import pandas as pd
 import numpy as np
 import re
@@ -24,10 +27,9 @@ import re
 # ============================================================
 
 # folder that contains bits/ and nobits/  (adjust to your layout)
-root_dir = Path("../results/Hopfield/indep/")
+root_dir = Path("../../results/Hopfield/indep/")
 
 MODES = ["bits", "nobits"]
-
 CORR_DIRNAME = "corr"
 
 N_TARGET = 4096
@@ -107,106 +109,136 @@ def read_blocks_csv(path: Path):
 
 
 # ============================================================
-# MAIN LOOP
+# ONE TASK = ONE (mode, alpha, beta)
 # ============================================================
 
-for mode in MODES:
+def process_task(task):
+    """
+    task = (mode, alpha_dir_name, beta_dir_name)
+    Returns a one-line status message.
+    """
+    mode, alpha_name, beta_name = task
+    N = N_TARGET
+    tag = f"[{mode.upper()}] {alpha_name} N{N} {beta_name}"
 
     mode_dir = root_dir / mode
+    beta_dir = mode_dir / alpha_name / f"N{N}" / beta_name
+    spin_dir = beta_dir / "spins"
 
-    ALL_ALPHA_DIRS = sorted(
-        mode_dir.glob("alpha_*"),
-        key=lambda p: float(p.name.split("_")[1])
-    )
+    if not spin_dir.exists():
+        return f"{tag}: SKIP (missing spins/)"
 
-    print(f"\n[INFO] {mode}/: {len(ALL_ALPHA_DIRS)} alpha folder(s) found:")
-    for i, d in enumerate(ALL_ALPHA_DIRS, start=1):
-        print(f"  [{i}] {d.name}")
+    out_dir = mode_dir / CORR_DIRNAME
+    alpha_tag = alpha_name.replace("alpha_", "alpha")   # alpha_0.05 -> alpha0.05
+    out_file = out_dir / f"q_pairs_{alpha_tag}_N{N}_{beta_name}_.csv"
 
-    if ALPHA_SELECTION:
-        selected = [
-            ALL_ALPHA_DIRS[i - 1]
-            for i in ALPHA_SELECTION
-            if 1 <= i <= len(ALL_ALPHA_DIRS)
-        ]
-    else:
-        selected = ALL_ALPHA_DIRS
+    if SKIP_EXISTING and out_file.exists():
+        return f"{tag}: skipped (exists)"
 
-    for alpha_dir in selected:
+    spin_map = {}
+    for sf in spin_dir.glob("spins_r*.csv"):
+        r = extract_r(sf.name)
+        if r is not None:
+            spin_map[r] = sf
 
-        alpha = float(alpha_dir.name.split("_")[1])
-        N_dir = alpha_dir / f"N{N_TARGET}"
-        N = N_TARGET
+    replicas = sorted(spin_map)
+    if len(replicas) < 2:
+        return f"{tag}: SKIP (fewer than 2 replicas)"
 
-        if not N_dir.exists():
-            print(f"\n[SKIP] {mode}/{alpha_dir.name}: no N{N_TARGET} folder")
-            continue
+    t0 = time.time()
 
-        beta_dirs = sorted(
-            N_dir.glob("beta*"),
-            key=lambda p: float(p.name.split("beta")[1])
+    # read every replica once
+    sweeps_all = {}
+    spins_all = {}
+    for r in replicas:
+        sweeps_all[r], spins_all[r] = read_blocks_csv(spin_map[r])
+
+    # keep only the sweeps present in all replicas
+    common_sweeps = reduce(np.intersect1d, sweeps_all.values())
+    spins_sel = {}
+    for r in replicas:
+        _, _, idx_r = np.intersect1d(common_sweeps, sweeps_all[r], return_indices=True)
+        spins_sel[r] = spins_all[r][idx_r]
+    del spins_all
+
+    # overlap of every pair of replicas (r < s)
+    columns = {}
+    for i, r in enumerate(replicas):
+        for s in replicas[i + 1:]:
+            columns[f"q_{r}_{s}"] = corelations_matrix(
+                spins_sel[r], spins_sel[s], N
+            )
+
+    df = pd.DataFrame(columns)
+    df.insert(0, "sweep", common_sweeps.astype(int))
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out_file, index=False)
+
+    return (f"{tag}: saved ({len(df)} sweeps x {len(columns)} pairs) "
+            f"in {time.time() - t0:.1f}s")
+
+
+# ============================================================
+# BUILD TASK LIST
+# ============================================================
+
+def build_tasks():
+    tasks = []
+    for mode in MODES:
+        mode_dir = root_dir / mode
+
+        all_alpha_dirs = sorted(
+            mode_dir.glob("alpha_*"),
+            key=lambda p: float(p.name.split("_")[1])
         )
 
-        if not beta_dirs:
-            print(f"\n[SKIP] {N_dir}: no beta* folder found")
-            continue
+        print(f"[INFO] {mode}/: {len(all_alpha_dirs)} alpha folder(s) found:")
+        for i, d in enumerate(all_alpha_dirs, start=1):
+            print(f"  [{i}] {d.name}")
 
-        for beta_dir in beta_dirs:
+        if ALPHA_SELECTION:
+            selected = [
+                all_alpha_dirs[i - 1]
+                for i in ALPHA_SELECTION
+                if 1 <= i <= len(all_alpha_dirs)
+            ]
+        else:
+            selected = all_alpha_dirs
 
-            beta_str = beta_dir.name.replace("beta", "")
-            spin_dir = beta_dir / "spins"
-
-            if not spin_dir.exists():
-                print(f"  [SKIP] missing spins/ in {mode}/{beta_dir.name}")
+        for alpha_dir in selected:
+            N_dir = alpha_dir / f"N{N_TARGET}"
+            if not N_dir.exists():
+                print(f"[SKIP] {mode}/{alpha_dir.name}: no N{N_TARGET} folder")
                 continue
 
-            spin_map = {}
-            for sf in spin_dir.glob("spins_r*.csv"):
-                r = extract_r(sf.name)
-                if r is not None:
-                    spin_map[r] = sf
-
-            replicas = sorted(spin_map)
-            if len(replicas) < 2:
-                print(f"  [SKIP] fewer than 2 replicas in {mode}/{beta_dir.name}")
+            beta_dirs = sorted(
+                N_dir.glob("beta*"),
+                key=lambda p: float(p.name.split("beta")[1])
+            )
+            if not beta_dirs:
+                print(f"[SKIP] {N_dir}: no beta* folder found")
                 continue
 
-            # <mode>/corr/q_pairs_alpha_*_N4096_beta*_.csv
-            out_dir = mode_dir / CORR_DIRNAME
-            out_file = out_dir / f"q_pairs_{alpha_dir.name}_N{N}_{beta_dir.name}.csv"
+            for beta_dir in beta_dirs:
+                tasks.append((mode, alpha_dir.name, beta_dir.name))
 
-            if SKIP_EXISTING and out_file.exists():
-                print("  skipped")
-                continue
+    return tasks
 
-            # read every replica once
-            sweeps_all = {}
-            spins_all = {}
-            for r in replicas:
-                print(f"  reading r={r}", end=" ... ", flush=True)
-                sweeps_all[r], spins_all[r] = read_blocks_csv(spin_map[r])
-                print("done")
 
-            # keep only the sweeps present in all replicas
-            common_sweeps = reduce(np.intersect1d, sweeps_all.values())
-            idx = {
-                r: np.searchsorted(sweeps_all[r], common_sweeps)
-                if np.all(np.diff(sweeps_all[r]) > 0)
-                else np.argsort(sweeps_all[r])[np.searchsorted(np.sort(sweeps_all[r]), common_sweeps)]
-                for r in replicas
-            }
-            spins_sel = {r: spins_all[r][idx[r]] for r in replicas}
+# ============================================================
+# MAIN
+# ============================================================
 
-            # overlap of every pair of replicas (r < s)
-            columns = {}
-            for i, r in enumerate(replicas):
-                for s in replicas[i + 1:]:
-                    columns[f"q_{r}_{s}"] = corelations_matrix(
-                        spins_sel[r], spins_sel[s], N
-                    )
+if __name__ == "__main__":
 
-            df = pd.DataFrame(columns)
-            df.insert(0, "sweep", common_sweeps.astype(int))
-            df.to_csv(out_file, index=False)
+    tasks = build_tasks()
 
-            print(f"saved ({len(df)} sweeps x {len(columns)} pairs)")
+    print(f"\n[INFO] {len(tasks)} task(s), sequential\n", flush=True)
+
+    t_start = time.time()
+
+    for k, task in enumerate(tasks, start=1):
+        print(f"({k}/{len(tasks)}) {process_task(task)}", flush=True)
+
+    print(f"\n[INFO] done in {time.time() - t_start:.1f}s")
