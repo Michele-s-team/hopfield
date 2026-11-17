@@ -631,7 +631,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
     int min_deg = *min_element(degrees.begin(), degrees.end());
     if (min_deg == N - 1) { runSweeps_pure_overlaps(ran, save, freq, burn_in); return; }
 
-    cout << "Overlaps and non-neighbors couplings spin update algorithm" << endl;
+    if (talk) cout << "Overlaps and non-neighbors couplings spin update algorithm" << endl;
 
     initCouplings_nonNeighbors_Bits();
 

@@ -74,8 +74,8 @@ vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
         reset(i);
         t.push_back(timed_run(ran, seed_of(i), fn));
         post(i);
-        cout << "done "<< i+1 <<"/"<< n <<endl;
     }
+    cout << n << "rep done \n";
     return t;
 }
 
@@ -354,6 +354,8 @@ int main() {
         const Stats stats_bits_ov = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }, post_bits_ov));
+
+        cout << "SIMULATIONS DONE"<< endl;
 
 
         all_ok = true;
