@@ -24,9 +24,9 @@ using namespace std;
 
 BitSet BitSet_one;
 
-// The two bits versions to compare (replace the aliases if they become separate classes)
-using Bits1 = HopfieldBits;   // neighbors-based version
-using Bits2 = HopfieldBits;   // shifted-overlaps version
+// The two bitwise versions (replace the aliases if they become separate classes)
+using BitsNeighbors = HopfieldBits;   // bitwise, neighbor-coupling formulation
+using BitsOverlaps  = HopfieldBits;   // bitwise, shifted-overlap formulation
 
 // Seeds shared by all models of a given job (same seed => same draws)
 static inline unsigned long seed_graph(int run) { return 1000 + run; }
@@ -39,6 +39,17 @@ void copy_graph(const Src& src, Dst& dst) {
     dst.initNeighbors(src.getNeighbors());
     dst.initNonNeighbors(src.getNonNeighbors());
     dst.initDegrees(src.getDegrees());
+}
+
+// Time a callable (seconds). The RNG is reseeded right before the run,
+// so every method starts from the same random stream.
+template <class F>
+double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
+    gsl_rng_set(ran, seed);
+    auto t0 = chrono::steady_clock::now();
+    fn();
+    auto t1 = chrono::steady_clock::now();
+    return chrono::duration<double>(t1 - t0).count();
 }
 
 int main() {
@@ -65,9 +76,13 @@ int main() {
     const int nb_runs = jobs.size();
 
     // Single output file: header written once, before the parallel region
+    // Naming: classic = nobits implementation, bitwise = bits implementation
     ofstream out(out_path);
     out << "N,rho,alpha,P,beta,k_eff,n_sweeps,"
-       "t_ref,t_1,t_2,speedup_1,speedup_2,speedup_1_over_2\n";
+           "t_classic_neighbors,t_classic_overlaps,"
+           "t_bitwise_neighbors,t_bitwise_overlaps,"
+           "speedup_neighbors,speedup_overlaps,"
+           "t_bitwise_overlaps_over_neighbors\n";
     out << setprecision(10);
     out.flush();
 
@@ -90,78 +105,80 @@ int main() {
         // Each job owns its own RNG
         gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
-        Bits1 bits1(N, beta, N_sweeps, P);
-        Bits2 bits2(N, beta, N_sweeps, P);
-        HopfieldNoBits nobits(N, beta, N_sweeps, P);
+        BitsNeighbors  bits_nb(N, beta, N_sweeps, P);
+        BitsOverlaps   bits_ov(N, beta, N_sweeps, P);
+        HopfieldNoBits classic(N, beta, N_sweeps, P);
 
-        // ── Graph: built once (bits1), copied to the two other models ────────
+        // ── Graph: built once (bits_nb), copied to the two other models ──────
         gsl_rng_set(ran, seed_graph(job.run));
-        bits1.initNetwork_RegularRandom(rho, ran);
-        copy_graph(bits1, bits2);
-        copy_graph(bits1, nobits);
+        bits_nb.initNetwork_RegularRandom(rho, ran);
+        copy_graph(bits_nb, bits_ov);
+        copy_graph(bits_nb, classic);
 
         // Degree actually obtained (may differ from rho*(N-1): rounding, parity)
-        const int k_eff = bits1.getDegrees()[0];
+        const int k_eff = bits_nb.getDegrees()[0];
 
-        // ── Spins and patterns: drawn once on bits1 ──────────────────────────
+        // ── Spins and patterns: drawn once on bits_nb ────────────────────────
         gsl_rng_set(ran, seed_init(job.run));
-        bits1.initSpinsBits(ran);
-        bits1.toCanonical();
-        bits1.initPatternsBits(ran);
+        bits_nb.initSpinsBits(ran);
+        bits_nb.toCanonical();
+        bits_nb.initPatternsBits(ran);
 
-        // ── Copy to bits2 and nobits: same spins, same patterns ──────────────
-        auto initial_config      = bits1.getSpinsConfig();
-        auto initial_config_bits = bits1.getSpinsConfigBits();
-        auto patterns            = bits1.getPatternsBitsToCanonical();
-        auto patterns_bits       = bits1.getPatternsBits();
+        // ── Same spins and patterns for the other models ─────────────────────
+        auto initial_config      = bits_nb.getSpinsConfig();
+        auto initial_config_bits = bits_nb.getSpinsConfigBits();
+        auto patterns            = bits_nb.getPatternsBitsToCanonical();
+        auto patterns_bits       = bits_nb.getPatternsBits();
 
-        bits2.initSpinsFromConfigBits(initial_config_bits);
-        bits2.initPatternsFromConfigBits(patterns_bits);
+        bits_ov.initSpinsFromConfigBits(initial_config_bits);
+        bits_ov.initPatternsFromConfigBits(patterns_bits);
 
-        nobits.initSpinsFromConfig(initial_config);
-        nobits.initPatternsFromConfig(patterns);
+        classic.initPatternsFromConfig(patterns);
 
-        // ── Reference: nobits ────────────────────────────────────────────────
-        gsl_rng_set(ran, seed_evol(job.run));
-        auto t0 = chrono::steady_clock::now();
-        nobits.runSweepsIndependentRNG(ran, save, freq);
-        auto t1 = chrono::steady_clock::now();
-        const double t_ref = chrono::duration<double>(t1 - t0).count();
+        // ── Classic neighbors (reference for bitwise neighbors) ──────────────
+        classic.initSpinsFromConfig(initial_config);   // fresh initial state
+        const double t_classic_neighbors = timed_run(ran, seed_evol(job.run), [&] {
+            classic.runSweepsIndependentRNG_neighbors(ran, save, freq);
+        });
 
-        // ── Version 1: bits couplings + neighbor-based sweeps ────────────────
-        // (setup time included in t_1)
-        gsl_rng_set(ran, seed_evol(job.run));
-        auto t0_1 = chrono::steady_clock::now();
-        bits1.initCouplingsBits();
-        bits1.runSweeps_neighbors(ran, save, freq, burn_in);
-        auto t1_1 = chrono::steady_clock::now();
-        const double t_1 = chrono::duration<double>(t1_1 - t0_1).count();
+        // ── Classic overlaps (reference for bitwise overlaps) ────────────────
+        classic.initSpinsFromConfig(initial_config);   // reset: same initial state again
+        const double t_classic_overlaps = timed_run(ran, seed_evol(job.run), [&] {
+            classic.runSweepsIndependentRNG_overlaps(ran, save, freq);   // computes overlaps itself
+        });
 
-        // ── Version 2: shifted overlaps + overlap-based sweeps ───────────────
-        // (setup time included in t_2)
-        gsl_rng_set(ran, seed_evol(job.run));
-        auto t0_2 = chrono::steady_clock::now();
-        bits2.compute_shifted_overlaps();
-        bits2.runSweeps_overlaps(ran, save, freq, burn_in);
-        auto t1_2 = chrono::steady_clock::now();
-        const double t_2 = chrono::duration<double>(t1_2 - t0_2).count();
+        // ── Bitwise neighbors (setup time included) ──────────────────────────
+        const double t_bitwise_neighbors = timed_run(ran, seed_evol(job.run), [&] {
+            bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
+        });
 
-        const double speedup_1 = t_ref / t_1;
-        const double speedup_2 = t_ref / t_2;
-        const double ratio     = speedup_1 / speedup_2;   // = t_2 / t_1
+        // ── Bitwise overlaps (setup time included) ───────────────────────────
+        const double t_bitwise_overlaps = timed_run(ran, seed_evol(job.run), [&] {
+            bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
+        });
+
+        // Each bitwise method vs. its own classic equivalent
+        const double speedup_neighbors = t_classic_neighbors / t_bitwise_neighbors;
+        const double speedup_overlaps  = t_classic_overlaps  / t_bitwise_overlaps;
+        // Bitwise vs. bitwise (> 1 means neighbors is faster than overlaps)
+        const double ratio_bitwise = t_bitwise_overlaps / t_bitwise_neighbors;
 
         // Protected write: one line per job, immediate flush
         #pragma omp critical(write_csv)
         {
             out << N << "," << rho << "," << job.alpha << "," << P << "," << beta << ","
-            << k_eff << "," << N_sweeps << ","
-            << t_ref << "," << t_1 << "," << t_2 << ","
-            << speedup_1 << "," << speedup_2 << "," << ratio << "\n";
+                << k_eff << "," << N_sweeps << ","
+                << t_classic_neighbors << "," << t_classic_overlaps << ","
+                << t_bitwise_neighbors << "," << t_bitwise_overlaps << ","
+                << speedup_neighbors << "," << speedup_overlaps << ","
+                << ratio_bitwise << "\n";
+            out.flush();
 
             cout << "Run " << job.run << "/" << nb_runs
                  << " (alpha=" << job.alpha << ", N=" << N << ", P=" << P
                  << ", k=" << k_eff << ", beta=" << beta << ", rho=" << rho << ")"
-                 << " ref=" << t_ref << "s, v1=" << t_1 << "s, v2=" << t_2 << "s\n";
+                 << " classic[nb=" << t_classic_neighbors << "s, ov=" << t_classic_overlaps << "s]"
+                 << " bitwise[nb=" << t_bitwise_neighbors << "s, ov=" << t_bitwise_overlaps << "s]\n";
         }
 
         gsl_rng_free(ran);

@@ -427,11 +427,9 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) 
 
     if (alpha + 0.5 <= rho) {
         // Dense graph: overlap formulation over non-neighbors is cheaper
-        compute_shifted_overlaps();
         runSweeps_overlaps(ran, save, freq, burn_in);
     } else {
         // Sparse graph: direct neighbor-coupling formulation is cheaper
-        initCouplingsBits();
         runSweeps_neighbors(ran, save, freq, burn_in);
     }
 }
@@ -457,6 +455,8 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) 
 // their maximum possible values to avoid any heap allocation in the hot path.
 void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in) {
     cout << "Neighbors couplings spin update algorithm" << endl;
+
+    initCouplingsBits();
 
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
@@ -626,6 +626,8 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 // the graph is fully connected (min degree == N-1), since the non-neighbor
 // set is then empty and this formulation offers no benefit.
 void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
+
+    compute_shifted_overlaps();
 
     int min_deg = *min_element(degrees.begin(), degrees.end());
     if (min_deg == N - 1) { runSweeps_pure_overlaps(ran, save, freq, burn_in); return; }

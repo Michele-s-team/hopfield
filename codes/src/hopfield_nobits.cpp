@@ -6,8 +6,9 @@
 //  Condensed on 23/07/2026: the three ΔE formulations (neighbors / overlaps /
 //  overlaps-non-neighbors) and the shared-RNG / independent-RNG sweep loops
 //  are each merged into a single parameterized implementation, selected by
-//  SweepMode. runSweepsSharedRNG and runSweepsIndependentRNG remain the only
-//  two public entry points.
+//  SweepMode. The public entry points choose between the overlaps and neighbors
+//  formulations; the _overlaps variants then choose between pure overlaps and
+//  overlaps + non-neighbor couplings.
 //
 
 #include "hopfield_nobits.hpp"
@@ -86,7 +87,7 @@ void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double fre
 
     std::vector<int> delta_E(n_bits);
 
-    if (save){SaveSpinConfigurations(0);} 
+    if (save){SaveSpinConfigurations(0);}
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
@@ -119,7 +120,7 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
 
     std::vector<int> delta_E(n_bits);
 
-    if (save){SaveSpinConfigurations(0);}   
+    if (save){SaveSpinConfigurations(0);}
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
@@ -141,51 +142,87 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
 }
 
 // =====================================================
-// PUBLIC ENTRY POINTS
+// SHARED RNG: formulation-specific entry points
+// =====================================================
+
+void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq) {
+    compute_overlaps();
+
+    const int min_deg = *std::min_element(degrees.begin(), degrees.end());
+    if (min_deg == N - 1) {
+        // Complete graph: pure overlaps, no non-neighbor correction
+        cout << "Shared RNG: Pure overlaps spin update algorithm" << endl;
+        runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS);
+        return;
+    }
+
+    // Non-complete dense graph: overlaps + non-neighbor couplings
+    initCouplings_nonNeighbors();
+    cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+    runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
+}
+
+void HopfieldNoBits::runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq) {
+    initCouplings();
+    cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
+    runSweepsSharedRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
+}
+
+// =====================================================
+// INDEPENDENT RNG: formulation-specific entry points
+// =====================================================
+
+void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq) {
+    compute_overlaps();
+
+    const int min_deg = *std::min_element(degrees.begin(), degrees.end());
+    if (min_deg == N - 1) {
+        // Complete graph: pure overlaps, no non-neighbor correction
+        cout << "Independent RNG: Pure overlaps spin update algorithm" << endl;
+        runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS);
+        return;
+    }
+
+    // Non-complete dense graph: overlaps + non-neighbor couplings
+    initCouplings_nonNeighbors();
+    cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+    runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
+}
+
+void HopfieldNoBits::runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq) {
+    initCouplings();
+    cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
+    runSweepsIndependentRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
+}
+
+// =====================================================
+// PUBLIC ENTRY POINTS (automatic choice of formulation)
 // =====================================================
 
 void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     const double alpha = (double)P / N;
     const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    const double mean_density = mean_degree / (N - 1);
+    const double rho = mean_degree / (N - 1);
 
-    if (alpha + 0.5 <= mean_density) {
-        compute_overlaps();
-        const int min_deg = *std::min_element(degrees.begin(), degrees.end());
-        if (min_deg == N - 1) {
-            cout << "Shared RNG: Overlaps spin update algorithm" << endl;
-            runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS);
-        } else {
-            initCouplings_nonNeighbors();
-            cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
-            runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
-        }
+    if (alpha + 0.5 <= rho) {
+        // Dense graph: overlap formulation is cheaper
+        runSweepsSharedRNG_overlaps(ran, save, freq);
     } else {
-        initCouplings();
-        cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
-        runSweepsSharedRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
+        // Sparse graph: direct neighbor-coupling formulation is cheaper
+        runSweepsSharedRNG_neighbors(ran, save, freq);
     }
 }
 
 void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
     const double alpha = (double)P / N;
     const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
-    const double mean_density = mean_degree / (N - 1);
+    const double rho = mean_degree / (N - 1);
 
-    if (alpha + 0.5 <= mean_density) {
-        compute_overlaps();
-        const int min_deg = *std::min_element(degrees.begin(), degrees.end());
-        if (min_deg == N - 1) {
-            cout << "Independent RNG: Overlaps spin update algorithm" << endl;
-            runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS);
-        } else {
-            initCouplings_nonNeighbors();
-            cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
-            runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
-        }
+    if (alpha + 0.5 <= rho) {
+        // Dense graph: overlap formulation is cheaper
+        runSweepsIndependentRNG_overlaps(ran, save, freq);
     } else {
-        initCouplings();
-        cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
-        runSweepsIndependentRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
+        // Sparse graph: direct neighbor-coupling formulation is cheaper
+        runSweepsIndependentRNG_neighbors(ran, save, freq);
     }
 }
