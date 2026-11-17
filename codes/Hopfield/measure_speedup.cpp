@@ -8,6 +8,7 @@
 #include <chrono>
 #include <algorithm>
 #include <numeric>
+#include <type_traits>
 #include <omp.h>
 
 using namespace std;
@@ -57,18 +58,22 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
 }
 
 // Repeat a measurement n times. For repetition i:
-//   - reset(i) restores the initial state number i (NOT timed),
+//   - reset(i)   restores the initial state number i (NOT timed; it also
+//                records the "before evolution" snapshot),
 //   - seed_of(i) gives the evolution seed of repetition i,
-//   - fn is the timed work (setup + sweeps).
-// Each repetition has its own init and seed, but the same (i) is used for
+//   - fn         is the timed work (setup + sweeps),
+//   - post(i)    records the "after evolution" snapshot (NOT timed).
+// Each repetition has its own init and seed, but the same i is used for
 // all 4 methods of a job, so the comparison stays paired.
-template <class Reset, class SeedOf, class F>
-vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of, Reset&& reset, F&& fn) {
+template <class Reset, class SeedOf, class F, class Post>
+vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
+                            Reset&& reset, F&& fn, Post&& post) {
     vector<double> t;
     t.reserve(n);
     for (int i = 0; i < n; ++i) {
         reset(i);
         t.push_back(timed_run(ran, seed_of(i), fn));
+        post(i);
     }
     return t;
 }
@@ -160,6 +165,14 @@ int main() {
         BitsOverlaps   bits_ov(N, beta, N_sweeps, P);
         HopfieldNoBits classic(N, beta, N_sweeps, P);
 
+        // Config types (decayed, in case the getters return references)
+        using CfgT     = decay_t<decltype(bits_nb.getSpinsConfig())>;
+        using CfgBitsT = decay_t<decltype(bits_nb.getSpinsConfigBits())>;
+
+        // check_equality_configs takes const vector<int>&
+        static_assert(is_same<CfgT, vector<int>>::value,
+                      "getSpinsConfig() is expected to return vector<int>");
+
         // ── Graph: built once, copied to the two other models ────────────────
         gsl_rng_set(ran, seed_graph(job.run));
         bits_nb.initNetwork_RegularRandom(rho, ran);
@@ -183,8 +196,8 @@ int main() {
 
         // ── One initial spin state per repetition ────────────────────────────
         // Drawn on bits_nb, stored in both representations. Not timed.
-        vector<decltype(bits_nb.getSpinsConfig())>     init_cfg(n_rep);
-        vector<decltype(bits_nb.getSpinsConfigBits())> init_bits(n_rep);
+        vector<CfgT>     init_cfg(n_rep);
+        vector<CfgBitsT> init_bits(n_rep);
 
         init_cfg[0]  = bits_nb.getSpinsConfig();
         init_bits[0] = bits_nb.getSpinsConfigBits();
@@ -196,26 +209,109 @@ int main() {
             init_bits[i] = bits_nb.getSpinsConfigBits();
         }
 
-        // Reset helpers: initial state of repetition i (same i for all methods)
-        auto reset_classic = [&](int i) { classic.initSpinsFromConfig(init_cfg[i]); };
-        auto reset_nb      = [&](int i) { bits_nb.initSpinsFromConfigBits(init_bits[i]); };
-        auto reset_ov      = [&](int i) { bits_ov.initSpinsFromConfigBits(init_bits[i]); };
+        // ── Snapshots for the consistency checks (all untimed) ───────────────
+        // start_* : state right after reset(i), before evolution
+        // end_*   : state right after the sweeps
+        // classic = unpacked config only; bits = unpacked + packed.
+        vector<CfgT> start_cn(n_rep), start_co(n_rep), end_cn(n_rep), end_co(n_rep);
+        vector<CfgT> start_bn_cfg(n_rep), start_bo_cfg(n_rep), end_bn_cfg(n_rep), end_bo_cfg(n_rep);
+        vector<CfgBitsT> start_bn_bits(n_rep), start_bo_bits(n_rep), end_bn_bits(n_rep), end_bo_bits(n_rep);
+
+        // Reset helpers: initial state of repetition i (same i for all methods).
+        // Each one also records the "before evolution" snapshot.
+        auto reset_cn = [&](int i) {
+            classic.initSpinsFromConfig(init_cfg[i]);
+            start_cn[i] = classic.getSpinsConfig();
+        };
+        auto reset_co = [&](int i) {
+            classic.initSpinsFromConfig(init_cfg[i]);
+            start_co[i] = classic.getSpinsConfig();
+        };
+        auto reset_nb = [&](int i) {
+            bits_nb.initSpinsFromConfigBits(init_bits[i]);
+            start_bn_cfg[i]  = bits_nb.getSpinsConfig();
+            start_bn_bits[i] = bits_nb.getSpinsConfigBits();
+        };
+        auto reset_ov = [&](int i) {
+            bits_ov.initSpinsFromConfigBits(init_bits[i]);
+            start_bo_cfg[i]  = bits_ov.getSpinsConfig();
+            start_bo_bits[i] = bits_ov.getSpinsConfigBits();
+        };
+
+        // "After evolution" snapshots. For the bitwise models we call
+        // toCanonical() first, mirroring what is done after initSpinsBits().
+        auto post_cn = [&](int i) { end_cn[i] = classic.getSpinsConfig(); };
+        auto post_co = [&](int i) { end_co[i] = classic.getSpinsConfig(); };
+        auto post_nb = [&](int i) {
+            bits_nb.toCanonical();
+            end_bn_cfg[i]  = bits_nb.getSpinsConfig();
+            end_bn_bits[i] = bits_nb.getSpinsConfigBits();
+        };
+        auto post_ov = [&](int i) {
+            bits_ov.toCanonical();
+            end_bo_cfg[i]  = bits_ov.getSpinsConfig();
+            end_bo_bits[i] = bits_ov.getSpinsConfigBits();
+        };
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
         // ── 4 measurements, run in series, each repeated n_rep times ─────────
-        const Stats s_cn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic, [&] {
+        const Stats s_cn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_cn, [&] {
             classic.runSweepsIndependentRNG_neighbors(ran, save, freq);
-        }));
-        const Stats s_co = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic, [&] {
+        }, post_cn));
+        const Stats s_co = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_co, [&] {
             classic.runSweepsIndependentRNG_overlaps(ran, save, freq);
-        }));
+        }, post_co));
         const Stats s_bn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_nb, [&] {
             bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
-        }));
+        }, post_nb));
         const Stats s_bo = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
-        }));
+        }, post_ov));
+
+        // ── Consistency checks (outside every timed region) ──────────────────
+        const int prefix_width = 14;
+        const int col_width    = 2;
+
+        // Compare two unpacked configs with IO.check_equality_configs.
+        // `ref` is the initial config (only used by the method for printing),
+        // `a` is passed as "nobits" and `b` as "bits".
+        // The whole block is in a critical section so that outputs of
+        // different threads do not interleave.
+        auto check_pair = [&](const char* stage, const char* label, int rep,
+                              const CfgT& ref, const CfgT& a, const CfgT& b) {
+            #pragma omp critical(print_check)
+            {
+                cout << "[check] run " << job.run << " rep " << rep
+                     << " | " << stage << " | " << label << "\n";
+                IO.check_equality_configs(ref, a, b, N, prefix_width, col_width);
+            }
+        };
+
+        // Packed (bits) vs unpacked (nobits) with the project's IO helper.
+        auto check_cross_packed = [&](const CfgBitsT& bits_cfg, const CfgT& nobits_cfg) {
+            // Adapt the argument list here if the exact signature differs.
+            #pragma omp critical(print_check)
+            IO.check_PackSpinConfigurations(bits_cfg, nobits_cfg, bits_cfg, N);
+        };
+
+        for (int i = 0; i < n_rep; ++i) {
+            // BEFORE evolution
+            check_pair("before", "nobits(neighbors) vs nobits(overlaps)", i, init_cfg[i], start_cn[i],     start_co[i]);
+            check_pair("before", "bits(neighbors)   vs bits(overlaps)",   i, init_cfg[i], start_bn_cfg[i], start_bo_cfg[i]);
+            check_pair("before", "nobits(neighbors) vs bits(neighbors)",  i, init_cfg[i], start_cn[i],     start_bn_cfg[i]);
+            check_pair("before", "nobits(overlaps)  vs bits(overlaps)",   i, init_cfg[i], start_co[i],     start_bo_cfg[i]);
+            check_cross_packed(start_bn_bits[i], start_cn[i]);
+            check_cross_packed(start_bo_bits[i], start_co[i]);
+
+            // AFTER evolution
+            check_pair("after", "nobits(neighbors) vs nobits(overlaps)", i, init_cfg[i], end_cn[i],     end_co[i]);
+            check_pair("after", "bits(neighbors)   vs bits(overlaps)",   i, init_cfg[i], end_bn_cfg[i], end_bo_cfg[i]);
+            check_pair("after", "nobits(neighbors) vs bits(neighbors)",  i, init_cfg[i], end_cn[i],     end_bn_cfg[i]);
+            check_pair("after", "nobits(overlaps)  vs bits(overlaps)",   i, init_cfg[i], end_co[i],     end_bo_cfg[i]);
+            check_cross_packed(end_bn_bits[i], end_cn[i]);
+            check_cross_packed(end_bo_bits[i], end_co[i]);
+        }
 
         // Speedups from medians (robust to outliers)
         const double speedup_neighbors = s_cn.median / s_bn.median;
