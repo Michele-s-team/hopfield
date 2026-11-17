@@ -278,8 +278,9 @@ int main() {
         // The helper compares its second and third configurations.
         // The first argument is the reference initial configuration.
         auto check_pair = [&](const char* stage, const char* label, int rep,
-                      const CfgT& a, const CfgT& b) {
-            if (!IO.check_equality_configs(a, b, N)) {
+                            const CfgT& a, const CfgT& b) -> bool {
+            const bool ok = IO.check_equality_configs(a, b, N);
+            if (!ok) {
                 #pragma omp critical(print_check)
                 {
                     cout << "[FAILED] run " << job.run
@@ -288,7 +289,10 @@ int main() {
                         << " | " << label << "\n";
                 }
             }
+            return ok;
         };
+
+        bool all_ok = true;
 
         for (int i = 0; i < n_rep; ++i) {
             // Initialize all six models and record their initial configurations.
@@ -301,21 +305,24 @@ int main() {
 
             // BEFORE evolution: five comparisons are sufficient to verify
             // that all six model instances start from the same configuration.
-            check_pair("before", "NoBits indep neighbors vs indep overlaps",
-                    i, start_cn_i[i], start_co_i[i]);
+            all_ok &= check_pair("before", "NoBits indep neighbors vs indep overlaps",
+                                i, start_cn_i[i], start_co_i[i]);
 
-            check_pair("before", "NoBits independent neighbors vs shared neighbors",
-                    i, start_cn_i[i], start_cn_s[i]);
+            all_ok &= check_pair("before", "NoBits independent neighbors vs shared neighbors",
+                                i, start_cn_i[i], start_cn_s[i]);
 
-            check_pair("before", "NoBits shared neighbors vs shared overlaps",
-                    i, start_cn_s[i], start_co_s[i]);
+            all_ok &= check_pair("before", "NoBits shared neighbors vs shared overlaps",
+                                i, start_cn_s[i], start_co_s[i]);
 
-            check_pair("before", "NoBits shared overlaps vs Bits overlaps",
-                    i, start_co_s[i], start_bo_cfg[i]);
+            all_ok &= check_pair("before", "NoBits shared overlaps vs Bits overlaps",
+                                i, start_co_s[i], start_bo_cfg[i]);
 
-            check_pair("before", "Bits overlaps vs Bits neighbors",
-                    i, start_bo_cfg[i], start_bn_cfg[i]);
+            all_ok &= check_pair("before", "Bits overlaps vs Bits neighbors",
+                                i, start_bo_cfg[i], start_bn_cfg[i]);
         }
+
+        if (all_ok)
+            std::cout << "=== SUCCESS: all tests passed ===\n";
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
@@ -340,19 +347,24 @@ int main() {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }, post_ov));
 
+
+        all_ok = true;
         for (int i = 0; i < n_rep; ++i) {
-            check_pair("after", "NoBits independent: neighbors vs overlaps",
-                    i, end_cn_i[i], end_co_i[i]);
+            all_ok &= check_pair("after", "NoBits independent: neighbors vs overlaps",
+                                i, end_cn_i[i], end_co_i[i]);
 
-            check_pair("after", "Shared group: NoBits neighbors vs NoBits overlaps",
-                    i, end_cn_s[i], end_co_s[i]);
+            all_ok &= check_pair("after", "Shared group: NoBits neighbors vs NoBits overlaps",
+                                i, end_cn_s[i], end_co_s[i]);
 
-            check_pair("after", "Shared group: NoBits overlaps vs Bits overlaps",
-                    i, end_co_s[i], end_bo_cfg[i]);
+            all_ok &= check_pair("after", "Shared group: NoBits overlaps vs Bits overlaps",
+                                i, end_co_s[i], end_bo_cfg[i]);
 
-            check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
-                    i, end_bo_cfg[i], end_bn_cfg[i]);
+            all_ok &= check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
+                                i, end_bo_cfg[i], end_bn_cfg[i]);
         }
+
+        if (all_ok)
+            std::cout << "=== SUCCESS: all tests passed ===\n";
 
         // Speedups from medians (robust to outliers). The two bitwise timings
         // are the common references for the independent and shared NoBits runs.
