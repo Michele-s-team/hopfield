@@ -75,7 +75,7 @@ vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
         t.push_back(timed_run(ran, seed_of(i), fn));
         post(i);
     }
-    cout << n << "rep done \n";
+    //cout << n << " rep done \n";
     return t;
 }
 
@@ -329,7 +329,7 @@ int main() {
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
-        cout << "RUNNING SIMULATIONS"<< endl;
+        cout << "\nRUNNING SIMULATIONS"<< endl;
 
         // ── 6 measurements, run in series, each repeated n_rep times ─────────
         // NoBits: IndependentRNG, then SharedRNG; Bits: neighbors and overlaps.
