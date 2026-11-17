@@ -74,6 +74,7 @@ vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
         reset(i);
         t.push_back(timed_run(ran, seed_of(i), fn));
         post(i);
+        cout << "done "<< i+1 <<"/"<< n <<endl;
     }
     return t;
 }
@@ -324,12 +325,14 @@ int main() {
         }
 
         if (all_ok)
-            std::cout << "=== SUCCESS: all tests passed (before evolution) ===\n";
+            cout << "=== SUCCESS: all tests passed (before evolution) ===\n";
         else
-            std::cout << "=== FAILURE: at least one test failed (before evolution) ===\n";
+            cout << "=== FAILURE: at least one test failed (before evolution) ===\n";
 
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
+
+        cout << "RUNNING SIMULATIONS"<< endl;
 
         // ── 6 measurements, run in series, each repeated n_rep times ─────────
         // NoBits: IndependentRNG, then SharedRNG; Bits: neighbors and overlaps.
@@ -369,9 +372,9 @@ int main() {
         }
 
         if (all_ok)
-            std::cout << "=== SUCCESS: all tests passed (after evolution) ===\n";
+            cout << "=== SUCCESS: all tests passed (after evolution) ===\n";
         else
-            std::cout << "=== FAILURE: at least one test failed (after evolution) ===\n";
+            cout << "=== FAILURE: at least one test failed (after evolution) ===\n";
 
         // Speedups from medians (robust to outliers). The two bitwise timings
         // are the common references for the independent and shared NoBits runs.
