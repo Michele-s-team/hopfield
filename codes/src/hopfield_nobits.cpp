@@ -80,7 +80,7 @@ void HopfieldNoBits::FlipSpin(int spin, int r, SweepMode mode) {
 // CORE SWEEP LOOPS (mode-agnostic)
 // =====================================================
 
-void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode) {
+void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode, bool talk) {
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
@@ -110,10 +110,10 @@ void HopfieldNoBits::runSweepsSharedRNG_core(gsl_rng* ran, bool save, double fre
 
         saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
-    std::cout << endl;
+    if (talk) std::cout << endl;
 }
 
-void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode) {
+void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode, bool talk) {
     const int total_sweeps = getNSweeps();
     const int progress_stride = std::max(1, total_sweeps / 10);
     const int save_stride = save ? std::max(1, (int)std::round(1.0 / freq)) : 0;
@@ -138,7 +138,7 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
 
         saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride);
     }
-    std::cout << endl;
+    if (talk) std::cout << endl;
 }
 
 // =====================================================

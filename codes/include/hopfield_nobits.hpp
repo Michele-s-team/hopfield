@@ -40,8 +40,8 @@ private:
     void DeltaE_all(int spin, SweepMode mode, vector<int>& delta_E);
     void FlipSpin(int spin, int r, SweepMode mode);
 
-    void runSweepsSharedRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode);
-    void runSweepsIndependentRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode);
+    void runSweepsSharedRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode, bool talk=false);
+    void runSweepsIndependentRNG_core(gsl_rng* ran, bool save, double freq, SweepMode mode, bool talk=false);
 };
 
 #endif

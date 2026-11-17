@@ -75,7 +75,7 @@ vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
         t.push_back(timed_run(ran, seed_of(i), fn));
         post(i);
     }
-    //cout << n << " rep done \n";
+    cout << n << " rep done \n";
     return t;
 }
 
