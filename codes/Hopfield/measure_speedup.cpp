@@ -105,6 +105,20 @@ int main() {
         // Each job owns its own RNG
         gsl_rng* ran = gsl_rng_alloc(gsl_rng_gfsr4);
 
+         // Print job information (critical section: avoids interleaved output between threads)
+        #pragma omp critical(print_info)
+        {
+            cout << "\n============ Hopfield 2D Model ============\n";
+            cout << "  Run:         " << job.run << "/" << nb_runs << "\n";
+            cout << "  Lattice:     " << job.L << " x " << job.L << " = " << N << "\n";
+            cout << "  Alpha:       " << job.alpha << " (P = " << P << ")\n";
+            cout << "  Temperature: " << job.temperature << " (beta = " << beta << ")\n";
+            cout << "  Rho:         " << rho << "\n";
+            cout << "  Sweeps:      " << N_sweeps << "\n";
+            cout << "  Thread:      " << omp_get_thread_num() << "\n";
+            cout << "============================================\n" << flush;
+        }
+
         BitsNeighbors  bits_nb(N, beta, N_sweeps, P);
         BitsOverlaps   bits_ov(N, beta, N_sweeps, P);
         HopfieldNoBits classic(N, beta, N_sweeps, P);
