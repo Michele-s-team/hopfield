@@ -145,26 +145,26 @@ void HopfieldNoBits::runSweepsIndependentRNG_core(gsl_rng* ran, bool save, doubl
 // SHARED RNG: formulation-specific entry points
 // =====================================================
 
-void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq, bool talk) {
     compute_overlaps();
 
     const int min_deg = *std::min_element(degrees.begin(), degrees.end());
     if (min_deg == N - 1) {
         // Complete graph: pure overlaps, no non-neighbor correction
-        cout << "Shared RNG: Pure overlaps spin update algorithm" << endl;
+        if (talk) cout << "Shared RNG: Pure overlaps spin update algorithm" << endl;
         runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS);
         return;
     }
 
     // Non-complete dense graph: overlaps + non-neighbor couplings
     initCouplings_nonNeighbors();
-    cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+    if (talk) cout << "Shared RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
     runSweepsSharedRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
 }
 
-void HopfieldNoBits::runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq, bool talk) {
     initCouplings();
-    cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
+    if (talk) cout << "Shared RNG: Neighbors couplings spin update algorithm" << endl;
     runSweepsSharedRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
 }
 
@@ -172,26 +172,26 @@ void HopfieldNoBits::runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, doubl
 // INDEPENDENT RNG: formulation-specific entry points
 // =====================================================
 
-void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq, bool talk) {
     compute_overlaps();
 
     const int min_deg = *std::min_element(degrees.begin(), degrees.end());
     if (min_deg == N - 1) {
         // Complete graph: pure overlaps, no non-neighbor correction
-        cout << "Independent RNG: Pure overlaps spin update algorithm" << endl;
+        if (talk) cout << "Independent RNG: Pure overlaps spin update algorithm" << endl;
         runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS);
         return;
     }
 
     // Non-complete dense graph: overlaps + non-neighbor couplings
     initCouplings_nonNeighbors();
-    cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
+    if (talk) cout << "Independent RNG: Overlaps and non-neighbors couplings spin update algorithm" << endl;
     runSweepsIndependentRNG_core(ran, save, freq, SweepMode::OVERLAPS_NON_NEIGHBORS);
 }
 
-void HopfieldNoBits::runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq, bool talk) {
     initCouplings();
-    cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
+    if (talk) cout << "Independent RNG: Neighbors couplings spin update algorithm" << endl;
     runSweepsIndependentRNG_core(ran, save, freq, SweepMode::NEIGHBORS);
 }
 
@@ -199,7 +199,7 @@ void HopfieldNoBits::runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, 
 // PUBLIC ENTRY POINTS (automatic choice of formulation)
 // =====================================================
 
-void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq, bool talk) {
     const double alpha = (double)P / N;
     const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
     const double rho = mean_degree / (N - 1);
@@ -213,7 +213,7 @@ void HopfieldNoBits::runSweepsSharedRNG(gsl_rng* ran, bool save, double freq) {
     }
 }
 
-void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq) {
+void HopfieldNoBits::runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq, bool talk) {
     const double alpha = (double)P / N;
     const double mean_degree = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
     const double rho = mean_degree / (N - 1);

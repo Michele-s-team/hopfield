@@ -371,7 +371,7 @@ void HopfieldBits::compute_shifted_overlaps() {
 // =====================================================
 
 
-void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
+void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold, bool talk){
 
     auto beta = getBeta();
 
@@ -382,7 +382,7 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
     bool condition = beta*rho*sqrt(P)<= log(1.0 / desired_escape_ratio)* sqrt(M_PI/2)/2;
 
     if (condition){
-        cout <<"compute tight escape conditions"<<endl;
+        if (talk) cout <<"compute tight escape conditions"<<endl;
          auto t1 = std::chrono::steady_clock::now();
         initCouplingsBits();
         
@@ -399,17 +399,16 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
 
         auto t3 = std::chrono::steady_clock::now();
         auto ms = [](auto a, auto b){ return std::chrono::duration<double, std::milli>(b-a).count(); };
-        std::cerr << "couplings " << ms(t1,t2)
-                << " ms, escape " << ms(t2,t3) << " ms\n";
+       
 
         int mean_escape_threshold = static_cast<int>(accumulate(max_escape_threshold.begin(),
                                                     max_escape_threshold.end(), 0LL)
                                                     / static_cast<double>(max_escape_threshold.size()));
 
-        cout << "mean escape condition across all spins: " << mean_escape_threshold << endl;
+        if (talk) cout << "mean escape condition across all spins: " << mean_escape_threshold << endl;
     }
     else{
-        cout << "loose escape threshold (P*degree), init skipped" << endl;
+        if (talk) cout << "loose escape threshold (P*degree), init skipped" << endl;
         for (int i=0; i<N; i++){max_escape_threshold[i]=P*degrees[i];}
 
     }
@@ -419,7 +418,7 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold){
 // of the interaction graph, compared against the pattern-loading ratio
 // alpha = P/N (see report theory: overlap formulation pays off once
 // alpha + 1/2 <= rho).
-void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) {
+void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in, bool talk) {
     double alpha = (double)P / N;
 
     double mean_degree  = std::accumulate(degrees.begin(), degrees.end(), 0.0) / degrees.size();
@@ -453,8 +452,8 @@ void HopfieldBits::runSweeps(gsl_rng* ran, bool save, double freq, int burn_in) 
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
-void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in) {
-    cout << "Neighbors couplings spin update algorithm" << endl;
+void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int burn_in, bool talk) {
+    if (talk) cout << "Neighbors couplings spin update algorithm" << endl;
 
     initCouplingsBits();
 
@@ -542,7 +541,7 @@ void HopfieldBits::runSweeps_neighbors(gsl_rng* ran, bool save, double freq, int
         saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
-    cout << endl;
+    if (talk) cout << endl;
 }
 
 // Recompute Shifted_Overlaps from the current spin state and compare it
@@ -625,7 +624,7 @@ bool HopfieldBits::check_shifted_overlaps_consistency(int sweep, int step) {
 // Falls back to the neighbor-based algorithm (runSweeps_overlaps) whenever
 // the graph is fully connected (min degree == N-1), since the non-neighbor
 // set is then empty and this formulation offers no benefit.
-void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
+void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int burn_in, bool talk) {
 
     compute_shifted_overlaps();
 
@@ -701,7 +700,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
             sum_couplings[spin] += &Couplings_nonNeighbors[spin][k];
     }
 
-    cout << "initialization done" << endl;
+    if (talk) cout << "initialization done" << endl;
 
     for (int sweep = 0; sweep < total_sweeps; ++sweep) {
         for (int step = 0; step < N; ++step) {
@@ -810,8 +809,7 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
         saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
-    cout << endl;
-    cout << "bitwise done" << endl;
+    if (talk) cout << endl;
 }
 
 // Runs Monte Carlo sweeps on 64 parallel Hopfield network instances using a
@@ -848,9 +846,9 @@ void HopfieldBits::runSweeps_overlaps(gsl_rng* ran, bool save, double freq, int 
 //
 // All UnsignedInt accumulators are preallocated before the sweep loop with
 // their maximum possible values to avoid any heap allocation in the hot path.
-void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in) {
+void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq, int burn_in, bool talk) {
 
-    cout << "Overlaps spin update algorithm" << endl;
+    if (talk) cout << "Overlaps spin update algorithm" << endl;
 
     const int total_sweeps    = getNSweeps();
     const int progress_stride = max(1, total_sweeps / 10);
@@ -888,7 +886,7 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
 
     vector<Bits> c_cache(P);
 
-    cout << "initialization done" << endl;
+    if (talk) cout << "initialization done" << endl;
 
     // Precompute Σ_j |g_ij| once for all i and store the max over replicas in a list, to determine
     // the escape condition boundary
@@ -998,15 +996,15 @@ void HopfieldBits::runSweeps_pure_overlaps(gsl_rng* ran, bool save, double freq,
         saveAndReport(sweep + 1, save, save_stride, total_sweeps, progress_stride, burn_in);
     }
 
-    cout << endl;
+    if (talk) cout << endl;
 
     double escape_ratio = 100.0 * escape_count /
         (escape_count + normal_count);
 
-    cout << "\nEscape branch:\n";
-    cout << "  Count: " << escape_count << "\n";
+    if (talk) cout << "\nEscape branch:\n";
+    if (talk) cout << "  Count: " << escape_count << "\n";
 
-    cout << "\nEscape ratio: " << escape_ratio << " %\n";
+    if (talk) cout << "\nEscape ratio: " << escape_ratio << " %\n";
 }
 
 void HopfieldBits::runSweeps_neighbors_DEBUG(gsl_rng* ran, bool save, double freq, int burn_in) {

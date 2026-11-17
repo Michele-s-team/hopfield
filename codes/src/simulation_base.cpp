@@ -129,11 +129,11 @@ void SimulationBase::SavePatterns(const vector<int>& patterns, int P){
 }
 
 void SimulationBase::saveAndReport(int done, bool save, int save_stride,
-                                 int total_sweeps, int progress_stride, int burn_in) {
+                                 int total_sweeps, int progress_stride, int burn_in, bool talk) {
     if (save && done > burn_in && (done % save_stride == 0))
         SaveSpinConfigurations(done);
 
-    if (done % progress_stride == 0)
+    if (done % progress_stride == 0 && talk)
         cout << "\rSweep: " << done
              << " (" << done * 100 / total_sweeps << "%)    "
              << flush;

@@ -53,7 +53,7 @@ public:
     void SavePatterns(const vector<int>& patterns, int P);
 
     void saveAndReport(int done, bool save, int save_stride,
-                   int total_sweeps, int progress_stride, int burn_in = 0);
+                   int total_sweeps, int progress_stride, int burn_in = 0, bool talk= false);
     
     static string format_beta(double beta);
 
