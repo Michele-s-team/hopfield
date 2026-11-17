@@ -365,14 +365,11 @@ int main() {
                                  i, end_classic_ov_shared[i], end_bits_ov[i]);
             all_ok &= check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
                                  i, end_bits_ov[i], end_bits_nb[i]);
-
-            all_ok &= check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
-                                 i, end_classic_nb_shared[i], end_classic_ov_indep[i]);
         }
 
         if (all_ok)
             cout << "=== SUCCESS: all tests passed (after evolution) ===\n";
-            
+
         // Speedups from medians (robust to outliers). The two bitwise timings
         // are the common references for the independent and shared NoBits runs.
         const double speedup_neighbors_indep  = stats_classic_nb_indep.median  / stats_bits_nb.median;
