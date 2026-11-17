@@ -131,7 +131,7 @@ int main() {
                  << "  Step " << i+1 << "/" << temperatures.size() << endl;
 
             // ── Bits timing ──────────────────
-            bits.fromCanonical();
+            bits.toBitwise();
             clock_t t0_bits = clock();
             bits.runSweeps(ran, false, 0, 0);
             clock_t t1_bits = clock();

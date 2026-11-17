@@ -76,6 +76,6 @@ public:
 
     // Implémentation par défaut pour NoBits, peut être override par Bits
     virtual void GetMagnetizations(vector<double>& magnetizations);
-    virtual void GetSpinConfigurations(vector<vector<uint64_t>>& configs);
+    virtual void PackSpinConfigurations(vector<vector<uint64_t>>& configs);
 };
 #endif

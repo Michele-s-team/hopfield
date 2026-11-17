@@ -90,7 +90,7 @@ void SimulationBase::GetMagnetizations(vector<double>& magnetizations){
 }
 
 // Converts the +-1 spins into packed binary blocks, for each iteration
-void SimulationBase::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
+void SimulationBase::PackSpinConfigurations(vector<vector<uint64_t>>& configs){
     const int n_blocks = num_blocks(N);
     configs.assign(n_bits, vector<uint64_t>(n_blocks));
 
@@ -120,7 +120,7 @@ void SimulationBase::SaveMagnetizations(int sweep){
 
 void SimulationBase::SaveSpinConfigurations(int sweep){
     vector<vector<uint64_t>> configs;
-    GetSpinConfigurations(configs);
+    PackSpinConfigurations(configs);
     m_io.SaveSpinConfigurations(sweep, configs);
 }
 

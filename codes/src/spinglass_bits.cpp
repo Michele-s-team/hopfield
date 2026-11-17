@@ -20,7 +20,7 @@
 // =====================================================
 
 // canonical spins {-1,+1} -> bit representation {0,1}
-void SpinGlassBits::fromCanonical(){
+void SpinGlassBits::toBitwise(){
     Bits_Spins_Set.clear();
     Degrees.clear();
     Couplings.clear();
@@ -61,13 +61,18 @@ void SpinGlassBits::toCanonical(){
             spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
 
+vector<Bits> SpinGlassBits::getSpinsConfigBits() {
+    return Bits_Spins_Set;
+}
+
+
 // =====================================================
 // DIRECT BITWISE INITIALIZATION
 // =====================================================
 
 
 // Initialize spins directly in bit-sliced representation.
-// Replaces: initSpins() + fromCanonical() step 1.
+// Replaces: initSpins() + toBitwise() step 1.
 void SpinGlassBits::initSpinsBits(gsl_rng* ran) {
     int max_deg = *max_element(degrees.begin(), degrees.end());
 
@@ -149,7 +154,7 @@ void SpinGlassBits::GetMagnetizations(vector<double>& magnetizations){
 // Converts spin configurations (already in bits) into packed blocks for each realisation
 // Uses the same MSB-first convention as PackBlock (and SavePatterns), so that
 // spins and patterns are bit-comparable.
-void SpinGlassBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
+void SpinGlassBits::PackSpinConfigurations(vector<vector<uint64_t>>& configs){
     const int n_blocks = num_blocks(N);
     configs.assign(n_bits, vector<uint64_t>(n_blocks, 0));
 
@@ -229,14 +234,14 @@ void SpinGlassBits::runSweeps(gsl_rng* ran, bool save, double freq){
 
 // Run simulation without saving (thermalization)
 void SpinGlassBits::evolve(gsl_rng* ran){
-    fromCanonical();
+    toBitwise();
     runSweeps(ran, /*save=*/false, 0.0);
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
 void SpinGlassBits::evolve_save(gsl_rng* ran, double freq){
-    fromCanonical();
+    toBitwise();
     OpenSpinFiles();
     cout << "evolve_save called" <<endl;
     runSweeps(ran, /*save=*/true, freq);

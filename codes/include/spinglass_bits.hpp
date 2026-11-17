@@ -33,7 +33,7 @@ public:
     void evolve_save_bits(gsl_rng* ran, double freq);
     void evolve_bits(gsl_rng* ran);
     void GetMagnetizations(vector<double>& magnetizations) override;         // get the n_bits magnetizations using the Bits formalism
-    void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
+    void PackSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 
     void initSpinsBits(gsl_rng* ran);
     void initSpinsFromConfigBits(vector<Bits> Config);
@@ -44,7 +44,9 @@ public:
     vector<vector<Bits>> getCouplingsConfigBits();
 
     void toCanonical();                                            // convert Bits → ±1 spin representation
-    void fromCanonical();                                          // convert ±1 spins → Bits representation
+    void toBitwise();                                          // convert ±1 spins → Bits representation
+
+    vector<Bits> getSpinsConfigBits();
     void runSweeps(gsl_rng* ran, bool save, double freq);
 };
 

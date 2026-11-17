@@ -36,7 +36,7 @@ public:
     //void initRandomNumbersFromExp(const vector<vector<double>>& exp_base);    // initialize from external distribution
 
     void GetMagnetizations(vector<double>&) override;                           // get the n_bits magnetizations using the UnsignedInt formalism
-    void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
+    void PackSpinConfigurations(vector<vector<uint64_t>>& configs) override;     // get the n_bits configurations using the Bits formalism
 
     void initSpinsBits(gsl_rng* ran);
     void initPatternsBits(gsl_rng* ran);
@@ -47,6 +47,8 @@ public:
 
     void initSpinsFromConfigBits(const vector<Bits>& Config);
     void initPatternsFromConfigBits(const vector<Bits>& Config);
+
+    vector<Bits> getSpinsConfigBits();
     vector<Bits> getPatternsBits();
     vector<vector<UnsignedInt>> getCouplingsConfigBits();
     vector<int> getPatternsBitsToCanonical();
@@ -58,7 +60,7 @@ public:
 
     //void convertRandomNumbers();                                 // convert double RNG values → UnsignedInt bitwise format
     void toCanonical();                                            // convert Bits → ±1 spin representation
-    void fromCanonical();                                          // convert ±1 spins → Bits representation
+    void toBitwise();                                          // convert ±1 spins → Bits representation
 
     void patternsToCanonical();
 

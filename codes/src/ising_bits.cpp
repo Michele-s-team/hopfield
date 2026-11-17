@@ -21,7 +21,7 @@
 // =====================================================
 
 // canonical spins {-1,+1} -> bit representation {0,1}
-void IsingBits::fromCanonical(){
+void IsingBits::toBitwise(){
     Bits_Spins_Set.clear();
     Degrees.clear();
 
@@ -54,7 +54,7 @@ void IsingBits::toCanonical(){
 
 
 // Initialize spins directly in bit-sliced representation.
-// Replaces: initSpins() + fromCanonical() step 1.
+// Replaces: initSpins() + toBitwise() step 1.
 void IsingBits::initSpinsBits(gsl_rng* ran) {
     int max_deg = *max_element(degrees.begin(), degrees.end());
 
@@ -99,7 +99,7 @@ void IsingBits::GetMagnetizations(vector<double>& magnetizations){
 // Converts spin configurations (already in bits) into packed blocks for each realisation
 // Uses the same MSB-first convention as PackBlock (and SavePatterns), so that
 // spins and patterns are bit-comparable.
-void IsingBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs){
+void IsingBits::PackSpinConfigurations(vector<vector<uint64_t>>& configs){
     const int n_blocks = num_blocks(N);
     configs.assign(n_bits, vector<uint64_t>(n_blocks, 0));
 
@@ -174,14 +174,14 @@ void IsingBits::runSweeps(gsl_rng* ran, bool save, double freq, int shift=0){
 
 // Run simulation without saving (thermalization)
 void IsingBits::evolve(gsl_rng* ran){
-    fromCanonical();
+    toBitwise();
     runSweeps(ran, /*save=*/false, 0.0);
     toCanonical();
 }
 
 // Run simulation and save magnetizations at the given frequency
 void IsingBits::evolve_save(gsl_rng* ran, double freq){
-    fromCanonical();
+    toBitwise();
     OpenSpinFiles();  // Use base class method
     runSweeps(ran, /*save=*/true, freq);
     CloseSpinFiles();       // Use base class method

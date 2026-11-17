@@ -27,7 +27,7 @@ using namespace std;
 // Convert the canonical (scalar) representation of the model
 // (spins_set, patterns, couplings) into the bit-sliced representation
 // used by the bitwise Metropolis routines below.
-void HopfieldBits::fromCanonical() {
+void HopfieldBits::toBitwise() {
     // =====================================================
     // 1. Convert spins
     // =====================================================
@@ -93,13 +93,6 @@ void HopfieldBits::fromCanonical() {
     */
 }
 
-// Bit representation {0,1} -> canonical spins {-1,+1}.
-void HopfieldBits::toCanonical() {
-    for (int r = 0; r < n_bits; ++r)
-        for (int spin = 0; spin < N; ++spin)
-            spins_set[r * N + spin] = -1 + 2 * Bits_Spins_Set[spin].Get(r);
-}
-
 // Sets the element patterns[spin * P * n_bits + mu * n_bits + r] to {-1,+1}
 void HopfieldBits::patternsToCanonical() {
     for (int spin = 0; spin < N; ++spin)
@@ -108,12 +101,18 @@ void HopfieldBits::patternsToCanonical() {
                 patterns[spin * P * n_bits + mu * n_bits + r] =
                     -1 + 2 * Patterns[spin * P + mu].Get(r);
 }
+
+vector<Bits> HopfieldBits::getSpinsConfigBits() {
+    return Bits_Spins_Set;
+}
+
+  
 // =====================================================
 // DIRECT BITWISE INITIALIZATION
 // =====================================================
 
 // Initialize spins directly in bit-sliced representation.
-// Replaces: initSpins() + fromCanonical() step 1.
+// Replaces: initSpins() + toBitwise() step 1.
 void HopfieldBits::initSpinsBits(gsl_rng* ran) {
     Bits_Spins_Set.clear();
     Bits_Spins_Set.resize(N);
@@ -150,7 +149,7 @@ void HopfieldBits::initSpinMetadataBits() {
 }
 
 // Initialize Patterns directly in bit-sliced representation.
-// Replaces: initPatterns() + fromCanonical() step 2.
+// Replaces: initPatterns() + toBitwise() step 2.
 // Patterns[spin*P+mu] is a Bits word: bit r = (xi_spin^mu_r + 1) / 2 in {0,1}.
 void HopfieldBits::initPatternsBits(gsl_rng* ran) {
     Patterns.clear();
@@ -197,7 +196,7 @@ vector<Bits> HopfieldBits::corruptPattern(const vector<Bits>& Patterns,
 // Initialize Couplings directly in bit-sliced representation via Hebb rule,
 // without ever building the scalar couplings[][][] tensor.
 // g_ij^r = P + sum_mu xi_i^mu_r * xi_j^mu_r  in [0, 2P]
-// Replaces: initCouplings() + fromCanonical() step 3.
+// Replaces: initCouplings() + toBitwise() step 3.
 // Only neighbor pairs (as given by neighbors[]) are computed; each pair
 // is computed once (for spin < j) and mirrored onto the symmetric entry.
 void HopfieldBits::initCouplingsBits() {
@@ -310,7 +309,7 @@ void HopfieldBits::GetMagnetizations(vector<double>& magnetizations) {
 // Convert spin configurations (already in bits) into packed blocks for
 // each realization. Uses the same MSB-first convention as PackBlock (and
 // SavePatterns), so that spins and patterns are bit-comparable.
-void HopfieldBits::GetSpinConfigurations(vector<vector<uint64_t>>& configs) {
+void HopfieldBits::PackSpinConfigurations(vector<vector<uint64_t>>& configs) {
     const int n_blocks = num_blocks(N);
     configs.assign(n_bits, vector<uint64_t>(n_blocks, 0));
 

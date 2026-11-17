@@ -27,13 +27,16 @@ public:
     virtual ~IsingBits() = default;
     
     void GetMagnetizations(std::vector<double>& magnetizations) override;    // get the n_bits magnetizations using the Bits formalism
-    void GetSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
+    void PackSpinConfigurations(vector<vector<uint64_t>>& configs) override;  // get the n_bits configurations using the Bits formalism
 
     void initSpinsBits(gsl_rng* ran);
     void initSpinsFromConfigBits(vector<Bits> Config);
 
-    void fromCanonical();
+    void toBitwise();
     void toCanonical();
+
+    vector<Bits> getSpinsConfigBits();
+    
     void runSweeps(gsl_rng* ran, bool save, double freq, int shift);
 
     void evolve(gsl_rng* ran);
