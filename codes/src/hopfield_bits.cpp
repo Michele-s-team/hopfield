@@ -93,6 +93,13 @@ void HopfieldBits::toBitwise() {
     */
 }
 
+// bit representation {0,1} -> canonical spins {-1,+1}
+void HopfieldBits::toCanonical(){
+    for (int r = 0; r < n_bits; ++r)
+        for (int i = 0; i < N; ++i)
+            spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
+}
+
 // Sets the element patterns[spin * P * n_bits + mu * n_bits + r] to {-1,+1}
 void HopfieldBits::patternsToCanonical() {
     for (int spin = 0; spin < N; ++spin)
