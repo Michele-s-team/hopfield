@@ -271,6 +271,40 @@ int main() {
             end_bo_cfg[i] = bits_ov.getSpinsConfig();
         };
 
+                // ── Consistency checks (outside every timed region) ──────────────────
+        const int prefix_width = 14;
+        const int col_width    = 2;
+
+        // The helper compares its second and third configurations.
+        // The first argument is the reference initial configuration.
+        auto check_pair = [&](const char* stage, const char* label, int rep,
+                              const CfgT& ref, const CfgT& a, const CfgT& b) {
+            #pragma omp critical(print_check)
+            {
+                cout << "[check] run " << job.run << " rep " << rep
+                     << " | " << stage << " | " << label << "\n";
+                IO.check_equality_configs(ref, a, b, N, prefix_width, col_width);
+            }
+        };
+
+
+        for (int i = 0; i < n_rep; ++i) {
+            // BEFORE evolution: five comparisons are sufficient to verify
+            // that all six model instances start from the same configuration.
+            check_pair("before", "NoBits indep neighbors vs indep overlaps",
+                       i, init_cfg[i], start_cn_i[i], start_co_i[i]);
+            check_pair("before", "NoBits independent neighbors vs shared neighbors",
+                       i, init_cfg[i], start_cn_i[i], start_cn_s[i]);
+            check_pair("before", "NoBits shared neighbors vs shared overlaps",
+                       i, init_cfg[i], start_cn_s[i], start_co_s[i]);
+            check_pair("before", "NoBits shared overlaps vs Bits overlaps",
+                       i, init_cfg[i], start_co_s[i], start_bo_cfg[i]);
+            check_pair("before", "Bits overlaps vs Bits neighbors",
+                       i, init_cfg[i], start_bo_cfg[i], start_bn_cfg[i]);
+            // These five comparisons form a spanning tree over the six
+            // model instances, so no redundant pairwise checks are needed.
+        }
+
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
         // ── 6 measurements, run in series, each repeated n_rep times ─────────
@@ -294,38 +328,7 @@ int main() {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }, post_ov));
 
-        // ── Consistency checks (outside every timed region) ──────────────────
-        const int prefix_width = 14;
-        const int col_width    = 2;
-
-        // The helper compares its second and third configurations.
-        // The first argument is the reference initial configuration.
-        auto check_pair = [&](const char* stage, const char* label, int rep,
-                              const CfgT& ref, const CfgT& a, const CfgT& b) {
-            #pragma omp critical(print_check)
-            {
-                cout << "[check] run " << job.run << " rep " << rep
-                     << " | " << stage << " | " << label << "\n";
-                IO.check_equality_configs(ref, a, b, N, prefix_width, col_width);
-            }
-        };
-
         for (int i = 0; i < n_rep; ++i) {
-            // BEFORE evolution: five comparisons are sufficient to verify
-            // that all six model instances start from the same configuration.
-            check_pair("before", "NoBits indep neighbors vs indep overlaps",
-                       i, init_cfg[i], start_cn_i[i], start_co_i[i]);
-            check_pair("before", "NoBits independent neighbors vs shared neighbors",
-                       i, init_cfg[i], start_cn_i[i], start_cn_s[i]);
-            check_pair("before", "NoBits shared neighbors vs shared overlaps",
-                       i, init_cfg[i], start_cn_s[i], start_co_s[i]);
-            check_pair("before", "NoBits shared overlaps vs Bits overlaps",
-                       i, init_cfg[i], start_co_s[i], start_bo_cfg[i]);
-            check_pair("before", "Bits overlaps vs Bits neighbors",
-                       i, init_cfg[i], start_bo_cfg[i], start_bn_cfg[i]);
-            // These five comparisons form a spanning tree over the six
-            // model instances, so no redundant pairwise checks are needed.
-
             // AFTER evolution:
             // 1 comparison for the two independent NoBits methods;
             // 3 comparisons connect the four SharedRNG methods.
