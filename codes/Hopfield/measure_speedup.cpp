@@ -34,6 +34,10 @@ static inline unsigned long seed_graph(int run) { return 1000 + run; }
 static inline unsigned long seed_init (int run) { return  123 + run; }
 static inline unsigned long seed_evol (int run) { return   42 + run; }
 
+// Per-repetition offsets (rep 0 keeps the original seeds)
+static inline unsigned long seed_init_rep(int run, int rep) { return seed_init(run) + 1000003UL * rep; }
+static inline unsigned long seed_evol_rep(int run, int rep) { return seed_evol(run) +    7919UL * rep; }
+
 // Copy the graph (neighbors, non_neighbors, degrees) from src to dst
 template <class Src, class Dst>
 void copy_graph(const Src& src, Dst& dst) {
@@ -52,16 +56,19 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
     return chrono::duration<double>(t1 - t0).count();
 }
 
-// Repeat a measurement n times. `reset` restores the same initial state before
-// each repetition (it is NOT timed); `fn` is the timed work (setup + sweeps).
-// Same seed every time => identical trajectory, so the spread is pure timing noise.
-template <class Reset, class F>
-vector<double> repeat_timed(int n, gsl_rng* ran, unsigned long seed, Reset&& reset, F&& fn) {
+// Repeat a measurement n times. For repetition i:
+//   - reset(i) restores the initial state number i (NOT timed),
+//   - seed_of(i) gives the evolution seed of repetition i,
+//   - fn is the timed work (setup + sweeps).
+// Each repetition has its own init and seed, but the same (i) is used for
+// all 4 methods of a job, so the comparison stays paired.
+template <class Reset, class SeedOf, class F>
+vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of, Reset&& reset, F&& fn) {
     vector<double> t;
     t.reserve(n);
     for (int i = 0; i < n; ++i) {
-        reset();
-        t.push_back(timed_run(ran, seed, fn));
+        reset(i);
+        t.push_back(timed_run(ran, seed_of(i), fn));
     }
     return t;
 }
@@ -161,39 +168,52 @@ int main() {
 
         const int k_eff = bits_nb.getDegrees()[0];
 
-        // ── Spins and patterns: drawn once on bits_nb ────────────────────────
-        gsl_rng_set(ran, seed_init(job.run));
+        // ── Patterns: drawn once (same disorder for all reps) ────────────────
+        // Rep 0 uses the original sequence (spins, canonical, patterns).
+        gsl_rng_set(ran, seed_init_rep(job.run, 0));
         bits_nb.initSpinsBits(ran);
         bits_nb.toCanonical();
         bits_nb.initPatternsBits(ran);
 
-        auto initial_config      = bits_nb.getSpinsConfig();
-        auto initial_config_bits = bits_nb.getSpinsConfigBits();
-        auto patterns            = bits_nb.getPatternsBitsToCanonical();
-        auto patterns_bits       = bits_nb.getPatternsBits();
+        auto patterns      = bits_nb.getPatternsBitsToCanonical();
+        auto patterns_bits = bits_nb.getPatternsBits();
 
-        bits_ov.initSpinsFromConfigBits(initial_config_bits);
         bits_ov.initPatternsFromConfigBits(patterns_bits);
         classic.initPatternsFromConfig(patterns);
 
-        // Reset helpers: same initial spins before every repetition
-        auto reset_classic = [&] { classic.initSpinsFromConfig(initial_config); };
-        auto reset_nb      = [&] { bits_nb.initSpinsFromConfigBits(initial_config_bits); };
-        auto reset_ov      = [&] { bits_ov.initSpinsFromConfigBits(initial_config_bits); };
+        // ── One initial spin state per repetition ────────────────────────────
+        // Drawn on bits_nb, stored in both representations. Not timed.
+        vector<decltype(bits_nb.getSpinsConfig())>     init_cfg(n_rep);
+        vector<decltype(bits_nb.getSpinsConfigBits())> init_bits(n_rep);
 
-        const unsigned long seed = seed_evol(job.run);
+        init_cfg[0]  = bits_nb.getSpinsConfig();
+        init_bits[0] = bits_nb.getSpinsConfigBits();
+        for (int i = 1; i < n_rep; ++i) {
+            gsl_rng_set(ran, seed_init_rep(job.run, i));
+            bits_nb.initSpinsBits(ran);
+            bits_nb.toCanonical();
+            init_cfg[i]  = bits_nb.getSpinsConfig();
+            init_bits[i] = bits_nb.getSpinsConfigBits();
+        }
+
+        // Reset helpers: initial state of repetition i (same i for all methods)
+        auto reset_classic = [&](int i) { classic.initSpinsFromConfig(init_cfg[i]); };
+        auto reset_nb      = [&](int i) { bits_nb.initSpinsFromConfigBits(init_bits[i]); };
+        auto reset_ov      = [&](int i) { bits_ov.initSpinsFromConfigBits(init_bits[i]); };
+
+        auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
         // ── 4 measurements, run in series, each repeated n_rep times ─────────
-        const Stats s_cn = compute_stats(repeat_timed(n_rep, ran, seed, reset_classic, [&] {
+        const Stats s_cn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic, [&] {
             classic.runSweepsIndependentRNG_neighbors(ran, save, freq);
         }));
-        const Stats s_co = compute_stats(repeat_timed(n_rep, ran, seed, reset_classic, [&] {
+        const Stats s_co = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic, [&] {
             classic.runSweepsIndependentRNG_overlaps(ran, save, freq);
         }));
-        const Stats s_bn = compute_stats(repeat_timed(n_rep, ran, seed, reset_nb, [&] {
+        const Stats s_bn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_nb, [&] {
             bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
         }));
-        const Stats s_bo = compute_stats(repeat_timed(n_rep, ran, seed, reset_ov, [&] {
+        const Stats s_bo = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }));
 
