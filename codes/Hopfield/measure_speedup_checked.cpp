@@ -97,8 +97,7 @@ void write_stats(ostream& o, const Stats& s) {
 
 int main() {
     // ── Scanned parameters ────────────────────────────────────────────────────
-    vector<int>    sizes        = {16//, 32, 64
-        };                                        // 3
+    vector<int>    sizes        = {16, 32, 64};                                        // 3
     vector<double> alpha_vals   = {0.02, 0.05, 0.1, 0.2, 0.3};                         // 5
     vector<double> temperatures = {0.2, 0.5, 1.0, 2.0, 5.0};                           // 5
     vector<double> rho_vals     = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};  // 10
@@ -168,10 +167,10 @@ int main() {
 
         BitsNeighbors  bits_nb(N, beta, N_sweeps, P);
         BitsOverlaps   bits_ov(N, beta, N_sweeps, P);
-        HopfieldNoBits classic_cn_i(N, beta, N_sweeps, P);
-        HopfieldNoBits classic_co_i(N, beta, N_sweeps, P);
-        HopfieldNoBits classic_cn_s(N, beta, N_sweeps, P);
-        HopfieldNoBits classic_co_s(N, beta, N_sweeps, P);
+        HopfieldNoBits classic_nb_indep (N, beta, N_sweeps, P);
+        HopfieldNoBits classic_ov_indep (N, beta, N_sweeps, P);
+        HopfieldNoBits classic_nb_shared(N, beta, N_sweeps, P);
+        HopfieldNoBits classic_ov_shared(N, beta, N_sweeps, P);
 
         // Config types (decayed, in case the getters return references)
         using CfgT     = decay_t<decltype(bits_nb.getSpinsConfig())>;
@@ -185,10 +184,10 @@ int main() {
         gsl_rng_set(ran, seed_graph(job.run));
         bits_nb.initNetwork_RegularRandom(rho, ran);
         copy_graph(bits_nb, bits_ov);
-        copy_graph(bits_nb, classic_cn_i);
-        copy_graph(bits_nb, classic_co_i);
-        copy_graph(bits_nb, classic_cn_s);
-        copy_graph(bits_nb, classic_co_s);
+        copy_graph(bits_nb, classic_nb_indep);
+        copy_graph(bits_nb, classic_ov_indep);
+        copy_graph(bits_nb, classic_nb_shared);
+        copy_graph(bits_nb, classic_ov_shared);
 
         const int k_eff = bits_nb.getDegrees()[0];
 
@@ -203,10 +202,10 @@ int main() {
         auto patterns_bits = bits_nb.getPatternsBits();
 
         bits_ov.initPatternsFromConfigBits(patterns_bits);
-        classic_cn_i.initPatternsFromConfig(patterns);
-        classic_co_i.initPatternsFromConfig(patterns);
-        classic_cn_s.initPatternsFromConfig(patterns);
-        classic_co_s.initPatternsFromConfig(patterns);
+        classic_nb_indep.initPatternsFromConfig(patterns);
+        classic_ov_indep.initPatternsFromConfig(patterns);
+        classic_nb_shared.initPatternsFromConfig(patterns);
+        classic_ov_shared.initPatternsFromConfig(patterns);
 
         // ── One initial spin state per repetition ────────────────────────────
         // Drawn on bits_nb, stored in both representations. Not timed.
@@ -225,68 +224,71 @@ int main() {
 
         // ── Snapshots for the consistency checks (all untimed) ───────────────
         // Each benchmark has its own model instance.
-        vector<CfgT> start_cn_i(n_rep), start_co_i(n_rep), end_cn_i(n_rep), end_co_i(n_rep);
-        vector<CfgT> start_cn_s(n_rep), start_co_s(n_rep), end_cn_s(n_rep), end_co_s(n_rep);
-        vector<CfgT> start_bn_cfg(n_rep), start_bo_cfg(n_rep), end_bn_cfg(n_rep), end_bo_cfg(n_rep);
+        vector<CfgT> start_classic_nb_indep(n_rep), start_classic_ov_indep(n_rep),
+                     end_classic_nb_indep(n_rep),   end_classic_ov_indep(n_rep);
+        vector<CfgT> start_classic_nb_shared(n_rep), start_classic_ov_shared(n_rep),
+                     end_classic_nb_shared(n_rep),   end_classic_ov_shared(n_rep);
+        vector<CfgT> start_bits_nb(n_rep), start_bits_ov(n_rep),
+                     end_bits_nb(n_rep),   end_bits_ov(n_rep);
 
         // Reset helpers: restore the same initial state for repetition i.
-        auto reset_cn_i = [&](int i) {
-            classic_cn_i.initSpinsFromConfig(init_cfg[i]);
-            start_cn_i[i] = classic_cn_i.getSpinsConfig();
+        auto reset_classic_nb_indep = [&](int i) {
+            classic_nb_indep.initSpinsFromConfig(init_cfg[i]);
+            start_classic_nb_indep[i] = classic_nb_indep.getSpinsConfig();
         };
-        auto reset_co_i = [&](int i) {
-            classic_co_i.initSpinsFromConfig(init_cfg[i]);
-            start_co_i[i] = classic_co_i.getSpinsConfig();
+        auto reset_classic_ov_indep = [&](int i) {
+            classic_ov_indep.initSpinsFromConfig(init_cfg[i]);
+            start_classic_ov_indep[i] = classic_ov_indep.getSpinsConfig();
         };
-        auto reset_cn_s = [&](int i) {
-            classic_cn_s.initSpinsFromConfig(init_cfg[i]);
-            start_cn_s[i] = classic_cn_s.getSpinsConfig();
+        auto reset_classic_nb_shared = [&](int i) {
+            classic_nb_shared.initSpinsFromConfig(init_cfg[i]);
+            start_classic_nb_shared[i] = classic_nb_shared.getSpinsConfig();
         };
-        auto reset_co_s = [&](int i) {
-            classic_co_s.initSpinsFromConfig(init_cfg[i]);
-            start_co_s[i] = classic_co_s.getSpinsConfig();
+        auto reset_classic_ov_shared = [&](int i) {
+            classic_ov_shared.initSpinsFromConfig(init_cfg[i]);
+            start_classic_ov_shared[i] = classic_ov_shared.getSpinsConfig();
         };
-        auto reset_nb = [&](int i) {
+        auto reset_bits_nb = [&](int i) {
             bits_nb.initSpinsFromConfigBits(init_bits[i]);
             bits_nb.toCanonical();
-            start_bn_cfg[i] = bits_nb.getSpinsConfig();
+            start_bits_nb[i] = bits_nb.getSpinsConfig();
         };
-        auto reset_ov = [&](int i) {
+        auto reset_bits_ov = [&](int i) {
             bits_ov.initSpinsFromConfigBits(init_bits[i]);
             bits_ov.toCanonical();
-            start_bo_cfg[i] = bits_ov.getSpinsConfig();
+            start_bits_ov[i] = bits_ov.getSpinsConfig();
         };
 
         // Convert bitwise states to canonical form before reading snapshots.
-        auto post_cn_i = [&](int i) { end_cn_i[i] = classic_cn_i.getSpinsConfig(); };
-        auto post_co_i = [&](int i) { end_co_i[i] = classic_co_i.getSpinsConfig(); };
-        auto post_cn_s = [&](int i) { end_cn_s[i] = classic_cn_s.getSpinsConfig(); };
-        auto post_co_s = [&](int i) { end_co_s[i] = classic_co_s.getSpinsConfig(); };
-        auto post_nb = [&](int i) {
+        auto post_classic_nb_indep  = [&](int i) { end_classic_nb_indep[i]  = classic_nb_indep.getSpinsConfig(); };
+        auto post_classic_ov_indep  = [&](int i) { end_classic_ov_indep[i]  = classic_ov_indep.getSpinsConfig(); };
+        auto post_classic_nb_shared = [&](int i) { end_classic_nb_shared[i] = classic_nb_shared.getSpinsConfig(); };
+        auto post_classic_ov_shared = [&](int i) { end_classic_ov_shared[i] = classic_ov_shared.getSpinsConfig(); };
+        auto post_bits_nb = [&](int i) {
             bits_nb.toCanonical();
-            end_bn_cfg[i] = bits_nb.getSpinsConfig();
+            end_bits_nb[i] = bits_nb.getSpinsConfig();
         };
-        auto post_ov = [&](int i) {
+        auto post_bits_ov = [&](int i) {
             bits_ov.toCanonical();
-            end_bo_cfg[i] = bits_ov.getSpinsConfig();
+            end_bits_ov[i] = bits_ov.getSpinsConfig();
         };
 
-                // ── Consistency checks (outside every timed region) ──────────────────
+        // ── Consistency checks (outside every timed region) ──────────────────
         const int prefix_width = 14;
         const int col_width    = 2;
 
         // The helper compares its second and third configurations.
         // The first argument is the reference initial configuration.
         auto check_pair = [&](const char* stage, const char* label, int rep,
-                            const CfgT& a, const CfgT& b) -> bool {
+                              const CfgT& a, const CfgT& b) -> bool {
             const bool ok = IO.check_equality_configs(a, b, N);
             if (!ok) {
                 #pragma omp critical(print_check)
                 {
                     cout << "[FAILED] run " << job.run
-                        << " rep " << rep
-                        << " | " << stage
-                        << " | " << label << "\n";
+                         << " rep " << rep
+                         << " | " << stage
+                         << " | " << label << "\n";
                 }
             }
             return ok;
@@ -296,97 +298,102 @@ int main() {
 
         for (int i = 0; i < n_rep; ++i) {
             // Initialize all six models and record their initial configurations.
-            reset_cn_i(i);
-            reset_co_i(i);
-            reset_cn_s(i);
-            reset_co_s(i);
-            reset_nb(i);
-            reset_ov(i);
+            reset_classic_nb_indep(i);
+            reset_classic_ov_indep(i);
+            reset_classic_nb_shared(i);
+            reset_classic_ov_shared(i);
+            reset_bits_nb(i);
+            reset_bits_ov(i);
 
             // BEFORE evolution: five comparisons are sufficient to verify
             // that all six model instances start from the same configuration.
             all_ok &= check_pair("before", "NoBits indep neighbors vs indep overlaps",
-                                i, start_cn_i[i], start_co_i[i]);
+                                 i, start_classic_nb_indep[i], start_classic_ov_indep[i]);
 
             all_ok &= check_pair("before", "NoBits independent neighbors vs shared neighbors",
-                                i, start_cn_i[i], start_cn_s[i]);
+                                 i, start_classic_nb_indep[i], start_classic_nb_shared[i]);
 
             all_ok &= check_pair("before", "NoBits shared neighbors vs shared overlaps",
-                                i, start_cn_s[i], start_co_s[i]);
+                                 i, start_classic_nb_shared[i], start_classic_ov_shared[i]);
 
             all_ok &= check_pair("before", "NoBits shared overlaps vs Bits overlaps",
-                                i, start_co_s[i], start_bo_cfg[i]);
+                                 i, start_classic_ov_shared[i], start_bits_ov[i]);
 
             all_ok &= check_pair("before", "Bits overlaps vs Bits neighbors",
-                                i, start_bo_cfg[i], start_bn_cfg[i]);
+                                 i, start_bits_ov[i], start_bits_nb[i]);
         }
 
         if (all_ok)
-            std::cout << "=== SUCCESS: all tests passed ===\n";
+            std::cout << "=== SUCCESS: all tests passed (before evolution) ===\n";
+        else
+            std::cout << "=== FAILURE: at least one test failed (before evolution) ===\n";
+
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
         // ── 6 measurements, run in series, each repeated n_rep times ─────────
         // NoBits: IndependentRNG, then SharedRNG; Bits: neighbors and overlaps.
-        const Stats s_cn_i = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_cn_i, [&] {
-            classic_cn_i.runSweepsIndependentRNG_neighbors(ran, save, freq);
-        }, post_cn_i));
-        const Stats s_co_i = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_co_i, [&] {
-            classic_co_i.runSweepsIndependentRNG_overlaps(ran, save, freq);
-        }, post_co_i));
-        const Stats s_cn_s = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_cn_s, [&] {
-            classic_cn_s.runSweepsSharedRNG_neighbors(ran, save, freq);
-        }, post_cn_s));
-        const Stats s_co_s = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_co_s, [&] {
-            classic_co_s.runSweepsSharedRNG_overlaps(ran, save, freq);
-        }, post_co_s));
-        const Stats s_bn = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_nb, [&] {
+        const Stats stats_classic_nb_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_indep, [&] {
+            classic_nb_indep.runSweepsIndependentRNG_neighbors(ran, save, freq);
+        }, post_classic_nb_indep));
+        const Stats stats_classic_ov_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_indep, [&] {
+            classic_ov_indep.runSweepsIndependentRNG_overlaps(ran, save, freq);
+        }, post_classic_ov_indep));
+        const Stats stats_classic_nb_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_shared, [&] {
+            classic_nb_shared.runSweepsSharedRNG_neighbors(ran, save, freq);
+        }, post_classic_nb_shared));
+        const Stats stats_classic_ov_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_shared, [&] {
+            classic_ov_shared.runSweepsSharedRNG_overlaps(ran, save, freq);
+        }, post_classic_ov_shared));
+        const Stats stats_bits_nb = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_nb, [&] {
             bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
-        }, post_nb));
-        const Stats s_bo = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_ov, [&] {
+        }, post_bits_nb));
+        const Stats stats_bits_ov = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
-        }, post_ov));
+        }, post_bits_ov));
 
 
         all_ok = true;
         for (int i = 0; i < n_rep; ++i) {
             all_ok &= check_pair("after", "NoBits independent: neighbors vs overlaps",
-                                i, end_cn_i[i], end_co_i[i]);
-
+                                 i, end_classic_nb_indep[i], end_classic_ov_indep[i]);
             all_ok &= check_pair("after", "Shared group: NoBits neighbors vs NoBits overlaps",
-                                i, end_cn_s[i], end_co_s[i]);
-
+                                 i, end_classic_nb_shared[i], end_classic_ov_shared[i]);
             all_ok &= check_pair("after", "Shared group: NoBits overlaps vs Bits overlaps",
-                                i, end_co_s[i], end_bo_cfg[i]);
+                                 i, end_classic_ov_shared[i], end_bits_ov[i]);
+            all_ok &= check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
+                                 i, end_bits_ov[i], end_bits_nb[i]);
 
             all_ok &= check_pair("after", "Shared group: Bits overlaps vs Bits neighbors",
-                                i, end_bo_cfg[i], end_bn_cfg[i]);
+                                 i, end_classic_nb_shared[i], end_classic_ov_indep[i]);
         }
 
         if (all_ok)
-            std::cout << "=== SUCCESS: all tests passed ===\n";
+            std::cout << "=== SUCCESS: all tests passed (after evolution) ===\n";
+        else
+            std::cout << "=== FAILURE: at least one test failed (after evolution) ===\n";
 
         // Speedups from medians (robust to outliers). The two bitwise timings
         // are the common references for the independent and shared NoBits runs.
-        const double speedup_neighbors_indep = s_cn_i.median / s_bn.median;
-        const double speedup_overlaps_indep  = s_co_i.median / s_bo.median;
-        const double speedup_neighbors_shared = s_cn_s.median / s_bn.median;
-        const double speedup_overlaps_shared  = s_co_s.median / s_bo.median;
+        const double speedup_neighbors_indep  = stats_classic_nb_indep.median  / stats_bits_nb.median;
+        const double speedup_overlaps_indep   = stats_classic_ov_indep.median  / stats_bits_ov.median;
+        const double speedup_neighbors_shared = stats_classic_nb_shared.median / stats_bits_nb.median;
+        const double speedup_overlaps_shared  = stats_classic_ov_shared.median / stats_bits_ov.median;
 
         // Exactly two final ratios: S_ov / S_nb, one for each NoBits RNG mode.
-        const double speedup_ratio_indep = speedup_overlaps_indep / speedup_neighbors_indep;
+        const double speedup_ratio_indep  = speedup_overlaps_indep  / speedup_neighbors_indep;
         const double speedup_ratio_shared = speedup_overlaps_shared / speedup_neighbors_shared;
 
         #pragma omp critical(write_csv)
         {
             out << N << "," << rho << "," << job.alpha << "," << P << "," << beta << ","
                 << k_eff << "," << N_sweeps << "," << n_rep << ",";
-            write_stats(out, s_cn_i); out << ",";
-            write_stats(out, s_co_i); out << ",";
-            write_stats(out, s_cn_s); out << ",";
-            write_stats(out, s_co_s); out << ",";
-            write_stats(out, s_bn); out << ",";
-            write_stats(out, s_bo); out << ",";
+            write_stats(out, stats_classic_nb_indep);  out << ",";
+            write_stats(out, stats_classic_ov_indep);  out << ",";
+            write_stats(out, stats_classic_nb_shared); out << ",";
+            write_stats(out, stats_classic_ov_shared); out << ",";
+            write_stats(out, stats_bits_nb);           out << ",";
+            write_stats(out, stats_bits_ov);           out << ",";
             out << speedup_neighbors_indep << "," << speedup_overlaps_indep << ","
                 << speedup_neighbors_shared << "," << speedup_overlaps_shared << ","
                 << speedup_ratio_indep << "," << speedup_ratio_shared << "\n";
@@ -395,9 +402,12 @@ int main() {
             cout << "Run " << job.run << "/" << nb_runs
                  << " (alpha=" << job.alpha << ", N=" << N << ", P=" << P
                  << ", k=" << k_eff << ", beta=" << beta << ", rho=" << rho << ")"
-                 << " median: NoBits_indep[nb=" << s_cn_i.median << "s, ov=" << s_co_i.median << "s]"
-                 << " NoBits_shared[nb=" << s_cn_s.median << "s, ov=" << s_co_s.median << "s]"
-                 << " Bits[nb=" << s_bn.median << "s, ov=" << s_bo.median << "s]"
+                 << " median: NoBits_indep[nb=" << stats_classic_nb_indep.median
+                 << "s, ov=" << stats_classic_ov_indep.median << "s]"
+                 << " NoBits_shared[nb=" << stats_classic_nb_shared.median
+                 << "s, ov=" << stats_classic_ov_shared.median << "s]"
+                 << " Bits[nb=" << stats_bits_nb.median
+                 << "s, ov=" << stats_bits_ov.median << "s]"
                  << " | ratios: indep=" << speedup_ratio_indep
                  << ", shared=" << speedup_ratio_shared << "\n";
         }
