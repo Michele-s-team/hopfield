@@ -54,12 +54,12 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
 
 int main() {
     // ── Scanned parameters ────────────────────────────────────────────────────
-    vector<int>    sizes        = {16};//, 32, 64};                                        // 3
+    vector<int>    sizes        = {16, 32, 64};                                        // 3
     vector<double> alpha_vals   = {0.02, 0.05, 0.1, 0.2, 0.3};                         // 5
     vector<double> temperatures = {0.2, 0.5, 1.0, 2.0, 5.0};                           // 5
-    vector<double> rho_vals     = {0.1 /*, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0*/ };  // 1 (10 when fully enabled)
+    vector<double> rho_vals     = {0.1 , 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}; // 10
 
-    // Number of jobs = 3 * 5 * 5 * 1 = 75 (750 with the full rho grid)
+    // Number of jobs = 3 * 5 * 5 * 10 = 750 
 
     const int N_sweeps = 1 << 13;
     const string out_path = "../../results/Hopfield/timing_comparison.csv";
