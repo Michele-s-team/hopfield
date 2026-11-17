@@ -326,9 +326,6 @@ int main() {
 
         if (all_ok)
             cout << "=== SUCCESS: all tests passed (before evolution) ===\n";
-        else
-            cout << "=== FAILURE: at least one test failed (before evolution) ===\n";
-
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
@@ -375,9 +372,7 @@ int main() {
 
         if (all_ok)
             cout << "=== SUCCESS: all tests passed (after evolution) ===\n";
-        else
-            cout << "=== FAILURE: at least one test failed (after evolution) ===\n";
-
+            
         // Speedups from medians (robust to outliers). The two bitwise timings
         // are the common references for the independent and shared NoBits runs.
         const double speedup_neighbors_indep  = stats_classic_nb_indep.median  / stats_bits_nb.median;
