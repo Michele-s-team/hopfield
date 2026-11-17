@@ -396,7 +396,7 @@ int main() {
                 << speedup_ratio_indep << "," << speedup_ratio_shared << "\n";
             out.flush();
 
-            cout << "Run " << job.run << "/" << nb_runs
+            cout << "\nRun " << job.run << "/" << nb_runs
                  << " (alpha=" << job.alpha << ", N=" << N << ", P=" << P
                  << ", k=" << k_eff << ", beta=" << beta << ", rho=" << rho << ")"
                  << " median: NoBits_indep[nb=" << stats_classic_nb_indep.median
