@@ -289,21 +289,27 @@ int main() {
 
 
         for (int i = 0; i < n_rep; ++i) {
-            // BEFORE evolution: five comparisons are sufficient to verify
-            // that all six model instances start from the same configuration.
-            check_pair("before", "NoBits indep neighbors vs indep overlaps",
-                       i, init_cfg[i], start_cn_i[i], start_co_i[i]);
-            check_pair("before", "NoBits independent neighbors vs shared neighbors",
-                       i, init_cfg[i], start_cn_i[i], start_cn_s[i]);
-            check_pair("before", "NoBits shared neighbors vs shared overlaps",
-                       i, init_cfg[i], start_cn_s[i], start_co_s[i]);
-            check_pair("before", "NoBits shared overlaps vs Bits overlaps",
-                       i, init_cfg[i], start_co_s[i], start_bo_cfg[i]);
-            check_pair("before", "Bits overlaps vs Bits neighbors",
-                       i, init_cfg[i], start_bo_cfg[i], start_bn_cfg[i]);
-            // These five comparisons form a spanning tree over the six
-            // model instances, so no redundant pairwise checks are needed.
-        }
+    // Initialize all six models and record their initial configurations.
+    reset_cn_i(i);
+    reset_co_i(i);
+    reset_cn_s(i);
+    reset_co_s(i);
+    reset_nb(i);
+    reset_ov(i);
+
+    // BEFORE evolution: five comparisons are sufficient to verify
+    // that all six model instances start from the same configuration.
+    check_pair("before", "NoBits indep neighbors vs indep overlaps",
+               i, init_cfg[i], start_cn_i[i], start_co_i[i]);
+    check_pair("before", "NoBits independent neighbors vs shared neighbors",
+               i, init_cfg[i], start_cn_i[i], start_cn_s[i]);
+    check_pair("before", "NoBits shared neighbors vs shared overlaps",
+               i, init_cfg[i], start_cn_s[i], start_co_s[i]);
+    check_pair("before", "NoBits shared overlaps vs Bits overlaps",
+               i, init_cfg[i], start_co_s[i], start_bo_cfg[i]);
+    check_pair("before", "Bits overlaps vs Bits neighbors",
+               i, init_cfg[i], start_bo_cfg[i], start_bn_cfg[i]);
+}
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
