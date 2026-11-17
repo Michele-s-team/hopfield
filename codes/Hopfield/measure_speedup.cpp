@@ -124,7 +124,7 @@ int main() {
         // ── Reference: nobits ────────────────────────────────────────────────
         gsl_rng_set(ran, seed_evol(job.run));
         auto t0 = chrono::steady_clock::now();
-        nobits.runSweepsSharedRNG(ran, save, freq);
+        nobits.runSweepsIndependentRNG(ran, save, freq);
         auto t1 = chrono::steady_clock::now();
         const double t_ref = chrono::duration<double>(t1 - t0).count();
 
