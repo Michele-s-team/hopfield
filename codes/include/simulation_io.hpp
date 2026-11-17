@@ -43,6 +43,10 @@ string m_base_folder;
                    const vector<int>& neurons_bits,
                    int N_neurons, int prefix_width=12, int col_width=3);
 
+    bool check_equality_configs(const vector<int>& neurons_nobits,
+                   const vector<int>& neurons_bits,
+                   int N_neurons);
+
 private:
     static inline int num_blocks(int N);
     static uint64_t PackBlock(const int* data, int start, int end);

@@ -193,7 +193,7 @@ void SimulationIO::check_equality_configs(const vector<int>& neurons_before,
 
         ostringstream oss;
         //Uncomment to print the spins when comparing
-        /*
+        
         oss << "Realization" << right << setw(3) << r+1;
         cout << oss.str() << "\n";
 
@@ -211,7 +211,7 @@ void SimulationIO::check_equality_configs(const vector<int>& neurons_before,
         for (int i = 0; i < N_neurons; i++)
             cout << right << setw(col_width) << neurons_bits[r*N_neurons+i] << " ";
         cout << "\n\n";
-        */
+        
 
         for (int i = 0; i < N_neurons; i++) {
             if (neurons_nobits[r*N_neurons+i] != neurons_bits[r*N_neurons+i]) {
@@ -225,4 +225,19 @@ void SimulationIO::check_equality_configs(const vector<int>& neurons_before,
         cout << "OK: classic and bitwise configurations are identical\n"<<endl;
     else
         cout << "WARNING: differences detected between classic and bitwise configurations\n" << endl;
+}
+
+bool SimulationIO::check_equality_configs(const vector<int>& neurons_nobits,
+                                          const vector<int>& neurons_bits,
+                                          int N_neurons) {
+    for (int r = 0; r < n_bits; r++) {
+        for (int i = 0; i < N_neurons; i++) {
+            if (neurons_nobits[r * N_neurons + i] !=
+                neurons_bits[r * N_neurons + i]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
