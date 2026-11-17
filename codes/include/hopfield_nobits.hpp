@@ -22,16 +22,16 @@ public:
     using HopfieldModel::HopfieldModel;
 
     // Automatic choice of the formulation (alpha + 0.5 <= rho => overlaps, else neighbors)
-    void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq);
-    void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq);
+    void runSweepsSharedRNG(gsl_rng* ran, bool save, double freq, bool talk = false);
+    void runSweepsIndependentRNG(gsl_rng* ran, bool save, double freq, bool talk = false);
 
     // Explicit formulations (e.g. to compare each against its bitwise equivalent).
     // _overlaps computes the overlaps itself, then picks pure overlaps (complete graph)
     // or overlaps + non-neighbor couplings (non-complete graph).
-    void runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq);
-    void runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq);
-    void runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq);
-    void runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq);
+    void runSweepsSharedRNG_overlaps(gsl_rng* ran, bool save, double freq, bool talk = false);
+    void runSweepsSharedRNG_neighbors(gsl_rng* ran, bool save, double freq, bool talk = false);
+    void runSweepsIndependentRNG_overlaps(gsl_rng* ran, bool save, double freq, bool talk = false);
+    void runSweepsIndependentRNG_neighbors(gsl_rng* ran, bool save, double freq, bool talk = false);
 
 private:
 
