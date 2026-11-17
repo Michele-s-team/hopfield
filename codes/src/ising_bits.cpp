@@ -48,6 +48,11 @@ void IsingBits::toCanonical(){
             spins_set[r*N+i] = -1 + 2 * Bits_Spins_Set[i].Get(r);
 }
 
+vector<Bits> IsingBits::getSpinsConfigBits() {
+    return Bits_Spins_Set;
+}
+
+
 // =====================================================
 // DIRECT BITWISE INITIALIZATION
 // =====================================================
