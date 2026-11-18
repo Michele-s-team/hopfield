@@ -102,12 +102,11 @@ int main() {
     vector<double> alpha_vals   = {/*0.02, 0.05, 0.1, 0.2,*/ 0.3};                     // 5
     //0.15, 0.25
     vector<double> temperatures = {0.2, 0.5, 1.0, 2.0, 5.0};                           // 5
-    vector<double> rho_vals     = {/*0.1/*/ 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-        };  // 10
+    vector<double> rho_vals     = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};  // 10
 
     // Number of jobs = 3 * 5 * 5 * 10 = 750
 
-    const int N_sweeps = 1 << 10;
+    const int N_sweeps = 1 << 8;
     const string out_path = "../../results/Hopfield/timing_comparison_bis.csv";
 
     struct Job { int L; double alpha, temperature, rho; int run; };
@@ -146,7 +145,7 @@ int main() {
         const double beta = 1.0 / job.temperature;
         const int    P    = static_cast<int>(round(N * job.alpha));
         const double rho  = job.rho;
-        const int    n_rep = 7;
+        const int    n_rep = 5;
 
         const bool save    = false;   // no disk I/O, it would bias the timings
         const int  freq    = 1;
