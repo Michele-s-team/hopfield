@@ -99,9 +99,10 @@ void write_stats(ostream& o, const Stats& s) {
 int main() {
     // ── Scanned parameters ────────────────────────────────────────────────────
     vector<int>    sizes        = {/*16, 32,*/ 64};                                    // 3
-    vector<double> alpha_vals   = {/*0.02, 0.05, 0.1, 0.2,*/ 0.3};                         // 5
+    vector<double> alpha_vals   = {/*0.02, 0.05, 0.1, 0.2,*/ 0.3};                     // 5
+    //0.15, 0.25
     vector<double> temperatures = {0.2, 0.5, 1.0, 2.0, 5.0};                           // 5
-    vector<double> rho_vals     = {0.1//, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+    vector<double> rho_vals     = {/*0.1/*/ 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
         };  // 10
 
     // Number of jobs = 3 * 5 * 5 * 10 = 750
@@ -122,7 +123,7 @@ int main() {
 
     // Header: four NoBits methods and two Bits methods; 4 stats per method
     ofstream out(out_path);
-    out << "N,rho,alpha,P,beta,k_eff,n_sweeps,n_rep";
+    out << "N,rho,alpha,beta,n_sweeps,n_rep";
     for (const char* m : {"classic_indep_neighbors", "classic_indep_overlaps",
                           "classic_shared_neighbors", "classic_shared_overlaps",
                           "bitwise_neighbors", "bitwise_overlaps"})
@@ -188,8 +189,6 @@ int main() {
         copy_graph(bits_nb, classic_ov_indep);
         copy_graph(bits_nb, classic_nb_shared);
         copy_graph(bits_nb, classic_ov_shared);
-
-        const int k_eff = bits_nb.getDegrees()[0];
 
         // ── Patterns: drawn once (same disorder for all reps) ────────────────
         // Rep 0 uses the original sequence (spins, canonical, patterns).
@@ -335,21 +334,27 @@ int main() {
         const Stats stats_classic_nb_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_indep, [&] {
             classic_nb_indep.runSweepsIndependentRNG_neighbors(ran, save, freq);
         }, post_classic_nb_indep));
+        cout << "\n1/6"<< endl;
         const Stats stats_classic_ov_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_indep, [&] {
             classic_ov_indep.runSweepsIndependentRNG_overlaps(ran, save, freq);
         }, post_classic_ov_indep));
+        cout << "\n2/6"<< endl;
         const Stats stats_classic_nb_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_shared, [&] {
             classic_nb_shared.runSweepsSharedRNG_neighbors(ran, save, freq);
         }, post_classic_nb_shared));
+        cout << "\n3/6"<< endl;
         const Stats stats_classic_ov_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_shared, [&] {
             classic_ov_shared.runSweepsSharedRNG_overlaps(ran, save, freq);
         }, post_classic_ov_shared));
+        cout << "\n4/6"<< endl; 
         const Stats stats_bits_nb = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_nb, [&] {
             bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
         }, post_bits_nb));
+        cout << "\n5/6"<< endl;
         const Stats stats_bits_ov = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }, post_bits_ov));
+        cout << "\n6/6"<< endl;
 
         cout << "SIMULATIONS DONE"<< endl;
 
@@ -382,8 +387,8 @@ int main() {
 
         #pragma omp critical(write_csv)
         {
-            out << N << "," << rho << "," << job.alpha << "," << P << "," << beta << ","
-                << k_eff << "," << N_sweeps << "," << n_rep << ",";
+            out << N << "," << rho << "," << job.alpha << "," << beta << ","
+             << N_sweeps << "," << n_rep << ",";
             write_stats(out, stats_classic_nb_indep);  out << ",";
             write_stats(out, stats_classic_ov_indep);  out << ",";
             write_stats(out, stats_classic_nb_shared); out << ",";
@@ -396,8 +401,8 @@ int main() {
             out.flush();
 
             cout << "\nRun " << job.run << "/" << nb_runs
-                 << " (alpha=" << job.alpha << ", N=" << N << ", P=" << P
-                 << ", k=" << k_eff << ", beta=" << beta << ", rho=" << rho << ")"
+                 << " \n(alpha=" << job.alpha << ", N=" << N
+                 << ", beta=" << beta << ", rho=" << rho << ")"
                  << " median: NoBits_indep[nb=" << stats_classic_nb_indep.median
                  << "s, ov=" << stats_classic_ov_indep.median << "s]"
                  << " NoBits_shared[nb=" << stats_classic_nb_shared.median
