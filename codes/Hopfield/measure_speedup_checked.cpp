@@ -75,7 +75,7 @@ vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
         t.push_back(timed_run(ran, seed_of(i), fn));
         post(i);
     }
-    cout << n << " rep done \n";
+    //cout << n << " rep done \n";
     return t;
 }
 
@@ -98,7 +98,7 @@ void write_stats(ostream& o, const Stats& s) {
 
 int main() {
     // ── Scanned parameters ────────────────────────────────────────────────────
-    vector<int>    sizes        = {16, 32/*, 64*/};                                        // 3
+    vector<int>    sizes        = {/*16, 32,*/ 64};                                    // 3
     vector<double> alpha_vals   = {0.02, 0.05, 0.1, 0.2, 0.3};                         // 5
     vector<double> temperatures = {0.2, 0.5, 1.0, 2.0, 5.0};                           // 5
     vector<double> rho_vals     = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};  // 10
@@ -106,7 +106,7 @@ int main() {
     // Number of jobs = 3 * 5 * 5 * 10 = 750
 
     const int N_sweeps = 1 << 10;
-    const string out_path = "../../results/Hopfield/timing_comparison.csv";
+    const string out_path = "../../results/Hopfield/timing_comparison_bis.csv";
 
     struct Job { int L; double alpha, temperature, rho; int run; };
     vector<Job> jobs;
@@ -154,16 +154,14 @@ int main() {
 
         #pragma omp critical(print_info)
         {
-            cout << "\n============ Hopfield 2D Model ============\n";
-            cout << "  Run:         " << job.run << "/" << nb_runs << "\n";
-            cout << "  Lattice:     " << job.L << " x " << job.L << " = " << N << "\n";
-            cout << "  Alpha:       " << job.alpha << " (P = " << P << ")\n";
-            cout << "  Temperature: " << job.temperature << " (beta = " << beta << ")\n";
-            cout << "  Rho:         " << rho << "\n";
-            cout << "  Sweeps:      " << N_sweeps << "\n";
-            cout << "  Repetitions: " << n_rep << "\n";
-            cout << "  Thread:      " << omp_get_thread_num() << "\n";
-            cout << "============================================\n" << flush;
+            cout << "[Hopfield 2D] run " << job.run << "/" << nb_runs
+            << " | L=" << job.L << " (N=" << N << ")"
+            << " | alpha=" << job.alpha << " (P=" << P << ")"
+            << " | T=" << job.temperature << " (beta=" << beta << ")"
+            << " | rho=" << rho
+            << " | sweeps=" << N_sweeps
+            << " | rep=" << n_rep
+            << " | thread=" << omp_get_thread_num() << '\n';
         }
 
         BitsNeighbors  bits_nb(N, beta, N_sweeps, P);
