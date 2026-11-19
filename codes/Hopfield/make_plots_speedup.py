@@ -187,26 +187,25 @@ def centered_ticks(vmin, vmax, c, n=4):
 # --------------------------------------------------------------------------- colormap
 
 def cell_boundary(ax, cls, **kw):
-    """
-    Draw boundaries between cells with different classes.
-
-    cls is a ny x nx matrix of boolean or 0-1 values.
-    NaN values are ignored.
-    """
     ny, nx = cls.shape
     kw.setdefault("solid_capstyle", "butt")
+    drawn = False
 
     for i in range(ny):
         for j in range(nx - 1):
             if np.isfinite(cls[i, j]) and np.isfinite(cls[i, j + 1]) \
                     and cls[i, j] != cls[i, j + 1]:
                 ax.plot([j + 0.5] * 2, [i - 0.5, i + 0.5], **kw)
+                drawn = True
 
     for i in range(ny - 1):
         for j in range(nx):
             if np.isfinite(cls[i, j]) and np.isfinite(cls[i + 1, j]) \
                     and cls[i, j] != cls[i + 1, j]:
                 ax.plot([j - 0.5, j + 0.5], [i + 0.5] * 2, **kw)
+                drawn = True
+
+    return drawn
 
 
 def heatmap(
@@ -300,28 +299,36 @@ def heatmap(
 
     # Draw the boundary between values above and below the reference value
     # only on the diverging map.
+    handles = []
+
+    # Boundary between Z >= center and Z < center (diverging map only).
     if diverging:
         above = np.where(np.isfinite(Z), Z >= center, np.nan)
-        cell_boundary(ax, above, color="black", lw=2.0, zorder=5)
+        if cell_boundary(ax, above, color="black", lw=2.0, zorder=5):
+            handles.append(
+                Line2D([], [], color="black", lw=2.0,
+                       label=rf"$Z={center:g}$")
+            )
 
-    # Draw the optional separation curve along cell boundaries.
+    # Optional curve (e.g. rho = alpha + 1/2), along cell boundaries.
     if curve is not None:
         f, clabel = curve
         side = np.where(Y[:, None] <= f(X)[None, :] + 1e-9, 1.0, 0.0)
 
         if side.min() == side.max():
             print(f"  [info] {name}: the curve does not separate the grid")
-        else:
-            # cell_boundary(ax, side, color="black", lw=2.0,
-            #               ls=(0, (4, 2)), zorder=6)
-            ax.legend(
-                handles=[
-                    Line2D([], [], color="black", lw=2.0, label=clabel)
-                ],
-                loc="upper right",
-                framealpha=0.9,
-                edgecolor="0.7",
+        elif cell_boundary(ax, side, color="crimson", lw=2.0, zorder=6, ls="--"):
+            handles.append(
+                Line2D([], [], color="crimson", lw=2.0, label=clabel)
             )
+
+    if handles:
+        ax.legend(
+            handles=handles,
+            loc="upper right",
+            framealpha=0.9,
+            edgecolor="0.7",
+        )
 
     ax.set_xlabel(pretty(x))
     ax.set_ylabel(pretty(y))
@@ -360,21 +367,21 @@ def best_method_map(df, x, y, name, title, outdir, agg, stat):
         _ne=df[f"t_bitwise_neighbors_{stat}"],
     )
 
-    t_ov = make_pivot(d, x, y, "_ov", agg)
-    t_ne = make_pivot(d, x, y, "_ne", agg)
+    t_ov_bits = make_pivot(d, x, y, "_ov", agg)
+    t_ne_bits = make_pivot(d, x, y, "_ne", agg)
 
-    if t_ov.shape[0] < 2 or t_ov.shape[1] < 2:
+    if t_ov_bits.shape[0] < 2 or t_ov_bits.shape[1] < 2:
         print(f"  [skip] {name}: not enough points for a 2D grid")
         return
 
     Z = np.where(
-        np.isfinite(t_ov.values) & np.isfinite(t_ne.values),
-        (t_ov.values <= t_ne.values).astype(float),
+        np.isfinite(t_ov_bits.values) & np.isfinite(t_ne_bits.values),
+        (t_ov_bits.values <= t_ne_bits.values).astype(float),
         np.nan,
     )
 
     ny, nx = Z.shape
-    X, Y = t_ov.columns.values, t_ov.index.values
+    X, Y = t_ov_bits.columns.values, t_ov_bits.index.values
     c_ov, c_ne = "C0", "#ff7f0e"
 
     fig, ax = plt.subplots(
@@ -556,16 +563,20 @@ def main():
     outdir = os.path.dirname(os.path.abspath(a.csv))
 
     # Derived quantities.
-    t_ov = df[f"t_bitwise_overlaps_{a.stat}"]
-    t_ne = df[f"t_bitwise_neighbors_{a.stat}"]
+    t_ov_bits = df[f"t_bitwise_overlaps_{a.stat}"]
+    t_ne_bits = df[f"t_bitwise_neighbors_{a.stat}"]
 
-    df["ratio_tbits"] = t_ov / t_ne
+    t_ov_nobits = df[f"t_classic_indep_overlaps_{a.stat}"]
+    t_ne_nobits = df[f"t_classic_indep_neighbors_{a.stat}"]
 
-    ov_best = t_ov <= t_ne
+    df["ratio_tbits"] = t_ov_bits / t_ne_bits
+    df["ratio_tnobits"] = t_ov_nobits / t_ne_nobits
+
+    ov_best_bits = t_ov_bits <= t_ne_bits
 
     for kind in ("indep", "shared"):
         df[f"speedup_best_{kind}"] = np.where(
-            ov_best,
+            ov_best_bits,
             df[f"speedup_overlaps_{kind}"],
             df[f"speedup_neighbors_{kind}"],
         )
@@ -611,6 +622,20 @@ def main():
 
     # 1-2. Ratio of bitwise overlaps / neighbors times.
     # Only this heatmap uses a logarithmic diverging scale centered on 1.
+    heatmap(
+        N_sel,
+        "rho",
+        "alpha",
+        "ratio_tnobits",
+        "ratio_tnobits_indep_alpha_rho",
+        ratio_lab,
+        f"{Nt} {avg}",
+        outdir,
+        a.agg,
+        curve=(lambda r: r - 0.5, r"$\rho=\alpha+1/2$"),
+        diverging=True,
+    )
+
     heatmap(
         N_sel,
         "rho",

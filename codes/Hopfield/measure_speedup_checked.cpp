@@ -333,27 +333,27 @@ int main() {
         const Stats stats_classic_nb_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_indep, [&] {
             classic_nb_indep.runSweepsIndependentRNG_neighbors(ran, save, freq);
         }, post_classic_nb_indep));
-        cout << "\n1/6"<< endl;
+        cout << "1/6"<< endl;
         const Stats stats_classic_ov_indep = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_indep, [&] {
             classic_ov_indep.runSweepsIndependentRNG_overlaps(ran, save, freq);
         }, post_classic_ov_indep));
-        cout << "\n2/6"<< endl;
+        cout << "2/6"<< endl;
         const Stats stats_classic_nb_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_nb_shared, [&] {
             classic_nb_shared.runSweepsSharedRNG_neighbors(ran, save, freq);
         }, post_classic_nb_shared));
-        cout << "\n3/6"<< endl;
+        cout << "3/6"<< endl;
         const Stats stats_classic_ov_shared = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_classic_ov_shared, [&] {
             classic_ov_shared.runSweepsSharedRNG_overlaps(ran, save, freq);
         }, post_classic_ov_shared));
-        cout << "\n4/6"<< endl; 
+        cout << "4/6"<< endl; 
         const Stats stats_bits_nb = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_nb, [&] {
             bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
         }, post_bits_nb));
-        cout << "\n5/6"<< endl;
+        cout << "5/6"<< endl;
         const Stats stats_bits_ov = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_bits_ov, [&] {
             bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
         }, post_bits_ov));
-        cout << "\n6/6"<< endl;
+        cout << "6/6"<< endl;
 
         cout << "SIMULATIONS DONE"<< endl;
 

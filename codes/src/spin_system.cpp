@@ -11,6 +11,11 @@
 #include "gsl_randist.h"
 #include <unordered_set>
 #include <math.h>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <cmath>
+#include <iostream>
 
 // =====================================================
 // CONSTRUCTION
@@ -131,12 +136,6 @@ void SpinSystem::initNetwork_random(gsl_rng* ran, double p) {
     }
     computeNonNeighbors();
 }
-
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
 
 // Random k-regular graph, k = round(rho*(N-1)).
 // 1) deterministic circulant k-regular graph (always valid)
