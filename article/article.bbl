@@ -1,0 +1,82 @@
+\begin{thebibliography}{10}
+
+\bibitem{nobel2024physics}
+{The Royal Swedish Academy of Sciences}.
+\newblock Press release: {The Nobel Prize in Physics 2024}.
+\newblock \url{https://www.nobelprize.org/prizes/physics/2024/press-release/}, October 2024.
+\newblock Accessed: June 2026.
+
+\bibitem{Amari1972LearningPA}
+Shun‐ichi Amari.
+\newblock Learning patterns and pattern sequences by self-organizing nets of threshold elements.
+\newblock {\em IEEE Transactions on Computers}, C-21:1197--1206, 1972.
+
+\bibitem{Hopfield1982}
+J.~J. Hopfield.
+\newblock Neural networks and physical systems with emergent collective computational abilities.
+\newblock {\em Proceedings of the National Academy of Sciences}, 79(8):2554--2558, 1982.
+
+\bibitem{Amit1985}
+Daniel~J. Amit, Hanoch Gutfreund, and H.~Sompolinsky.
+\newblock Spin-glass models of neural networks.
+\newblock {\em Phys. Rev. A}, 32:1007--1018, Aug 1985.
+
+\bibitem{AMIT1987}
+Daniel~J Amit, Hanoch Gutfreund, and H~Sompolinsky.
+\newblock Statistical mechanics of neural networks near saturation.
+\newblock {\em Annals of Physics}, 173(1):30--67, 1987.
+
+\bibitem{Amit1989}
+Daniel~J. Amit.
+\newblock {\em Modeling Brain Function: The World of Attractor Neural Networks}.
+\newblock Cambridge University Press, Cambridge, 1989.
+
+\bibitem{Sompolinsky1988}
+Haim Sompolinsky.
+\newblock Statistical mechanics of neural networks.
+\newblock {\em Physics Today}, 41(12):70--80, 1988.
+
+\bibitem{Hertz1991}
+John Hertz, Anders Krogh, and Richard~G. Palmer.
+\newblock {\em Introduction to the Theory of Neural Computation}.
+\newblock Santa Fe Institute Studies in the Sciences of Complexity. Addison-Wesley, Redwood City, CA, 1991.
+
+\bibitem{Hebb1949}
+Donald~O. Hebb.
+\newblock {\em The Organization of Behavior: A Neuropsychological Theory}.
+\newblock Wiley, New York, 1949.
+
+\bibitem{Metropolis1953}
+Nicholas Metropolis, Arianna~W. Rosenbluth, Marshall~N. Rosenbluth, Augusta~H. Teller, and Edward Teller.
+\newblock Equation of state calculations by fast computing machines.
+\newblock {\em The Journal of Chemical Physics}, 21(6):1087--1092, 1953.
+
+\bibitem{intel2023sdm}
+{Intel Corporation}.
+\newblock {\em Intel® 64 and IA-32 Architectures Software Developer's Manual}, 2023.
+
+\bibitem{HFreund_1988}
+H~Freund and P~Grassberger.
+\newblock Multispin coding for spin glasses.
+\newblock {\em Journal of Physics A: Mathematical and General}, 21(16):L801, aug 1988.
+
+\bibitem{palassini1999}
+Matteo Palassini and Sergio Caracciolo.
+\newblock Monte carlo simulation of the three-dimensional ising spin glass, 1999.
+
+\bibitem{Glauber1963}
+Roy~J. Glauber.
+\newblock Time-dependent statistics of the {I}sing model.
+\newblock {\em Journal of Mathematical Physics}, 4(2):294--307, 1963.
+
+\bibitem{SwendsenWang1987}
+Robert~H. Swendsen and Jian-Sheng Wang.
+\newblock Nonuniversal critical dynamics in {M}onte {C}arlo simulations.
+\newblock {\em Physical Review Letters}, 58(2):86--88, 1987.
+
+\bibitem{Wolff1989}
+Ulli Wolff.
+\newblock Collective {M}onte {C}arlo updating for spin systems.
+\newblock {\em Physical Review Letters}, 62(4):361--364, 1989.
+
+\end{thebibliography}
