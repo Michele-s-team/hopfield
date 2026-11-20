@@ -613,10 +613,15 @@ def main():
         else r"(median over $\beta$)"
     )
 
-    ratio_lab = (
+    ratio_lab_bits = (
         r"$t^{\rm bits}_{\rm overlaps}\,/\,"
         r"t^{\rm bits}_{\rm neighbors}$"
     )
+
+    ratio_lab_nobits = (
+            r"$t^{\rm classic}_{\rm overlaps}\,/\,"
+            r"t^{\rm classic}_{\rm neighbors}$"
+        )
 
     print("Figures:")
 
@@ -628,7 +633,7 @@ def main():
         "alpha",
         "ratio_tnobits",
         "ratio_tnobits_indep_alpha_rho",
-        ratio_lab,
+        ratio_lab_nobits,
         f"{Nt} {avg}",
         outdir,
         a.agg,
@@ -642,7 +647,7 @@ def main():
         "alpha",
         "ratio_tbits",
         "ratio_tbits_alpha_rho",
-        ratio_lab,
+        ratio_lab_bits,
         f"{Nt} {avg}",
         outdir,
         a.agg,
@@ -657,7 +662,7 @@ def main():
         "alpha",
         "ratio_tbits",
         "ratio_tbits_alpha_N",
-        ratio_lab,
+        ratio_lab_bits,
         f"{rt} {avg}",
         outdir,
         a.agg,
