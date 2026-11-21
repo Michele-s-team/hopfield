@@ -1,6 +1,25 @@
 \section{Method}
 We start by presenting the broad implementation of the Metropolis algorithm, before showing how we adapt it to each specific model.
 
+\subsection{The Metropolis algorithm}
+In order to make the models evolve in time, which is necessary to observe their dynamics, we use the well-known metropolis algorithm \cite{Metropolis1953}. For models with a defined Hamiltonian, the Metropolis algorithm proceeds as follows:
+\begin{enumerate}
+    \item Start from an initial configuration $\{S_i\}$.
+    \item Repeat $N$ times:
+    \begin{enumerate}[label=\alph*.]
+        \item Pick a random spin $S_k$ and compute the energy change $\Delta E_k$
+              upon flipping it.
+        \item If $\Delta E_k \leq 0$, accept the flip.
+        \item Else, draw a random number $r \sim \mathcal{U}([0,1])$
+              and accept the flip if $r \leq e^{-\beta \Delta E_k}$.
+    \end{enumerate}
+    \item Repeat Step 2 for $N_{\text{sweeps}}$ sweeps.
+\end{enumerate}
+Where $N$ is the number of spins, $\beta$ is the inverse temperature,
+and $N_{\text{sweeps}}$ is the number of sweeps, where one sweep consists of
+$N$ successive single-spin flip attempts.\\
+This algorithm however becomes computationally demanding when one attempts to sample a large number of configurations. This situation occurs, for example, when looking for rare samples in the dynamics, or sampling many different initial conditions -- both of which we will try to explore during this internship. We thus need to find way of optimizing the implementation of the algorithm.
+
 
 \subsection{Code structure}
 We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
@@ -19,7 +38,7 @@ The code is built around hierarchical classes. We first implement the topology o
 \begin{algorithm}[b]
 \DontPrintSemicolon
 
-\caption{Standard Metropolis implementation  (naive)}
+\caption{Standard Metropolis implementation (naive)}
 
 \KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
 \KwOut{Updated lattice spins $\{S_i\}$}
@@ -46,3 +65,36 @@ The code is built around hierarchical classes. We first implement the topology o
 }
 \label{alg:ising_classic_naive}
 \end{algorithm}
+
+\vspace{1em}
+\nolinenumbers
+\begin{algorithm}[t]
+\DontPrintSemicolon
+\caption{Standard Metropolis implementation}
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+\BlankLine
+\BlankLine
+\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$k = 1$ \KwTo $N$}{
+      Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
+      \eIf{$q \geq \Delta_k^\text{max}$}{
+        \For{$r = 1$ \KwTo $n_\text{bits}$}{
+            $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+            }
+        }{
+            \For{$r = 1$ \KwTo $n_\text{bits}$}{
+                Compute $\Delta_k^{(r)} $\;
+                \If{$\Delta_k^{(r)} \leq 0$ \textbf{or} $q \geq \Delta_k^{(r)}$}{
+                    \BlankLine
+                    \tcp{the test $\Delta_k^{(r)} \leq 0$ is not necessary as $q$ has already been drawn, but is shown for pedagogy}
+                    $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+                }
+            }
+        }
+    }
+}
+\label{alg:ising_classic}
+\end{algorithm}
+\linenumbers
+\vspace{1em}

@@ -55,27 +55,27 @@
   \setlength\tabcolsep{0pt}%
 
   % Labels first: they will be in the background
-  \put(0.05,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.04,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_1$\end{tabular}}}}
 
-  \put(0.325,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.315,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_2$\end{tabular}}}}
 
-  \put(0.5925,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.59,0.335){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_3$\end{tabular}}}}
 
-  \put(0.05,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.04,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_4$\end{tabular}}}}
 
-  \put(0.325,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.315,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_5$\end{tabular}}}}
 
-  \put(0.5925,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
+  \put(0.59,0.06){\color[rgb]{0,0,0}\makebox(0,0)[lt]{%
     \fontsize{15pt}{15pt}\selectfont
     \smash{\begin{tabular}[t]{l}$S_6$\end{tabular}}}}
 
