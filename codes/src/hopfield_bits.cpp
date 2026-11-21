@@ -383,8 +383,9 @@ void HopfieldBits::compute_escapes(vector<int>& max_escape_threshold, bool talk)
 
     if (condition){
         if (talk) cout <<"compute tight escape conditions"<<endl;
-         auto t1 = std::chrono::steady_clock::now();
-        initCouplingsBits();
+        auto t1 = std::chrono::steady_clock::now();
+        initCouplingsBits();             // computed twice if the method is neighbors-based, not a huge issue as 
+                                         // "condition" is only fulfilled at low density
         
         auto t2 = std::chrono::steady_clock::now();
         for (int spin = 0; spin < N; ++spin) {

@@ -538,6 +538,12 @@ def main():
         default=None,
         help="Fixed alpha for curves with several N values (default: median alpha)",
     )
+    ap.add_argument(
+        "--beta",
+        type=float,
+        default=None,
+        help="Fixed beta for the heatmaps (default: median beta)",
+    )
     ap.add_argument("--Ns", nargs="*", type=float, help="N values to plot (default: all)")
     ap.add_argument(
         "--alphas",
@@ -566,11 +572,15 @@ def main():
     t_ov_bits = df[f"t_bitwise_overlaps_{a.stat}"]
     t_ne_bits = df[f"t_bitwise_neighbors_{a.stat}"]
 
-    t_ov_nobits = df[f"t_classic_indep_overlaps_{a.stat}"]
-    t_ne_nobits = df[f"t_classic_indep_neighbors_{a.stat}"]
+    t_ov_nobits_indep = df[f"t_classic_indep_overlaps_{a.stat}"]
+    t_ne_nobits_indep = df[f"t_classic_indep_neighbors_{a.stat}"]
+
+    t_ov_nobits_shared = df[f"t_classic_shared_overlaps_{a.stat}"]
+    t_ne_nobits_shared = df[f"t_classic_shared_neighbors_{a.stat}"]
 
     df["ratio_tbits"] = t_ov_bits / t_ne_bits
-    df["ratio_tnobits"] = t_ov_nobits / t_ne_nobits
+    df["ratio_tnobits_indep"] = t_ov_nobits_indep / t_ne_nobits_indep
+    df["ratio_tnobits_shared"] = t_ov_nobits_shared / t_ne_nobits_shared
 
     ov_best_bits = t_ov_bits <= t_ne_bits
 
@@ -586,12 +596,21 @@ def main():
     N_sel = select(df, {"N": a.N_fixed})
     both = select(rho_sel, {"N": a.N_fixed})
 
-    if a.alpha is None:
-        av = np.sort(df["alpha"].unique())
-        a.alpha = float(av[len(av) // 2])
+    av = np.sort(df["alpha"].unique())
+    a.alpha = float(av[len(av) // 2])
+
+    bv = np.sort(df["beta"].unique())
+    a.beta = 1
 
     if rho_sel.empty or N_sel.empty:
         sys.exit("No rows for this rho / N: check --rho and --N-fixed.")
+
+    # Heatmap selections: beta fixed.
+    N_hm = select(N_sel, {"beta": a.beta})
+    rho_hm = select(rho_sel, {"beta": a.beta})
+
+    if N_hm.empty or rho_hm.empty:
+        sys.exit(f"No rows for beta={a.beta:g}: check --beta.")
 
     varying = [
         p for p in EXTRA_PARAMS
@@ -606,12 +625,7 @@ def main():
 
     Nt = rf"$N={a.N_fixed:g}$"
     rt = rf"$\rho={a.rho:g}$"
-
-    avg = (
-        rf"(average over $\beta$)"
-        if a.agg == "mean"
-        else r"(median over $\beta$)"
-    )
+    bt = rf"$\beta={a.beta:g}$"
 
     ratio_lab_bits = (
         r"$t^{\rm bits}_{\rm overlaps}\,/\,"
@@ -619,22 +633,35 @@ def main():
     )
 
     ratio_lab_nobits = (
-            r"$t^{\rm classic}_{\rm overlaps}\,/\,"
-            r"t^{\rm classic}_{\rm neighbors}$"
-        )
+        r"$t^{\rm classic}_{\rm overlaps}\,/\,"
+        r"t^{\rm classic}_{\rm neighbors}$"
+    )
 
     print("Figures:")
 
-    # 1-2. Ratio of bitwise overlaps / neighbors times.
-    # Only this heatmap uses a logarithmic diverging scale centered on 1.
+    # 1-2. Ratio of overlaps / neighbors times, alpha (y) vs rho (x), fixed N and beta.
+    # Only these heatmaps use a logarithmic diverging scale centered on 1.
     heatmap(
-        N_sel,
+        N_hm,
         "rho",
         "alpha",
-        "ratio_tnobits",
+        "ratio_tnobits_indep",
         "ratio_tnobits_indep_alpha_rho",
         ratio_lab_nobits,
-        f"{Nt} {avg}",
+        f"{Nt}, {bt}",
+        outdir,
+        a.agg,
+        curve=(lambda r: r - 0.5, r"$\rho=\alpha+1/2$"),
+        diverging=True,
+    )
+    heatmap(
+        N_hm,
+        "rho",
+        "alpha",
+        "ratio_tnobits_shared",
+        "ratio_tnobits_shared_alpha_rho",
+        ratio_lab_nobits,
+        f"{Nt}, {bt}",
         outdir,
         a.agg,
         curve=(lambda r: r - 0.5, r"$\rho=\alpha+1/2$"),
@@ -642,13 +669,13 @@ def main():
     )
 
     heatmap(
-        N_sel,
+        N_hm,
         "rho",
         "alpha",
         "ratio_tbits",
         "ratio_tbits_alpha_rho",
         ratio_lab_bits,
-        f"{Nt} {avg}",
+        f"{Nt}, {bt}",
         outdir,
         a.agg,
         curve=(lambda r: r - 0.5, r"$\rho=\alpha+1/2$"),
@@ -657,42 +684,42 @@ def main():
 
     # This heatmap uses a sequential linear scale.
     heatmap(
-        rho_sel,
+        rho_hm,
         "N",
         "alpha",
         "ratio_tbits",
         "ratio_tbits_alpha_N",
         ratio_lab_bits,
-        f"{rt} {avg}",
+        f"{rt}, {bt}",
         outdir,
         a.agg,
     )
 
-    # 2bis. Fastest bitwise method, alpha (y) vs rho (x), fixed N.
+    # 2bis. Fastest bitwise method, alpha (y) vs rho (x), fixed N and beta.
     # Uncomment to generate the categorical map.
     #
     # best_method_map(
-    #     N_sel,
+    #     N_hm,
     #     "rho",
     #     "alpha",
     #     "best_method_alpha_rho",
-    #     rf"Fastest bitwise method, {Nt} {avg}",
+    #     rf"Fastest bitwise method, {Nt}, {bt}",
     #     outdir,
     #     a.agg,
     #     a.stat,
     # )
 
-    # 3-4. Speedup of the best method, alpha (y) vs N (x).
+    # 3-4. Speedup of the best method, alpha (y) vs N (x), fixed rho and beta.
     # These heatmaps use sequential linear scales.
     for kind in ("indep", "shared"):
         heatmap(
-            rho_sel,
+            rho_hm,
             "N",
             "alpha",
             f"speedup_best_{kind}",
             f"speedup_best_{kind}_alpha_N",
             f"Speed-up factor ({kind}, best method)",
-            f"{rt} {avg}",
+            f"{rt}, {bt}",
             outdir,
             a.agg,
         )
