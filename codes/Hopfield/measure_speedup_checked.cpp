@@ -34,10 +34,12 @@ using BitsOverlaps  = HopfieldBits;   // bitwise, shifted-overlap formulation
 static inline unsigned long seed_graph(int run) { return 1000 + run; }
 static inline unsigned long seed_init (int run) { return  123 + run; }
 static inline unsigned long seed_evol (int run) { return   42 + run; }
+static inline unsigned long seed_pat  (int run) { return  555 + run; }
 
-// Per-repetition offsets (rep 0 keeps the original seeds)
+// Per-repetition offsets (rep 0 keeps the original seeds / draw sequence)
 static inline unsigned long seed_init_rep(int run, int rep) { return seed_init(run) + 1000003UL * rep; }
 static inline unsigned long seed_evol_rep(int run, int rep) { return seed_evol(run) +    7919UL * rep; }
+static inline unsigned long seed_pat_rep (int run, int rep) { return seed_pat(run)  +  104729UL * rep; }
 
 // Copy the graph (neighbors, non_neighbors, degrees) from src to dst
 template <class Src, class Dst>
@@ -58,13 +60,13 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
 }
 
 // Repeat a measurement n times. For repetition i:
-//   - reset(i)   restores the initial state number i (NOT timed; it also
-//                records the "before evolution" snapshot),
+//   - reset(i)   restores the patterns AND the initial state number i (NOT
+//                timed; it also records the "before evolution" snapshot),
 //   - seed_of(i) gives the evolution seed of repetition i,
 //   - fn         is the timed work (setup + sweeps),
 //   - post(i)    records the "after evolution" snapshot (NOT timed).
-// Each repetition has its own init and seed, and the same i is used for
-// all 6 methods of a job, so the comparison stays paired.
+// Each repetition has its own patterns, init and seed, and the same i is used
+// for all 6 methods of a job, so the comparison stays paired.
 template <class Reset, class SeedOf, class F, class Post>
 vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
                             Reset&& reset, F&& fn, Post&& post) {
@@ -173,14 +175,18 @@ int main() {
         HopfieldNoBits classic_ov_shared(N, beta, N_sweeps, P);
 
         // Config types (decayed, in case the getters return references)
-        using CfgT     = decay_t<decltype(bits_nb.getSpinsConfig())>;
-        using CfgBitsT = decay_t<decltype(bits_nb.getSpinsConfigBits())>;
+        using CfgT      = decay_t<decltype(bits_nb.getSpinsConfig())>;
+        using CfgBitsT  = decay_t<decltype(bits_nb.getSpinsConfigBits())>;
+        using PatT      = decay_t<decltype(bits_nb.getPatternsBitsToCanonical())>;
+        using PatBitsT  = decay_t<decltype(bits_nb.getPatternsBits())>;
 
         // check_equality_configs takes const vector<int>&
         static_assert(is_same<CfgT, vector<int>>::value,
                       "getSpinsConfig() is expected to return vector<int>");
 
         // ── Graph: built once, copied to the other models ────────────────────
+        // (the graph stays fixed across repetitions: random regular graphs are
+        //  statistically equivalent and self-averaging at this N)
         gsl_rng_set(ran, seed_graph(job.run));
         bits_nb.initNetwork_RegularRandom(rho, ran);
         copy_graph(bits_nb, bits_ov);
@@ -189,35 +195,30 @@ int main() {
         copy_graph(bits_nb, classic_nb_shared);
         copy_graph(bits_nb, classic_ov_shared);
 
-        // ── Patterns: drawn once (same disorder for all reps) ────────────────
-        // Rep 0 uses the original sequence (spins, canonical, patterns).
-        gsl_rng_set(ran, seed_init_rep(job.run, 0));
-        bits_nb.initSpinsBits(ran);
-        bits_nb.toCanonical();
-        bits_nb.initPatternsBits(ran);
-
-        auto patterns      = bits_nb.getPatternsBitsToCanonical();
-        auto patterns_bits = bits_nb.getPatternsBits();
-
-        bits_ov.initPatternsFromConfigBits(patterns_bits);
-        classic_nb_indep.initPatternsFromConfig(patterns);
-        classic_ov_indep.initPatternsFromConfig(patterns);
-        classic_nb_shared.initPatternsFromConfig(patterns);
-        classic_ov_shared.initPatternsFromConfig(patterns);
-
-        // ── One initial spin state per repetition ────────────────────────────
-        // Drawn on bits_nb, stored in both representations. Not timed.
+        // ── Patterns AND initial spin state: one pair per repetition ─────────
+        // Everything is drawn on bits_nb, stored in both representations, and
+        // later injected identically into the 6 models. Not timed.
+        //   rep 0 : original sequence (seed_init_rep(run,0) -> spins,
+        //           toCanonical, patterns drawn from the same stream), so rep 0
+        //           reproduces the previous results exactly.
+        //   rep i : same spin draw as before (seed_init_rep(run,i)), then the
+        //           patterns are drawn from their own stream seed_pat_rep(run,i)
         vector<CfgT>     init_cfg(n_rep);
         vector<CfgBitsT> init_bits(n_rep);
+        vector<PatT>     pat_cfg(n_rep);
+        vector<PatBitsT> pat_bits(n_rep);
 
-        init_cfg[0]  = bits_nb.getSpinsConfig();
-        init_bits[0] = bits_nb.getSpinsConfigBits();
-        for (int i = 1; i < n_rep; ++i) {
+        for (int i = 0; i < n_rep; ++i) {
             gsl_rng_set(ran, seed_init_rep(job.run, i));
             bits_nb.initSpinsBits(ran);
             bits_nb.toCanonical();
+            if (i > 0) gsl_rng_set(ran, seed_pat_rep(job.run, i));
+            bits_nb.initPatternsBits(ran);
+
             init_cfg[i]  = bits_nb.getSpinsConfig();
             init_bits[i] = bits_nb.getSpinsConfigBits();
+            pat_cfg[i]   = bits_nb.getPatternsBitsToCanonical();
+            pat_bits[i]  = bits_nb.getPatternsBits();
         }
 
         // ── Snapshots for the consistency checks (all untimed) ───────────────
@@ -229,29 +230,36 @@ int main() {
         vector<CfgT> start_bits_nb(n_rep), start_bits_ov(n_rep),
                      end_bits_nb(n_rep),   end_bits_ov(n_rep);
 
-        // Reset helpers: restore the same initial state for repetition i.
+        // Reset helpers: restore the same patterns and initial state for
+        // repetition i. Patterns first, then spins. All untimed.
         auto reset_classic_nb_indep = [&](int i) {
+            classic_nb_indep.initPatternsFromConfig(pat_cfg[i]);
             classic_nb_indep.initSpinsFromConfig(init_cfg[i]);
             start_classic_nb_indep[i] = classic_nb_indep.getSpinsConfig();
         };
         auto reset_classic_ov_indep = [&](int i) {
+            classic_ov_indep.initPatternsFromConfig(pat_cfg[i]);
             classic_ov_indep.initSpinsFromConfig(init_cfg[i]);
             start_classic_ov_indep[i] = classic_ov_indep.getSpinsConfig();
         };
         auto reset_classic_nb_shared = [&](int i) {
+            classic_nb_shared.initPatternsFromConfig(pat_cfg[i]);
             classic_nb_shared.initSpinsFromConfig(init_cfg[i]);
             start_classic_nb_shared[i] = classic_nb_shared.getSpinsConfig();
         };
         auto reset_classic_ov_shared = [&](int i) {
+            classic_ov_shared.initPatternsFromConfig(pat_cfg[i]);
             classic_ov_shared.initSpinsFromConfig(init_cfg[i]);
             start_classic_ov_shared[i] = classic_ov_shared.getSpinsConfig();
         };
         auto reset_bits_nb = [&](int i) {
+            bits_nb.initPatternsFromConfigBits(pat_bits[i]);
             bits_nb.initSpinsFromConfigBits(init_bits[i]);
             bits_nb.toCanonical();
             start_bits_nb[i] = bits_nb.getSpinsConfig();
         };
         auto reset_bits_ov = [&](int i) {
+            bits_ov.initPatternsFromConfigBits(pat_bits[i]);
             bits_ov.initSpinsFromConfigBits(init_bits[i]);
             bits_ov.toCanonical();
             start_bits_ov[i] = bits_ov.getSpinsConfig();
