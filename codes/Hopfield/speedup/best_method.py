@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.colors import FuncNorm
 
-N_DEFAULT = 32 * 32
+N_DEFAULT = 16 * 16
 PRETTY = {"rho": r"$\rho$", "alpha": r"$\alpha$", "beta": r"$\beta$", "N": r"$N$"}
 
 # kind -> (default csv name, column prefix, colorbar label)
