@@ -56,25 +56,6 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
     return chrono::duration<double>(t1 - t0).count();
 }
 
-// Repeat a measurement n times. For repetition i:
-//   reset(i)   restores patterns AND initial state i (NOT timed),
-//   seed_of(i) gives the evolution seed of repetition i,
-//   fn         is the timed work,
-//   post(i)    records the "after evolution" snapshot (NOT timed).
-// Same i for both methods => paired comparison.
-template <class Reset, class SeedOf, class F, class Post>
-vector<double> repeat_timed(int n, gsl_rng* ran, SeedOf&& seed_of,
-                            Reset&& reset, F&& fn, Post&& post) {
-    vector<double> t;
-    t.reserve(n);
-    for (int i = 0; i < n; ++i) {
-        reset(i);
-        t.push_back(timed_run(ran, seed_of(i), fn));
-        post(i);
-    }
-    return t;
-}
-
 struct Stats { double mean, min, max, median; };
 
 Stats compute_stats(vector<double> v) {
@@ -97,18 +78,26 @@ struct Job { int L; double alpha, temperature, rho; int run; };
 // Benchmark: bitwise neighbors vs bitwise overlaps.
 // Patterns and initial state change with each repetition i, but are shared
 // by the two models for a given i. Ratio = t_neighbors / t_overlaps (medians).
+//
+// Measurement protocol:
+//   - one untimed warm-up run per method (caches, frequency, first touch),
+//   - the two methods are interleaved repetition by repetition, and the order
+//     alternates (even i: nb then ov, odd i: ov then nb), so that slow drifts
+//     of the machine load and order effects affect both methods equally.
+//     Use an even n_rep for a perfectly balanced design.
 
 using BitsNeighbors = HopfieldBits;   // bitwise, neighbor-coupling formulation
 using BitsOverlaps  = HopfieldBits;   // bitwise, shifted-overlap formulation
 
 int main() {
-    cout << unitbuf;  
+    cout << unitbuf;
     vector<int>    sizes        = {16};
     vector<double> alpha_vals   = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6};
     vector<double> temperatures = {0.1, 1, 5};
     vector<double> rho_vals     = {0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
     const int N_sweeps = 1 << 12;
+    const int n_rep    = 5;    
     const string out_path = "../../../results/Hopfield/speedup_bits.csv";
 
     vector<Job> jobs;
@@ -121,6 +110,11 @@ int main() {
     const int nb_runs = jobs.size();
 
     ofstream out(out_path);
+    if (!out) {
+        cerr << "ERROR: cannot open " << out_path
+             << " (does the directory exist?)\n";
+        return 1;
+    }
     out << "N,rho,alpha,beta,n_sweeps,n_rep";
     for (const char* m : {"bitwise_neighbors", "bitwise_overlaps"})
         for (const char* s : {"mean", "min", "max", "median"})
@@ -139,7 +133,6 @@ int main() {
         const double beta = 1.0 / job.temperature;
         const int    P    = static_cast<int>(round(N * job.alpha));
         const double rho  = job.rho;
-        const int    n_rep = 5;
 
         const bool save    = false;
         const int  freq    = 1;
@@ -175,6 +168,7 @@ int main() {
         vector<CfgT>     init_cfg(n_rep);
         vector<CfgBitsT> init_bits(n_rep);
         vector<PatBitsT> pat_bits(n_rep);
+
         for (int i = 0; i < n_rep; ++i) {
             gsl_rng_set(ran, seed_init_rep(job.run, i));
             bits_nb.initSpinsBits(ran);
@@ -223,12 +217,38 @@ int main() {
 
         auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
 
-        const Stats st_nb = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_nb, [&] {
-            bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
-        }, post_nb));
-        const Stats st_ov = compute_stats(repeat_timed(n_rep, ran, seed_of, reset_ov, [&] {
-            bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
-        }, post_ov));
+        // ── Timed work ───────────────────────────────────────────────────────
+        auto run_nb = [&] { bits_nb.runSweeps_neighbors(ran, save, freq, burn_in); };
+        auto run_ov = [&] { bits_ov.runSweeps_overlaps (ran, save, freq, burn_in); };
+
+        // Warm-up: one untimed run of each method (result discarded; every
+        // repetition below starts from reset(i), so the warm-up leaves no trace).
+        reset_nb(0); timed_run(ran, seed_of(0), run_nb);
+        reset_ov(0); timed_run(ran, seed_of(0), run_ov);
+
+        vector<double> t_nb, t_ov;
+        t_nb.reserve(n_rep);
+        t_ov.reserve(n_rep);
+
+        auto measure_nb = [&](int i) {
+            reset_nb(i);                                   // not timed
+            t_nb.push_back(timed_run(ran, seed_of(i), run_nb));
+            post_nb(i);                                    // not timed
+        };
+        auto measure_ov = [&](int i) {
+            reset_ov(i);                                   // not timed
+            t_ov.push_back(timed_run(ran, seed_of(i), run_ov));
+            post_ov(i);                                    // not timed
+        };
+
+        // Interleaved, alternating order: same i for both methods (paired).
+        for (int i = 0; i < n_rep; ++i) {
+            if (i % 2 == 0) { measure_nb(i); measure_ov(i); }
+            else            { measure_ov(i); measure_nb(i); }
+        }
+
+        const Stats st_nb = compute_stats(t_nb);
+        const Stats st_ov = compute_stats(t_ov);
 
         all_ok = true;
         for (int i = 0; i < n_rep; ++i)
