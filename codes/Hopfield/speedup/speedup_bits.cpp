@@ -109,7 +109,7 @@ int main() {
     vector<double> rho_vals     = {0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
     const int N_sweeps = 1 << 10;
-    const string out_path = "../../results/Hopfield/speedup_bits.csv";
+    const string out_path = "../../../results/Hopfield/speedup_bits.csv";
 
     vector<Job> jobs;
     int run = 0;
