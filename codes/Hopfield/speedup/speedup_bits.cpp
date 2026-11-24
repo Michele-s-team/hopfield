@@ -128,9 +128,8 @@ int main() {
             for (double T : temperatures) {
                 for (double rho : rho_vals) {
 
-                    ++run;
-
                     for (int N_sweeps : N_sweeps_vals) {
+                        ++run;
                         jobs.push_back({
                             L,
                             alpha,
