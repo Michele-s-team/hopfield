@@ -56,16 +56,20 @@ double timed_run(gsl_rng* ran, unsigned long seed, F&& fn) {
     return chrono::duration<double>(t1 - t0).count();
 }
 
-struct Stats { double mean, min, max, median; };
+struct Stats {
+    double mean, min, max, median;
+};
 
 Stats compute_stats(vector<double> v) {
     sort(v.begin(), v.end());
     const size_t n = v.size();
+
     Stats s;
     s.min    = v.front();
     s.max    = v.back();
     s.mean   = accumulate(v.begin(), v.end(), 0.0) / n;
     s.median = (n % 2) ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
+
     return s;
 }
 
@@ -73,12 +77,17 @@ void write_stats(ostream& o, const Stats& s) {
     o << s.mean << "," << s.min << "," << s.max << "," << s.median;
 }
 
-struct Job { int L; double alpha, temperature, rho; int run; };
+struct Job {
+    int L;
+    double alpha, temperature, rho;
+    int run;
+    int n_sweeps;
+};
 
 // Benchmark: bitwise neighbors vs bitwise overlaps.
 // Patterns and initial state change with each repetition i, but are shared
 // by the two models for a given i. Ratio = t_neighbors / t_overlaps (medians).
-//
+
 // Measurement protocol:
 //   - one untimed warm-up run per method (caches, frequency, first touch),
 //   - the two methods are interleaved repetition by repetition, and the order
@@ -86,39 +95,75 @@ struct Job { int L; double alpha, temperature, rho; int run; };
 //     of the machine load and order effects affect both methods equally.
 //     Use an even n_rep for a perfectly balanced design.
 
-using BitsNeighbors = HopfieldBits;   // bitwise, neighbor-coupling formulation
-using BitsOverlaps  = HopfieldBits;   // bitwise, shifted-overlap formulation
+using BitsNeighbors = HopfieldBits;
+using BitsOverlaps  = HopfieldBits;
 
 int main() {
+
     cout << unitbuf;
+
     vector<int>    sizes        = {16};
     vector<double> alpha_vals   = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6};
     vector<double> temperatures = {0.1, 1, 5};
     vector<double> rho_vals     = {0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
-    const int N_sweeps = 1 << 12;
-    const int n_rep    = 5;    
+    // Number of sweeps to benchmark
+    const vector<int> N_sweeps_vals = {
+        1 << 10,
+        1 << 11,
+        1 << 12,
+        1 << 13
+    };
+
+    const int n_rep = 5;
+
     const string out_path = "../../../results/Hopfield/speedup_bits.csv";
 
+    // Build the list of jobs
     vector<Job> jobs;
     int run = 0;
-    for (int L : sizes)
-        for (double alpha : alpha_vals)
-            for (double T : temperatures)
-                for (double rho : rho_vals)
-                    jobs.push_back({L, alpha, T, rho, ++run});
+
+    for (int L : sizes) {
+        for (double alpha : alpha_vals) {
+            for (double T : temperatures) {
+                for (double rho : rho_vals) {
+
+                    ++run;
+
+                    for (int N_sweeps : N_sweeps_vals) {
+                        jobs.push_back({
+                            L,
+                            alpha,
+                            T,
+                            rho,
+                            run,
+                            N_sweeps
+                        });
+                    }
+                }
+            }
+        }
+    }
+
     const int nb_runs = jobs.size();
 
+    // Open output CSV
     ofstream out(out_path);
+
     if (!out) {
         cerr << "ERROR: cannot open " << out_path
              << " (does the directory exist?)\n";
         return 1;
     }
+
     out << "N,rho,alpha,beta,n_sweeps,n_rep";
-    for (const char* m : {"bitwise_neighbors", "bitwise_overlaps"})
-        for (const char* s : {"mean", "min", "max", "median"})
+
+    for (const char* m : {"bitwise_neighbors", "bitwise_overlaps"}) {
+        for (const char* s : {"mean", "min", "max", "median"}) {
             out << ",t_" << m << "_" << s;
+        }
+    }
+
     out << ",ratio_neighbors_over_overlaps\n";
     out << setprecision(10);
     out.flush();
@@ -129,10 +174,12 @@ int main() {
     for (int job_id = 0; job_id < nb_runs; ++job_id) {
 
         const Job& job = jobs[job_id];
-        const int    N    = job.L * job.L;
-        const double beta = 1.0 / job.temperature;
-        const int    P    = static_cast<int>(round(N * job.alpha));
-        const double rho  = job.rho;
+
+        const int    N         = job.L * job.L;
+        const double beta      = 1.0 / job.temperature;
+        const int    P         = static_cast<int>(round(N * job.alpha));
+        const double rho       = job.rho;
+        const int    N_sweeps  = job.n_sweeps;
 
         const bool save    = false;
         const int  freq    = 1;
@@ -143,8 +190,11 @@ int main() {
         #pragma omp critical(print_info)
         {
             cout << "[Bits nb vs ov] run " << job.run << "/" << nb_runs
-                 << " | N=" << N << " | alpha=" << job.alpha << " (P=" << P << ")"
-                 << " | T=" << job.temperature << " | rho=" << rho
+                 << " | N=" << N
+                 << " | alpha=" << job.alpha << " (P=" << P << ")"
+                 << " | T=" << job.temperature
+                 << " | rho=" << rho
+                 << " | N_sweeps=" << N_sweeps
                  << " | thread=" << omp_get_thread_num() << '\n';
         }
 
@@ -154,119 +204,206 @@ int main() {
         using CfgT     = decay_t<decltype(bits_nb.getSpinsConfig())>;
         using CfgBitsT = decay_t<decltype(bits_nb.getSpinsConfigBits())>;
         using PatBitsT = decay_t<decltype(bits_nb.getPatternsBits())>;
+
         static_assert(is_same<CfgT, vector<int>>::value,
                       "getSpinsConfig() is expected to return vector<int>");
 
         // Graph: built once on bits_nb, copied to bits_ov
         gsl_rng_set(ran, seed_graph(job.run));
+
         bits_nb.initNetwork_RegularRandom(rho, ran);
         copy_graph(bits_nb, bits_ov);
 
-        // Patterns + initial state: one pair per repetition (drawn on bits_nb)
-        //   rep 0 : original sequence (patterns follow the spins on the same stream)
-        //   rep i : same spin draw, patterns from their own stream seed_pat_rep
+        // Patterns + initial state: one pair per repetition
+        // rep 0 : original sequence
+        // rep i : same spin draw, patterns from their own stream seed_pat_rep
         vector<CfgT>     init_cfg(n_rep);
         vector<CfgBitsT> init_bits(n_rep);
         vector<PatBitsT> pat_bits(n_rep);
 
         for (int i = 0; i < n_rep; ++i) {
+
             gsl_rng_set(ran, seed_init_rep(job.run, i));
+
             bits_nb.initSpinsBits(ran);
             bits_nb.toCanonical();
-            if (i > 0) gsl_rng_set(ran, seed_pat_rep(job.run, i));
+
+            if (i > 0) {
+                gsl_rng_set(ran, seed_pat_rep(job.run, i));
+            }
+
             bits_nb.initPatternsBits(ran);
+
             init_cfg[i]  = bits_nb.getSpinsConfig();
             init_bits[i] = bits_nb.getSpinsConfigBits();
             pat_bits[i]  = bits_nb.getPatternsBits();
         }
 
-        vector<CfgT> start_nb(n_rep), start_ov(n_rep), end_nb(n_rep), end_ov(n_rep);
+        vector<CfgT> start_nb(n_rep), start_ov(n_rep);
+        vector<CfgT> end_nb(n_rep), end_ov(n_rep);
 
         auto reset_nb = [&](int i) {
+
             bits_nb.initPatternsFromConfigBits(pat_bits[i]);
             bits_nb.initSpinsFromConfigBits(init_bits[i]);
             bits_nb.toCanonical();
+
             start_nb[i] = bits_nb.getSpinsConfig();
         };
+
         auto reset_ov = [&](int i) {
+
             bits_ov.initPatternsFromConfigBits(pat_bits[i]);
             bits_ov.initSpinsFromConfigBits(init_bits[i]);
             bits_ov.toCanonical();
+
             start_ov[i] = bits_ov.getSpinsConfig();
         };
-        auto post_nb = [&](int i) { bits_nb.toCanonical(); end_nb[i] = bits_nb.getSpinsConfig(); };
-        auto post_ov = [&](int i) { bits_ov.toCanonical(); end_ov[i] = bits_ov.getSpinsConfig(); };
 
-        auto check_pair = [&](const char* stage, int rep, const CfgT& a, const CfgT& b) -> bool {
+        auto post_nb = [&](int i) {
+            bits_nb.toCanonical();
+            end_nb[i] = bits_nb.getSpinsConfig();
+        };
+
+        auto post_ov = [&](int i) {
+            bits_ov.toCanonical();
+            end_ov[i] = bits_ov.getSpinsConfig();
+        };
+
+        auto check_pair = [&](const char* stage,
+                              int rep,
+                              const CfgT& a,
+                              const CfgT& b) -> bool {
+
             const bool ok = IO.check_equality_configs(a, b, N);
+
             if (!ok) {
                 #pragma omp critical(print_check)
-                cout << "[FAILED] run " << job.run << " rep " << rep
-                     << " | " << stage << " | Bits neighbors vs Bits overlaps\n";
+                {
+                    cout << "[FAILED] run " << job.run
+                         << " rep " << rep
+                         << " | " << stage
+                         << " | Bits neighbors vs Bits overlaps\n";
+                }
             }
+
             return ok;
         };
 
         bool all_ok = true;
+
         for (int i = 0; i < n_rep; ++i) {
+
             reset_nb(i);
             reset_ov(i);
-            all_ok &= check_pair("before", i, start_nb[i], start_ov[i]);
+
+            all_ok &= check_pair(
+                "before",
+                i,
+                start_nb[i],
+                start_ov[i]
+            );
         }
-        if (all_ok) cout << "=== SUCCESS (before evolution) ===\n";
 
-        auto seed_of = [&](int i) { return seed_evol_rep(job.run, i); };
+        if (all_ok) {
+            cout << "=== SUCCESS (before evolution) ===\n";
+        }
 
-        // ── Timed work ───────────────────────────────────────────────────────
-        auto run_nb = [&] { bits_nb.runSweeps_neighbors(ran, save, freq, burn_in); };
-        auto run_ov = [&] { bits_ov.runSweeps_overlaps (ran, save, freq, burn_in); };
+        auto seed_of = [&](int i) {
+            return seed_evol_rep(job.run, i);
+        };
 
-        // Warm-up: one untimed run of each method (result discarded; every
-        // repetition below starts from reset(i), so the warm-up leaves no trace).
-        reset_nb(0); timed_run(ran, seed_of(0), run_nb);
-        reset_ov(0); timed_run(ran, seed_of(0), run_ov);
+        // Timed work
+        auto run_nb = [&] {
+            bits_nb.runSweeps_neighbors(ran, save, freq, burn_in);
+        };
+
+        auto run_ov = [&] {
+            bits_ov.runSweeps_overlaps(ran, save, freq, burn_in);
+        };
+
+        // Warm-up: one untimed run of each method
+        reset_nb(0);
+        timed_run(ran, seed_of(0), run_nb);
+
+        reset_ov(0);
+        timed_run(ran, seed_of(0), run_ov);
 
         vector<double> t_nb, t_ov;
+
         t_nb.reserve(n_rep);
         t_ov.reserve(n_rep);
 
         auto measure_nb = [&](int i) {
-            reset_nb(i);                                   // not timed
+
+            reset_nb(i);
             t_nb.push_back(timed_run(ran, seed_of(i), run_nb));
-            post_nb(i);                                    // not timed
-        };
-        auto measure_ov = [&](int i) {
-            reset_ov(i);                                   // not timed
-            t_ov.push_back(timed_run(ran, seed_of(i), run_ov));
-            post_ov(i);                                    // not timed
+            post_nb(i);
         };
 
-        // Interleaved, alternating order: same i for both methods (paired).
+        auto measure_ov = [&](int i) {
+
+            reset_ov(i);
+            t_ov.push_back(timed_run(ran, seed_of(i), run_ov));
+            post_ov(i);
+        };
+
+        // Interleaved, alternating order: same i for both methods (paired)
         for (int i = 0; i < n_rep; ++i) {
-            if (i % 2 == 0) { measure_nb(i); measure_ov(i); }
-            else            { measure_ov(i); measure_nb(i); }
+
+            if (i % 2 == 0) {
+                measure_nb(i);
+                measure_ov(i);
+            }
+            else {
+                measure_ov(i);
+                measure_nb(i);
+            }
         }
 
         const Stats st_nb = compute_stats(t_nb);
         const Stats st_ov = compute_stats(t_ov);
 
         all_ok = true;
-        for (int i = 0; i < n_rep; ++i)
-            all_ok &= check_pair("after", i, end_nb[i], end_ov[i]);
-        if (all_ok) cout << "=== SUCCESS (after evolution) ===\n";
 
-        const double ratio = st_nb.median / st_ov.median;   // >1 : overlaps faster
+        for (int i = 0; i < n_rep; ++i) {
+            all_ok &= check_pair(
+                "after",
+                i,
+                end_nb[i],
+                end_ov[i]
+            );
+        }
 
+        if (all_ok) {
+            cout << "=== SUCCESS (after evolution) ===\n";
+        }
+
+        const double ratio = st_nb.median / st_ov.median;
+
+        // Write CSV
         #pragma omp critical(write_csv)
         {
-            out << N << "," << rho << "," << job.alpha << "," << beta << ","
-                << N_sweeps << "," << n_rep << ",";
-            write_stats(out, st_nb); out << ",";
-            write_stats(out, st_ov); out << ",";
+            out << N << ","
+                << rho << ","
+                << job.alpha << ","
+                << beta << ","
+                << N_sweeps << ","
+                << n_rep << ",";
+
+            write_stats(out, st_nb);
+            out << ",";
+
+            write_stats(out, st_ov);
+            out << ",";
+
             out << ratio << "\n";
             out.flush();
+
             cout << "Run " << job.run << "/" << nb_runs
-                 << " median: nb=" << st_nb.median << "s, ov=" << st_ov.median
+                 << " | N_sweeps=" << N_sweeps
+                 << " | median: nb=" << st_nb.median
+                 << "s, ov=" << st_ov.median
                  << "s | nb/ov=" << ratio << "\n";
         }
 
@@ -274,7 +411,10 @@ int main() {
     }
 
     auto end_all = chrono::steady_clock::now();
+
     cout << "\nTotal wall time: "
-         << chrono::duration<double>(end_all - start_all).count() << " s\n";
+         << chrono::duration<double>(end_all - start_all).count()
+         << " s\n";
+
     return 0;
 }
