@@ -43,8 +43,8 @@ N_DEFAULT = 32 * 32
 
 # Plot range (inclusive). None = no restriction.
 #   e.g. ALPHA_RANGE = (0.05, 0.3)    RHO_RANGE = (0.5, 1.0)
-ALPHA_RANGE = (0.05, 0.3)
-RHO_RANGE = (0.4, 0.8)
+ALPHA_RANGE = None
+RHO_RANGE = None
 KEY = ["N", "rho", "alpha", "beta"]
 PRETTY = {"rho": r"$\rho$", "alpha": r"$\alpha$", "beta": r"$\beta$", "N": r"$N$"}
 
@@ -294,7 +294,7 @@ def heatmap_ratio(df, zcol, name, label, title, outdir, curve=True, center=1.0):
         if side.min() != side.max() and cell_boundary(
                 ax, side, color="crimson", lw=2.0, zorder=6, ls="--"):
             handles.append(Line2D([], [], color="crimson", lw=2.0,
-                                  label=r"$\rho=(5/6)*\alpha+1/2$"))
+                                  label=r"$\rho=(2/3)*\alpha+1/2$"))
 
     if handles:
         ax.legend(handles=handles, loc="upper right",
@@ -424,7 +424,7 @@ def process_kind(kind, given, a):
         if msg:
             print(f"  beta={b:g} | " + " | ".join(msg))
 
-        name = f"ratio_loop_{kind}_alpha_rho_beta{b:g}{suffix}"
+        name = f"ratio_loop_{kind}_alpha_rho_beta{b:g}"
         try:
             ok |= bool(heatmap_ratio(sub, "ratio_loop", name, label,
                                      rf"{Nt}, $\beta={b:g}$", outdir,
