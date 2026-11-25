@@ -43,8 +43,8 @@ N_DEFAULT = 32 * 32
 
 # Plot range (inclusive). None = no restriction.
 #   e.g. ALPHA_RANGE = (0.05, 0.3)    RHO_RANGE = (0.5, 1.0)
-ALPHA_RANGE = None
-RHO_RANGE = None
+ALPHA_RANGE = (0.05, 0.35)
+RHO_RANGE = (0.5, 0.8)
 KEY = ["N", "rho", "alpha", "beta"]
 PRETTY = {"rho": r"$\rho$", "alpha": r"$\alpha$", "beta": r"$\beta$", "N": r"$N$"}
 
