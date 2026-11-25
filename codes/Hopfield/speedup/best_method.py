@@ -1,17 +1,33 @@
 #!/usr/bin/env python3
 """
-Plot 1 only: ratio t_overlaps / t_neighbors, alpha (y) vs rho (x),
-for 3 CSV files (bits, nobits_indep, nobits_shared), one figure per beta.
-A missing CSV / column / beta is skipped with a message, never a crash.
+Loop-only ratio of the two methods (neighbors vs overlaps).
+
+For each cell (N, rho, alpha, beta) and each method, the median time is fitted
+against the number of sweeps S :
+
+        t(S) = t0 + S * t1
+
+t0 is the initialisation cost (everything inside runSweeps_* that does not
+scale with S), t1 is the cost of one Metropolis sweep. The plotted ratio is
+built from the slopes t1 only, so the initialisation is removed.
+
+One heatmap (alpha vs rho, log scale centred on 1) per beta and per CSV kind.
+A table of the fits (t0, t1, init fraction, S needed for init < 1 %) is saved
+next to the CSVs as loopfit_<kind>.csv.
+
+Several CSV files (one per n_sweeps) or one CSV with several n_sweeps are fine:
+they are concatenated. Missing files / columns / betas are skipped, never a crash.
 
 Usage:
-  python make_plots.py
-  python make_plots.py --dir results/
-  python make_plots.py --bits a.csv --indep b.csv --shared c.csv
-  python make_plots.py --N-fixed 1024 --stat mean --betas 0.5 1 2
+  python make_plots_loop.py --dir results/
+  python make_plots_loop.py --bits a.csv b.csv c.csv d.csv
+  python make_plots_loop.py --dir results/ --ratio nb_over_ov --min-points 3
+
+Plot range: edit ALPHA_RANGE and RHO_RANGE at the top of the file.
 """
 
 import argparse
+import glob
 import os
 import shutil
 import sys
@@ -23,23 +39,20 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.colors import FuncNorm
 
-N_DEFAULT = 16 * 16
+N_DEFAULT = 32 * 32
+
+# Plot range (inclusive). None = no restriction.
+#   e.g. ALPHA_RANGE = (0.05, 0.3)    RHO_RANGE = (0.5, 1.0)
+ALPHA_RANGE = (0.05, 0.3)
+RHO_RANGE = (0.4, 0.8)
+KEY = ["N", "rho", "alpha", "beta"]
 PRETTY = {"rho": r"$\rho$", "alpha": r"$\alpha$", "beta": r"$\beta$", "N": r"$N$"}
 
-# kind -> (default csv name, column prefix, colorbar label)
+# kind -> (glob pattern for the default file names, column prefix, label tag)
 KINDS = {
-    "bits": (
-        "speedup_bits.csv", "t_bitwise",
-        r"$t^{\rm bits}_{\rm overlaps}\,/\,t^{\rm bits}_{\rm neighbors}$",
-    ),
-    "nobits_indep": (
-        "speedup_nobits_indep.csv", "t_classic_indep",
-        r"$t^{\rm classic,\,indep}_{\rm overlaps}\,/\,t^{\rm classic,\,indep}_{\rm neighbors}$",
-    ),
-    "nobits_shared": (
-        "speedup_nobits_shared.csv", "t_classic_shared",
-        r"$t^{\rm classic,\,shared}_{\rm overlaps}\,/\,t^{\rm classic,\,shared}_{\rm neighbors}$",
-    ),
+    "bits":          ("speedup_bits*.csv",          "t_bitwise",       "bits"),
+    "nobits_indep":  ("speedup_nobits_indep*.csv",  "t_classic_indep", "classic,indep"),
+    "nobits_shared": ("speedup_nobits_shared*.csv", "t_classic_shared", "classic,shared"),
 }
 
 
@@ -107,9 +120,59 @@ def select(df, fixed):
     return df[mask]
 
 
-def make_pivot(sub, x, y, zcol, agg):
-    piv = sub.pivot_table(index=y, columns=x, values=zcol, aggfunc=agg)
+def restrict(df, alpha_range, rho_range):
+    """Keep only rows with alpha / rho inside [min, max] (inclusive).
+
+    Returns the filtered frame and a file-name suffix describing the range
+    ("" if no range is given), so restricted plots never overwrite full ones.
+    """
+    suffix = ""
+    for col, rng in (("rho", rho_range), ("alpha", alpha_range)):
+        if rng is None:
+            continue
+        lo, hi = sorted(rng)
+        df = df[(df[col] >= lo - 1e-9) & (df[col] <= hi + 1e-9)]
+        suffix += f"_{col}{lo:g}-{hi:g}"
+    return df, suffix
+
+
+def make_pivot(sub, x, y, zcol):
+    piv = sub.pivot_table(index=y, columns=x, values=zcol, aggfunc="mean")
     return piv.sort_index().sort_index(axis=1)
+
+
+def fit_cells(df, c_nb, c_ov, min_points):
+    """Weighted linear fit t = t0 + S*t1 per cell and per method.
+
+    The timing noise is relative (about constant in %), so the weights are
+    1/t, which prevents the longest runs from dominating the fit.
+    """
+    d = df[KEY + ["n_sweeps", c_nb, c_ov]].copy()
+    for k in ("rho", "alpha", "beta"):
+        d[k] = d[k].astype(float).round(9)
+    # same cell and same n_sweeps in several files -> median
+    d = d.groupby(KEY + ["n_sweeps"], as_index=False)[[c_nb, c_ov]].median()
+
+    rows = []
+    for key, g in d.groupby(KEY):
+        row = dict(zip(KEY, key))
+        row["n_points"] = int(g["n_sweeps"].nunique())
+        S = g["n_sweeps"].to_numpy(float)
+        for tag, col in (("nb", c_nb), ("ov", c_ov)):
+            t0 = t1 = frac = s1 = np.nan
+            t = g[col].to_numpy(float)
+            if row["n_points"] >= min_points and np.all(np.isfinite(t)) and np.all(t > 0):
+                t1, t0 = np.polyfit(S, t, 1, w=1.0 / t)
+                frac = t0 / (t0 + t1 * S.max()) if t1 > 0 else np.nan
+                # n_sweeps for which t0 / t(S) < 1 %
+                s1 = max(99.0 * t0 / t1, 0.0) if t1 > 0 else np.nan
+            row[f"t0_{tag}"] = t0
+            row[f"t1_{tag}"] = t1
+            row[f"init_frac_Smax_{tag}"] = frac
+            row[f"S_for_1pct_{tag}"] = s1
+        row["S_min"], row["S_max"] = S.min(), S.max()
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 # --------------------------------------------------------------------------- color scale
@@ -172,20 +235,20 @@ def cell_boundary(ax, cls, **kw):
     return drawn
 
 
-# --------------------------------------------------------------------------- plot 1
+# --------------------------------------------------------------------------- plot
 
-def heatmap_ratio(df, zcol, name, label, title, outdir, agg, center=1.0):
+def heatmap_ratio(df, zcol, name, label, title, outdir, curve=True, center=1.0):
     x, y = "rho", "alpha"
-    piv = make_pivot(df, x, y, zcol, agg)
+    piv = make_pivot(df, x, y, zcol)
     Z = piv.values
     vals = Z[np.isfinite(Z)]
 
     if vals.size == 0 or piv.shape[0] < 2 or piv.shape[1] < 2:
         print(f"  [skip] {name}: not enough points for a 2D grid")
-        return
+        return False
     if vals.min() <= 0:
         print(f"  [skip] {name}: non-positive values, log scale impossible")
-        return
+        return False
 
     vmin = min(float(vals.min()), center)
     vmax = max(float(vals.max()), center)
@@ -221,18 +284,17 @@ def heatmap_ratio(df, zcol, name, label, title, outdir, agg, center=1.0):
 
     handles = []
 
-    # Boundary Z >= 1 / Z < 1
     above = np.where(np.isfinite(Z), Z >= center, np.nan)
     if cell_boundary(ax, above, color="black", lw=2.0, zorder=5):
         handles.append(Line2D([], [], color="black", lw=2.0,
                               label=rf"$Z={center:g}$"))
 
-    # Curve rho = alpha + 1/2
-    side = np.where(Y[:, None] <= (X - 0.5)[None, :] + 1e-9, 1.0, 0.0)
-    if side.min() != side.max() and cell_boundary(
-            ax, side, color="crimson", lw=2.0, zorder=6, ls="--"):
-        handles.append(Line2D([], [], color="crimson", lw=2.0,
-                              label=r"$\rho=\alpha+1/2$"))
+    if curve:
+        side = np.where((5/6)*Y[:, None] <= (X - 0.5)[None, :] + 1e-9, 1.0, 0.0)
+        if side.min() != side.max() and cell_boundary(
+                ax, side, color="crimson", lw=2.0, zorder=6, ls="--"):
+            handles.append(Line2D([], [], color="crimson", lw=2.0,
+                                  label=r"$\rho=(5/6)*\alpha+1/2$"))
 
     if handles:
         ax.legend(handles=handles, loc="upper right",
@@ -252,40 +314,89 @@ def heatmap_ratio(df, zcol, name, label, title, outdir, agg, center=1.0):
 
     fig.tight_layout()
     save(fig, outdir, name)
+    return True
 
 
-# --------------------------------------------------------------------------- per-CSV driver
+def ratio_label(tag, ratio):
+    num, den = ("overlaps", "neighbors") if ratio == "ov_over_nb" else ("neighbors", "overlaps")
+    return (r"$t^{\rm " + tag + r"}_{\rm " + num + r"}\,/\,t^{\rm " + tag
+            + r"}_{\rm " + den + r"}$" + "\n(Metropolis loop only)")
 
-def process_csv(kind, path, a):
-    default_name, prefix, label = KINDS[kind]
-    print(f"\n[{kind}] {path}")
 
-    if not os.path.isfile(path):
-        print("  [skip] file not found")
+# --------------------------------------------------------------------------- per-kind driver
+
+def find_files(kind, given, a):
+    if given:
+        return list(given)
+    return sorted(glob.glob(os.path.join(a.dir, KINDS[kind][0])))
+
+
+def process_kind(kind, given, a):
+    pattern, prefix, tag = KINDS[kind]
+    files = find_files(kind, given, a)
+    print(f"\n[{kind}] {len(files)} file(s)")
+    if not files:
+        print("  [skip] no file found")
         return False
 
-    try:
-        df = pd.read_csv(path)
-    except Exception as e:
-        print(f"  [skip] cannot read file: {e}")
-        return False
-
+    c_nb = f"{prefix}_neighbors_{a.stat}"
     c_ov = f"{prefix}_overlaps_{a.stat}"
-    c_ne = f"{prefix}_neighbors_{a.stat}"
-    needed = ["rho", "alpha", "beta", "N", c_ov, c_ne]
-    missing = [c for c in needed if c not in df.columns]
-    if missing:
-        print(f"  [skip] missing columns: {', '.join(missing)}")
+    needed = KEY + ["n_sweeps", c_nb, c_ov]
+
+    frames = []
+    for p in files:
+        if not os.path.isfile(p):
+            print(f"  [skip] {p}: not found")
+            continue
+        try:
+            d = pd.read_csv(p)
+        except Exception as e:
+            print(f"  [skip] {p}: cannot read ({e})")
+            continue
+        miss = [c for c in needed if c not in d.columns]
+        if miss:
+            print(f"  [skip] {p}: missing columns {', '.join(miss)}")
+            continue
+        print(f"  read {p}: {len(d)} rows, n_sweeps = "
+              f"{', '.join(str(s) for s in sorted(d['n_sweeps'].unique()))}")
+        frames.append(d[needed])
+    if not frames:
+        print("  [skip] no usable file")
         return False
 
-    zcol = f"ratio_{kind}"
-    df[zcol] = df[c_ov] / df[c_ne]
-    df = df.replace([np.inf, -np.inf], np.nan)
+    df = pd.concat(frames, ignore_index=True).replace([np.inf, -np.inf], np.nan)
+    n_s = sorted(df["n_sweeps"].unique())
+    print(f"  n_sweeps available: {', '.join(str(int(s)) for s in n_s)}")
+    if len(n_s) < max(a.min_points, 2):
+        print(f"  [skip] need at least {max(a.min_points, 2)} distinct n_sweeps")
+        return False
 
-    N_sel = select(df, {"N": a.N_fixed})
+    fits = fit_cells(df, c_nb, c_ov, a.min_points)
+    outdir = os.path.dirname(os.path.abspath(files[0]))
+    fit_path = os.path.join(outdir, f"loopfit_{kind}.csv")
+    try:
+        fits.to_csv(fit_path, index=False, float_format="%.6g")
+        print(f"  -> {os.path.basename(fit_path)} (t0, t1, init fraction per cell)")
+    except Exception as e:
+        print(f"  [warn] cannot write {fit_path}: {e}")
+
+    if a.ratio == "ov_over_nb":
+        fits["ratio_loop"] = fits["t1_ov"] / fits["t1_nb"]
+    else:
+        fits["ratio_loop"] = fits["t1_nb"] / fits["t1_ov"]
+    fits = fits.replace([np.inf, -np.inf], np.nan)
+
+    N_sel = select(fits, {"N": a.N_fixed})
     if N_sel.empty:
         print(f"  [skip] no rows for N={a.N_fixed:g}")
         return False
+
+    N_sel, suffix = restrict(N_sel, ALPHA_RANGE, RHO_RANGE)
+    if N_sel.empty:
+        print("  [skip] no rows left after the alpha / rho restriction")
+        return False
+    if suffix:
+        print(f"  range restriction: {suffix.strip('_').replace('_', ', ')}")
 
     betas = np.sort(N_sel["beta"].unique())
     if a.betas:
@@ -295,17 +406,29 @@ def process_csv(kind, path, a):
             return False
     print(f"  betas: {', '.join(f'{b:g}' for b in betas)}")
 
-    outdir = os.path.dirname(os.path.abspath(path))
+    label = ratio_label(tag, a.ratio)
     Nt = rf"$N={a.N_fixed:g}$"
     ok = False
 
     for b in betas:
         sub = select(N_sel, {"beta": b})
-        name = f"ratio_{kind}_alpha_rho_beta{b:g}"
+
+        # Summary of the initialisation cost for this beta.
+        msg = []
+        for m in ("nb", "ov"):
+            fr = sub[f"init_frac_Smax_{m}"].dropna()
+            s1 = sub[f"S_for_1pct_{m}"].dropna()
+            if len(fr):
+                msg.append(f"{m}: init/t(Smax) median {100*fr.median():.2f}% "
+                           f"max {100*fr.max():.2f}%, S for <1% up to {s1.max():.0f}")
+        if msg:
+            print(f"  beta={b:g} | " + " | ".join(msg))
+
+        name = f"ratio_loop_{kind}_alpha_rho_beta{b:g}{suffix}"
         try:
-            heatmap_ratio(sub, zcol, name, label,
-                          rf"{Nt}, $\beta={b:g}$", outdir, a.agg)
-            ok = True
+            ok |= bool(heatmap_ratio(sub, "ratio_loop", name, label,
+                                     rf"{Nt}, $\beta={b:g}$", outdir,
+                                     curve=not a.no_curve))
         except Exception as e:
             print(f"  [error] {name}: {e}", file=sys.stderr)
             if a.debug:
@@ -316,32 +439,32 @@ def process_csv(kind, path, a):
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--dir", default=".", help="Directory for default CSV names")
-    ap.add_argument("--bits", default=None, help="CSV speedup_bits")
-    ap.add_argument("--indep", default=None, help="CSV speedup_nobits_indep")
-    ap.add_argument("--shared", default=None, help="CSV speedup_nobits_shared")
-    ap.add_argument("--agg", default="mean", choices=["mean", "median"])
+    ap.add_argument("--dir", default=".", help="Directory searched for speedup_<kind>*.csv")
+    ap.add_argument("--bits", nargs="*", default=None, help="CSV file(s) speedup_bits")
+    ap.add_argument("--indep", nargs="*", default=None, help="CSV file(s) speedup_nobits_indep")
+    ap.add_argument("--shared", nargs="*", default=None, help="CSV file(s) speedup_nobits_shared")
     ap.add_argument("--stat", default="median", choices=["median", "mean"])
     ap.add_argument("--N-fixed", type=float, default=N_DEFAULT)
     ap.add_argument("--betas", nargs="*", type=float,
-                    help="Betas to plot (default: all betas found in each CSV)")
+                    help="Betas to plot (default: all betas found)")
+    ap.add_argument("--min-points", type=int, default=3,
+                    help="Minimum number of distinct n_sweeps per cell for the fit (default 3)")
+    ap.add_argument("--ratio", default="ov_over_nb", choices=["ov_over_nb", "nb_over_ov"],
+                    help="ov_over_nb: t_overlaps/t_neighbors (default); "
+                         "nb_over_ov: t_neighbors/t_overlaps (as in the C++ column)")
+    ap.add_argument("--no-curve", action="store_true", help="Do not draw rho = alpha + 1/2")
     ap.add_argument("--no-tex", action="store_true")
     ap.add_argument("--debug", action="store_true", help="Print tracebacks")
     a = ap.parse_args()
 
     set_style(not a.no_tex)
 
-    paths = {
-        "bits": a.bits or os.path.join(a.dir, KINDS["bits"][0]),
-        "nobits_indep": a.indep or os.path.join(a.dir, KINDS["nobits_indep"][0]),
-        "nobits_shared": a.shared or os.path.join(a.dir, KINDS["nobits_shared"][0]),
-    }
-
+    given = {"bits": a.bits, "nobits_indep": a.indep, "nobits_shared": a.shared}
     done = 0
-    for kind, path in paths.items():
+    for kind in KINDS:
         try:
-            done += bool(process_csv(kind, path, a))
-        except Exception as e:  # last safety net: one CSV never kills the others
+            done += bool(process_kind(kind, given[kind], a))
+        except Exception as e:  # one kind never kills the others
             print(f"  [error] {kind}: {e}", file=sys.stderr)
             if a.debug:
                 traceback.print_exc()
@@ -349,7 +472,7 @@ def main():
     if done == 0:
         print("\nNo figure produced (no usable CSV found).", file=sys.stderr)
     else:
-        print(f"\nDone: {done}/3 CSV processed.")
+        print(f"\nDone: {done}/3 kinds processed.")
 
 
 if __name__ == "__main__":

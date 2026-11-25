@@ -105,7 +105,7 @@ int main() {
     vector<int>    sizes        = {32};
     vector<double> alpha_vals   = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6};
     vector<double> temperatures = {0.1, 1, 5};
-    vector<double> rho_vals     = {0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
+    vector<double> rho_vals     = {0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0};
 
     // Number of sweeps to benchmark
     const vector<int> N_sweeps_vals = {
@@ -305,7 +305,7 @@ int main() {
         }
 
         if (all_ok) {
-            cout << "=== SUCCESS (before evolution) ===\n";
+            cout << "=== INDENTICAL CONFIGS (before evolution) ===\n";
         }
 
         auto seed_of = [&](int i) {
@@ -375,7 +375,7 @@ int main() {
         }
 
         if (all_ok) {
-            cout << "=== SUCCESS (after evolution) ===\n";
+            cout << "=== INDENTICAL CONFIGS (after evolution) ===\n";
         }
 
         const double ratio = st_nb.median / st_ov.median;
@@ -399,11 +399,15 @@ int main() {
             out << ratio << "\n";
             out.flush();
 
-            cout << "Run " << job.run << "/" << nb_runs
-                 << " | N_sweeps=" << N_sweeps
-                 << " | median: nb=" << st_nb.median
-                 << "s, ov=" << st_ov.median
-                 << "s | nb/ov=" << ratio << "\n";
+            cout << "Run " << job.run
+            << " | N=" << N
+            << " | alpha=" << job.alpha << " (P=" << P << ")"
+            << " | T=" << job.temperature
+            << " | rho=" << rho
+            << " | N_sweeps=" << N_sweeps
+            << " | median: nb=" << st_nb.median
+            << "s, ov=" << st_ov.median
+            << "s | nb/ov=" << ratio << "\n";
         }
 
         gsl_rng_free(ran);
