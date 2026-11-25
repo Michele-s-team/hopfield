@@ -4,26 +4,27 @@
 \FloatBarrier
 \subsection{Performance test - Comparison of the two algorithms}
 \noteBastien{la discussion de mon rapport de stage sur les performances du code pour Hopfield se trouve dans "brouillon"}
+
 \nolinenumbers
 \begin{figure}[t]
 \centering
-
-\includegraphics[width=\columnwidth]{ratio_tbits_alpha_rho.pdf}
-\caption{\noteBastien{placeholder} on retrouve normalement la frontière attendue entre les deux régimes de performances des deux méthodes}
+\begin{subfigure}[t]{0.49\columnwidth}
+  \centering
+  \includegraphics[width=\linewidth]{ratio_loop_bits_alpha_rho_beta0.2.pdf}
+  \caption{$\beta = 0.2$}
+  \label{fig:best_algo_bits_lowbeta}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\columnwidth}
+  \centering
+  \includegraphics[width=\linewidth]{ratio_loop_bits_alpha_rho_beta10.pdf}
+  \caption{$\beta = 10$}
+  \label{fig:best_algo_bits_highbeta}
+\end{subfigure}
+\caption{\noteBastien{frontière entre les deux régimes de performances des deux méthodes, et l'approximation obtenue, à faible $\beta$ (a) et à $\beta$ élevé (b)}}
 \label{fig:best_algo_bits}
 \end{figure}
 \linenumbers
-\nolinenumbers
-\begin{figure}[b]
-\centering
-
-\includegraphics[width=\columnwidth]{ratio_tbits_alpha_rho.pdf}
-\caption{\noteBastien{placeholder} idem pour la version classique ?}
-\label{fig:best_algo_nobits}
-\end{figure}
-\linenumbers
 \FloatBarrier
-\subsection{Performance test - Speedup factor \noteBastien{sous-titre à changer}}
 
 \nolinenumbers
 \begin{figure}[b]
