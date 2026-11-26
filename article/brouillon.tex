@@ -1,35 +1,185 @@
-\begin{figure}[ht]
+\documentclass[%
+ %reprint,                 % retiré : l'en-tête d'origine n'utilisait pas reprint
+ superscriptaddress,
+ amsmath,amssymb,
+ aps,
+ pra,                      % pre -> pra (comme l'en-tête d'origine)
+ floatfix,
+]{revtex4-2}
+
+% --- Encoding and language ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{xspace}
+\usepackage{xcolor}
+
+% --- Mathematics and symbols ---
+\usepackage{mathrsfs, stmaryrd}
+\usepackage{amsfonts}
+\usepackage{siunitx}
+\usepackage{bm}
+\DeclareMathOperator\arctanh{arctanh}
+
+% --- Graphics and figures ---
+\usepackage{graphicx}
+\usepackage{float}        % option [H]
+\usepackage{caption}
+\usepackage{subcaption}   % si problème avec revtex, utiliser \usepackage{subfig}
+\graphicspath{{pictures/}}
+\usepackage{placeins}     % pour \FloatBarrier
+
+\captionsetup[figure]{justification=raggedright, singlelinecheck=false, format=plain}
+\captionsetup[subfigure]{justification=centering}
+
+% --- Float placement ---
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{6}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.7}
+\setlength{\parskip}{0.5\baselineskip}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{multirow, array, makecell}
+\usepackage{dcolumn}
+
+% --- Lists ---
+\usepackage{enumitem}
+
+% --- Algorithms and code ---
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{listings}
+\usepackage{fvextra}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+
+% --- Text editing / review ---
+\usepackage[normalem]{ulem}
+\usepackage{lineno}
+
+% --- References (hyperref avant cleveref) ---
+\usepackage{hyperref}
+\usepackage{cleveref}
+\crefname{algocf}{algorithm}{algorithms}
+\Crefname{algocf}{Algorithm}{Algorithms}
+\bibliographystyle{apsrev4-2}
+
+% --- Macros : annotations (à retirer avant soumission) ---
+\newcommand{\note}[1]{\textcolor{blue}{#1}}
+\newcommand{\noteBastien}[1]{\textcolor{blue}{#1}}
+\newcommand{\noteMichele}[1]{\textcolor{red}{#1}}
+\newcommand{\noteDavid}[1]{\textcolor{green}{#1}}
+
+% --- Macros : code identifiers ---
+\newcommand{\UnsignedInt}{\texttt{UnsignedInt}\xspace}
+\newcommand{\UnsignedInts}{\texttt{UnsignedInts}\xspace}
+\newcommand{\BitSet}{\texttt{BitSet}\xspace}
+\newcommand{\BitSets}{\texttt{BitSets}\xspace}
+\newcommand{\Bits}{\texttt{Bits}\xspace}
+
+\begin{document}
+
+We show in \Cref{fig:phase_transition} the evolution of the error with the storage load:
+\nolinenumbers
+\begin{figure}[h]
 \centering
-\begin{tikzpicture}
-
-\def\boxw{0.6} % largeur exacte de la boîte
-\def\step{\boxw} % PAS = largeur => boîtes collées
-
-% left boxes
-\foreach \i/\label in {0/0, 1/1, 2/2} {
-    \draw (\i*\step, 0) rectangle (\i*\step+\boxw, 0.6);
-    \node[font=\small] at (\i*\step+0.3, 0.3) {$b_1^\label$};
-}
-
-% ...
-\node at (3*\step+0.33, 0.3) {$\cdots$};
-
-% right boxes
-\foreach \i/\clabel in {0/62, 1/63} {
-    \draw (4*\step + \i*\step, 0)
-        rectangle (4*\step + \i*\step+\boxw, 0.6);
-    \node[font=\small] at (4*\step + \i*\step+0.3, 0.3)
-        {$b_1^{\clabel}$};
-}
-% left label
-\node at (-0.6, 0.3) {$S_1=$};
-
-\end{tikzpicture}
+\includegraphics[width=0.6\columnwidth]{phase_transition.png}
+\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes totally uncorrelated with the stored patterns and the error suddenly jumps to 0.5.}
+\label{fig:phase_transition}
 \end{figure}
+\linenumbers
+The convention used for what follows is presented in the Table \ref{tab:notation}:
+\nolinenumbers
+\begin{table}[b]
+\centering
+\begin{tabular}{ll}
+\hline
+Object & Notation \\
+\hline
+
+$n_\text{bits}$ replicas of spin i & $S_i \in \{-1,1\}^{n_\text{bits}}$ \\
+$n_\text{bits}$-bit word (\Bits) & $B_i \in \{0,1\}^{n_\text{bits}}$ \\
+Replica $k$ of spin $i$ & $s_i^{(k)} \in \{-1,+1\}$ \\
+Replica $k$ of bit $i$ & $b_i^{(k)} \in \{0,1\}$ \\
+\hline
+\end{tabular}
+\caption{Notation for the bitwise representation of spins.}
+\label{tab:notation}
+\end{table}
+\linenumbers
 
 
-Scalar spin & $s_i \in \{-1,+1\}$ \\
-Scalar bit & $b_i \in \{0,1\}$ \\
+We present in \Cref {fig:speedup_hopfield} the performance analysis of the code obtained with the implementation presented in \Cref{sec:base_implementation_hopfield}. Several values of $\alpha$ and lattice sizes have been tested for an evolution of $2^{10}$ sweeps each.
+Subfigure (\subref{fig:sweep_time_vs_N_hopfield}) confirms that both implementations have complexities $\mathcal{O}\left(N \cdot N_\text{neighbors}\right)\sim \mathcal{O}\left(N^2\right)$ per sweep.
 
 
-Thus, the obtained phase diagram is in excellent agreement with the expected phase diagram, taking into account that we work on finite size lattices.
+
+
+
+Compared to the two previous models, the speedup factor strikingly decreases close to 1 (and in some cases even below) in the case of the dense Hopfield network. The bitwise implementation is no longer more efficient than the reference one. In addition, the speedup factor appears to be mostly uncorrelated with the temperature and the storage capacity of the network.
+
+The main explanation for this drop in efficiency of the bitwise implementation is the topology and the structure of the interactions in the case of the Hopfield model. Indeed, the Hopfield network is most commonly defined as a dense (fully connected) network, meaning that every neuron interacts with every other neuron in the network. This contrasts with the two previous models, in which each spin interacted with only four neighbors; in the Hopfield network, each neuron interacts with all $N-1$ remaining neurons. Thus, if the loop over neighbors at each spin update is not perfectly optimized in the bitwise implementation, the loss in performance can become considerable for dense networks, as observed here. The loss in performance is however much more discrete in the case of the Ising and spin glass models, for which we only sum on the 4 closest neighbors each time.
+
+This hypothesis is confirmed by the decrease of the speedup factor with the lattice size, impacting the number of neighbors to sum over. Also, when testing the code on a sparse Hopfield model, the obtained speedup is very comparable to that of the other models. Conversely, when initialized on a dense network, the Ising model bitwise implementation also yields a significantly reduced speedup factor, confirming again our hypothesis. This is also reassuring, as it shows that the issue does not stem from the generalized use of \UnsignedInt in this new bitwise implementation, but rather a common lack of optimization in all models, that finds its sources in the coding of the base classes \Bits and \UnsignedInt.
+
+The main reason for this lack of efficiency in the neighbors loop might the creation of temporary \texttt{Bits} objects over the summations, killing the code performance when done hundreds of thousands ($\sim N^2$) times per sweep.
+
+Two other related causes can explain the lack of performances for dense networks. The first one is the data structure and the other one is the memory access. The structure has indeed initially been built for sparse networks, with the use of lists of neighbors instead of direct interaction matrices. This implementation is effective when the network is sparse but becomes inefficient in the case of a dense network: instead of storing a fully filled $N \times N$ triangular interaction matrix containing $N \left(N-1\right)/2$ values (taking advantage of the symmetry), we store twice as many values in $N$ lists of $N-1$ components, thus increasing the memory usage, and potentially reducing the performance if the memory overflows the available RAM.
+\nolinenumbers
+\begin{figure*}[p]
+\centering
+% ── Rangée 1 : a et b ────────────────────────────────────────────────
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\columnwidth,height=0.17\textheight,keepaspectratio]{speedup_curves_hopfield.pdf}
+  \caption{Speedup factor evolution.}
+  \label{fig:speedup_curve_hopfield}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\columnwidth,height=0.17\textheight,keepaspectratio]{time_normalized_hopfield.pdf}
+  \caption{Normalized time evolution.}
+  \label{fig:normalised_time_hopfield}
+\end{subfigure}
+
+\vspace{0.5em}
+% ── Rangée 2 : c en pleine largeur ───────────────────────────────────
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\columnwidth,height=0.15\textheight,keepaspectratio]{time_total_vs_N_hopfield.pdf}
+  \caption{Sweep time depending on the lattice size for all temperatures.}
+  \label{fig:sweep_time_vs_N_hopfield}
+\end{subfigure}
+
+\vspace{0.5em}
+% ── Rangée 3 : d à gauche ────────────────────────────────────────────
+\begin{subfigure}[b]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\columnwidth,height=0.17\textheight,keepaspectratio]{speedup_curves_by_alpha_hopfield.pdf}
+  \caption{Speedup factor depending on the temperature for different $\alpha$ values.}
+  \label{fig:speedup_by_alpha_hopfield}
+\end{subfigure}\hfill
+\hspace*{0.49\textwidth}
+
+\vspace{0.5em}
+% ── Rangée 4 : e en pleine largeur ───────────────────────────────────
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\columnwidth,height=0.15\textheight,keepaspectratio]{time_normalized_by_alpha_hopfield.pdf}
+  \caption{Sweep time depending on the temperature for different $\alpha$ values.}
+  \label{fig:sweep_time_vs_alpha_hopfield}
+\end{subfigure}
+
+\caption{Performance analysis of the bitwise and classical Hopfield Metropolis implementations. In Subfigures~(\subref{fig:speedup_curve_hopfield}), (\subref{fig:normalised_time_hopfield}) and (\subref{fig:sweep_time_vs_N_hopfield}), the data has been averaged over the different values of $\alpha$.}
+\label{fig:speedup_hopfield}
+\end{figure*}
+\linenumbers
+
+
+
+\end{document}

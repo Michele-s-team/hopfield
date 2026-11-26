@@ -76,6 +76,75 @@ A first naive implementation would be to unfold $G_{ki}$ into its pattern compon
 As seen in the previous sections, the product $\xi_k^\mu \xi_i^\mu S_k S_i$ can simply be expressed from  $X_k^\mu \odot X_i^\mu \odot B_k \odot B_i$, where $X_k^\mu$ is the boolean variable associated with $\xi_k^\mu$. This method presents the advantage to not require too much memory allocation to store the couplings $G_{ki}$ as they are not stored before the evolution but computed on the fly in the hot loop.
 However, it requires summing over the patterns, thus introducing  an additional complexity of $\mathcal{O}(p)=\mathcal{O}(\alpha N)$ per spin update, which is done $N \cdot N_\text{sweeps}$ times. This would result in a significant loss of performance.
 
+\nolinenumbers
+\begin{algorithm}[t]
+\DontPrintSemicolon
+\caption{Bitwise Hopfield Metropolis}
+
+\KwIn{Bit-replicated spins $\{B_i\}$, couplings $\texttt{Couplings}$, neighbor lists $\partial i$, number of patterns $P$}
+\KwOut{Updated spin configurations $\{B_i\}$}
+
+\BlankLine
+\textbf{Preallocated variables:}
+$\mathtt{Bits}\ c_{ij},\ \mathtt{mask}$\;
+$\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathrm{RHS},\ tmp$\;
+
+\BlankLine
+
+\For{$i=1$ \KwTo $N$}{
+    $\Sigma_g(i)\leftarrow 0$\;
+    \For{$j\in\partial i$}{
+        $\Sigma_g(i)\mathrel{+}=G_{ij}$
+    }
+}
+\tcp*{Precompute coupling sums}
+
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+
+        Draw a random neuron $i$\;
+
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta/N)$\;
+
+        \eIf{$q \geq  \Delta_k^\text{esc}$}{
+            $B_i\leftarrow\neg B_i$
+            \tcp*{Unconditional flip}
+        }{
+
+            $\Sigma_c\leftarrow0$\;
+            $\Sigma_{cg}\leftarrow0$\;
+
+            \For{$j\in\partial i$}{
+
+                $c_{ij}\leftarrow B_i\odot B_j$
+                \tcp*{Replica-wise agreement}
+
+                $\Sigma_c\mathrel{+}=c_{ij}$\;
+
+                $tmp\leftarrow G_{ij}$\;
+
+                $tmp\leftarrow tmp\land c_{ij}$\;
+
+                $\Sigma_{cg}\mathrel{+}=tmp$\;
+            }
+
+            $\mathrm{RHS}\leftarrow P\,n_i+2\,\Sigma_{cg}$\;
+
+            $\mathrm{LHS}\leftarrow \Sigma_g(i)+r+2P\,\Sigma_c$\;
+
+            $\mathtt{mask}\leftarrow(\mathrm{RHS}\le\mathrm{LHS})$
+            \tcp*{Replica-wise acceptance test}
+
+            $B_i\leftarrow B_i\oplus\mathtt{mask}$\;
+        }
+    }
+}
+\label{alg:Hopfield_bitwise}
+\end{algorithm}
+\linenumbers
+
 \begin{algorithm}[b]
 \nolinenumbers
 \DontPrintSemicolon
