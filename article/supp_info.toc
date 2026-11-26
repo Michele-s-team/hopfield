@@ -1,0 +1,24 @@
+\babel@toc {english}{}\relax 
+\contentsline {title}{Supplementary Material for:\\When does multi-spin coding pay off for simulating sparse spin glasses or dense Hopfield networks?}{1}{section*.1}%
+\tocdepth@munge 
+\contentsline {section}{\numberline {}Contents}{1}{section*.2}%
+\tocdepth@restore 
+\contentsline {section}{\numberline {I}Method}{2}{section*.3}%
+\contentsline {subsection}{\numberline {A}Code structure}{2}{section*.4}%
+\contentsline {subsection}{\numberline {B}Naive implementation of the classic Metropolis algorithm}{3}{section*.6}%
+\contentsline {subsection}{\numberline {C}Shared random number implementation of the classic Metropolis algorithm}{3}{section*.8}%
+\contentsline {section}{\numberline {II}The Ising model}{4}{section*.10}%
+\contentsline {subsection}{\numberline {A}The model}{4}{section*.11}%
+\contentsline {subsection}{\numberline {B}Bitwise Implementation}{4}{section*.12}%
+\contentsline {subsection}{\numberline {C}Phase diagram}{6}{section*.15}%
+\contentsline {subsection}{\numberline {D}Performance test}{7}{section*.19}%
+\contentsline {section}{\numberline {III}The spin glass model}{10}{section*.21}%
+\contentsline {subsection}{\numberline {A}The Edwards–Anderson model}{10}{section*.22}%
+\contentsline {subsection}{\numberline {B}Bitwise Implementation}{10}{section*.23}%
+\contentsline {subsection}{\numberline {C}Performance test}{11}{section*.25}%
+\contentsline {section}{\numberline {IV}The Hopfield model}{12}{section*.27}%
+\contentsline {subsection}{\numberline {A}Bitwise implementation of the Metropolis algorithm}{12}{section*.28}%
+\contentsline {subsubsection}{\numberline {1}Naive implementation}{13}{section*.30}%
+\contentsline {subsection}{\numberline {B}Probability of the escape condition}{13}{section*.32}%
+\contentsline {subsection}{\numberline {C}Evolution of the maximum overlap of all replicas}{15}{section*.33}%
+\contentsline {section}{\numberline {}References}{15}{section*.35}%

@@ -1,0 +1,94 @@
+%apsrev4-2.bst 2019-01-14 (MD) hand-edited version of apsrev4-1.bst
+%Control: key (0)
+%Control: author (72) initials jnrlst
+%Control: editor formatted (1) identically to author
+%Control: production of article title (-1) disabled
+%Control: page (0) single
+%Control: year (1) truncated
+%Control: production of eprint (0) enabled
+\begin{thebibliography}{5}%
+\makeatletter
+\providecommand \@ifxundefined [1]{%
+ \@ifx{#1\undefined}
+}%
+\providecommand \@ifnum [1]{%
+ \ifnum #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \@ifx [1]{%
+ \ifx #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \natexlab [1]{#1}%
+\providecommand \enquote  [1]{``#1''}%
+\providecommand \bibnamefont  [1]{#1}%
+\providecommand \bibfnamefont [1]{#1}%
+\providecommand \citenamefont [1]{#1}%
+\providecommand \href@noop [0]{\@secondoftwo}%
+\providecommand \href [0]{\begingroup \@sanitize@url \@href}%
+\providecommand \@href[1]{\@@startlink{#1}\@@href}%
+\providecommand \@@href[1]{\endgroup#1\@@endlink}%
+\providecommand \@sanitize@url [0]{\catcode `\\12\catcode `\$12\catcode
+  `\&12\catcode `\#12\catcode `\^12\catcode `\_12\catcode `\%12\relax}%
+\providecommand \@@startlink[1]{}%
+\providecommand \@@endlink[0]{}%
+\providecommand \url  [0]{\begingroup\@sanitize@url \@url }%
+\providecommand \@url [1]{\endgroup\@href {#1}{\urlprefix }}%
+\providecommand \urlprefix  [0]{URL }%
+\providecommand \Eprint [0]{\href }%
+\providecommand \doibase [0]{https://doi.org/}%
+\providecommand \selectlanguage [0]{\@gobble}%
+\providecommand \bibinfo  [0]{\@secondoftwo}%
+\providecommand \bibfield  [0]{\@secondoftwo}%
+\providecommand \translation [1]{[#1]}%
+\providecommand \BibitemOpen [0]{}%
+\providecommand \bibitemStop [0]{}%
+\providecommand \bibitemNoStop [0]{.\EOS\space}%
+\providecommand \EOS [0]{\spacefactor3000\relax}%
+\providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
+\let\auto@bib@innerbib\@empty
+%</preamble>
+\bibitem [{\citenamefont {Dumont}\ and\ \citenamefont
+  {Castellana}(2026)}]{hopfield_code}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {B.}~\bibnamefont
+  {Dumont}}\ and\ \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Castellana}},\ }\href@noop {} {\bibinfo {title} {Hopfield code [bastien
+  branch]}},\ \bibinfo {howpublished}
+  {\url{https://github.com/Michele-s-team/hopfield/tree/Bastien}} (\bibinfo
+  {year} {2026})\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Onsager}(1944)}]{Onsager1944}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.}~\bibnamefont
+  {Onsager}},\ }\href {https://doi.org/10.1103/PhysRev.65.117} {\bibfield
+  {journal} {\bibinfo  {journal} {Physical Review}\ }\textbf {\bibinfo {volume}
+  {65}},\ \bibinfo {pages} {117} (\bibinfo {year} {1944})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Binder}(1981)}]{Binder1981}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {K.}~\bibnamefont
+  {Binder}},\ }\href {https://doi.org/10.1007/BF01293604} {\bibfield  {journal}
+  {\bibinfo  {journal} {Zeitschrift f{\"u}r Physik B}\ }\textbf {\bibinfo
+  {volume} {43}},\ \bibinfo {pages} {119} (\bibinfo {year} {1981})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Edwards}\ and\ \citenamefont
+  {Anderson}(1975)}]{SFEdwards_1975}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.~F.}\ \bibnamefont
+  {Edwards}}\ and\ \bibinfo {author} {\bibfnamefont {P.~W.}\ \bibnamefont
+  {Anderson}},\ }\href {https://doi.org/10.1088/0305-4608/5/5/017} {\bibfield
+  {journal} {\bibinfo  {journal} {Journal of Physics F: Metal Physics}\
+  }\textbf {\bibinfo {volume} {5}},\ \bibinfo {pages} {965} (\bibinfo {year}
+  {1975})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sherrington}\ and\ \citenamefont
+  {Kirkpatrick}(1975)}]{SK_model}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {D.}~\bibnamefont
+  {Sherrington}}\ and\ \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Kirkpatrick}},\ }\href {https://doi.org/10.1103/PhysRevLett.35.1792}
+  {\bibfield  {journal} {\bibinfo  {journal} {Phys. Rev. Lett.}\ }\textbf
+  {\bibinfo {volume} {35}},\ \bibinfo {pages} {1792} (\bibinfo {year}
+  {1975})}\BibitemShut {NoStop}%
+\end{thebibliography}%

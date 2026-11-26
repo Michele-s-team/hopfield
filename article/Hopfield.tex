@@ -1,43 +1,36 @@
 \section{The Hopfield model}
-We here present the Hopfield model, which is of interest in this internship.
-\subsection{The model}
+
 \label{subsec:hopfield_model}
-The Hopfield Hamiltonian resemble this of the spin glass model and is as follows:
+The Hopfield Hamiltonian is defined as:
 \begin{equation}
   H_\text{Hopfield}=-\frac{1}{2}\sum_{i \neq j}w_{ij}S_iS_j,
   \label{eq:Hopfield}
 \end{equation}
-where in this case the weights $w_{ij}$ are not initialized randomly but rather determined by a set of states that one wants to ``store'' in the network (this term will be explained further on):
+where the weights $w_{ij}$ are not initialized randomly but rather determined by a set of states that one wants to ``store'' in the network -- the patterns. Importantly, these weights are built to be symmetric, $w_{ij}=w_{ji}$, and their diagonal elements are set to zero, $w_{ii}=0$. The weights are initialized according to :
 \begin{equation}
-  w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu.
+  w_{ij}=\frac{1}{N}\sum_{\mu=1}^{p} \xi_i^\mu \xi_j^\mu,
 \end{equation}
-With $\{\xi^1, \xi^2 \ldots, \xi^p\}$ the set of patterns to be memorized by the network, each pattern being a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights this way, the energy landscape is shaped with local minima at each pattern coordinates.
+for $i \neq j$. The $\{\xi^1, \xi^2 \ldots, \xi^p\}$ are the set of patterns to be memorized by the network, each pattern being a state of the system with components $\xi_i^\mu = \pm 1$. This initialization follows the Hebb rule ``neurons that fire together wire together'' \cite{Hebb1949}. By setting the weights in this way, the energy landscape is shaped with local minima at each pattern coordinates.
 
-By initializing the network not far from one of the stored patters, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. In this way, the network is said to have associative memory: it can recover a stored pattern from a partial or noisy version of that pattern. A visual representation of the model is shown in \Cref{fig:energy_landscape}.
+By initializing the network not far from one of the stored patterns, the dynamics will make it tend to the precise pattern's configuration, given that we are located in the memory phase of the model. This property is called associative memory. The network can recover a stored pattern from a partial or noisy version of that pattern.
 
-A parameter of particular interest in this model is its storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with p the number of patterns to be stored. The equilibrium properties of the model, depending both on the temperature and on this storage load have been extensively studies in \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. We show in \Cref{fig:phase_diagram_hopfield} the phase diagram of the Hopfield model on a fully-connected network, which is the reference topology of the model. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s storage capacity, as beyond this threshold the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
+A parameter of particular interest in this model is the storage load, defined as the number of patterns to be stored over the size of the network: $\alpha = p /N$ with $p$ the number of patterns to be stored \cite{Amit1985,AMIT1987,Amit1989,Sompolinsky1988}. In the limit $T\to0$, the model is known to exhibit a phase transition at $\alpha_c= 0.138$. This critical storage load value can be regarded as the network’s storage capacity, since beyond this threshold, the model is no longer able to reconstruct the stored data from partial or corrupted data. Above the network's capacity, the energy minima overlap, leading to mixed or spurious (parasite) states that prevent accurate retrieval of stored information.
 
 In order to study the capacity of the network to recover stored data, we introduce the overlap order parameter:
 \begin{equation}
-    m^\mu = \frac{1}{N}\sum_{i=1}^N \xi_i^\mu S_i.
+    m^\mu = \frac{1}{N}\sum_{i=1}^N \xi_i^\mu S_i,
 \end{equation}
-This quantity measures how much the system's configuration is aligned with the pattern $\mu$.
+which measures how much the system's configuration is aligned with the pattern $\mu$.
 Using the definition of $m^\mu$, the energy of the system can be re-written:
 \begin{equation}
-  E=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2.
+  E=-\frac{N}{2}\sum_{\mu=1}^{p} (m^\mu)^2 + \frac{p}{2}.
 \end{equation}
 
-All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. Thus, we often consider the pattern for which the overlap is maximum: $m^* = \max\limits_\mu |m^\mu|$. We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry.  From $m^*$ we can define the reconstruction error of the network:
+All the $m^\mu$ are of order $1/\sqrt{N}$ for a state that is uncorrelated with the memories, while, in the memory phase, $m^*$ should be of the order of the unit \cite{Sompolinsky1988}. Thus, we consider the pattern for which the overlap is maximum:
 \begin{equation}
-    \text{error}=\frac{1-m^*}{2}
+m^* = \max\limits_\mu |m^\mu|.
 \end{equation}
-
-We show in \Cref{fig:phase_transition} the evolution of the error with the storage load:
-\nolinenumbers
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.6\columnwidth]{phase_transition.png}
-\caption{Evolution of the error with the storage load, extracted from \cite{Sompolinsky1988}.  For this diagram, the configuration is initialized near a pattern. When the storage load exceeds $\alpha_c$, the configuration becomes totally uncorrelated with the stored patterns and the error suddenly jumps to 0.5.}
-\label{fig:phase_transition}
-\end{figure}
-\linenumbers
+We take the absolute value of the overlap as the system can also end up in the configuration opposite of the stored pattern due to the $\mathbb{Z}_2$ global spin flip symmetry.  From $m^*$, we define the reconstruction error of the network:
+\begin{equation}
+    \text{error}=\frac{1-m^*}{2}.
+\end{equation}

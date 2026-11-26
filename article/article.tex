@@ -44,6 +44,7 @@
 \usetikzlibrary{decorations.pathreplacing}
 
 % --- References (hyperref avant cleveref) ---
+\usepackage{xr-hyper}   % cross-references to the Supplementary Material
 \usepackage{hyperref}
 \usepackage{cleveref}
 
@@ -62,11 +63,13 @@
 \newcommand{\BitSets}{\texttt{BitSets}\xspace}
 \newcommand{\Bits}{\texttt{Bits}\xspace}
 
+\externaldocument{supp_info}
+
 \begin{document}
 \modulolinenumbers[5]
 \linenumbers
 
-\title{Revisiting the Hopfield model through bitwise arithmetic}
+\title{When does multi-spin coding pay off for simulating sparse or dense spin glasses and Hopfield networks?}
 
 \author{Bastien Dumont}
  \affiliation{Aix-Marseille Universit\'e, Marseille, France}
@@ -81,7 +84,7 @@
 \date{\today}
 
 \begin{abstract}
-The Hopfield model, introduced in its now-canonical form by J.J. Hopfield in 1982, laid the foundation for the understanding of neural networks, whether they are biological or artificial. This model has become a reference in the statistical mechanics of networks and its equilibrium properties have been extensively studied and are now well understood. Nevertheless, much remains to be discovered about the dynamics leading to those equilibrium properties. Studying such dynamical properties requires the use of optimized algorithms capable of probing large samples of trajectories or initial conditions, as well as potentially rare events. In this internship project, we use a bitwise implementation of the Metropolis algorithm to study the properties of several discrete-value network models such as the Ising model, the Edwards-Anderson model and the Hopfield model. This implementation takes advantage of the native machine-specific binary arithmetic to efficiently simulate the evolution of $n_\text{bits}$ systems in parallel. We show that this approach is well-adapted to simulate discrete value models, and in particular the Hopfield network, and can also yield significant computational gains when properly implemented at the low level.
+The Hopfield model, introduced in its now-canonical form by J.J. Hopfield in 1982, laid the foundation for an understanding of neural networks, whether they are biological or artificial. In practice, such systems typically have a complex high-dimensional free energy landscape, and the dynamics of such systems is challenging to simulate computationally. For this reason, it is essential to optimize any algorithm used to simulate such systems. In this work, we implement a bitwise Metropolis algorithm and show that its implementation can efficiently sample 64 copies of a binary system. To benchmark the method, we test it with classical network models, such as the Ising model and the Edwards-Anderson model. Then we apply the method to the dense Hopfield network for which we design a specific version of the algorithm. While the method does not provide significant gain for the dense network, we find that it gives significant gain for the diluted network, which is more biologically plausible with a higher capacity per synapse.
 \end{abstract}
 %\keywords{Suggested keywords}%Use showkeys class option if keyword
                               %display desired
@@ -93,17 +96,13 @@ The Hopfield model, introduced in its now-canonical form by J.J. Hopfield in 198
 \FloatBarrier
 \input{Method}
 \FloatBarrier
-\input{Motivations}
-\FloatBarrier
 \input{Results}
 \FloatBarrier
-\input{Discussion}
-\FloatBarrier
 
 
-\input{Conclusion}
+\input{conclusion}
 \setlength{\bibsep}{2pt}
-\bibliographystyle{unsrt}
+\bibliographystyle{apsrev4-2}
 \bibliography{references}
 
 \end{document}

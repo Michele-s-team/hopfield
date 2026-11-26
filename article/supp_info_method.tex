@@ -3,7 +3,7 @@ We start by presenting the broad implementation of the Metropolis algorithm, bef
 
 
 \subsection{Code structure}
-We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. Most of the time of this internship has been spent understanding the object-oriented syntax and philosophy, and implementing an easily readable and efficient code for the simulation of the Metropolis algorithm on the different models. The structure found so far is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
+We here present the structure of the code. It has been entirely written in \texttt{C++}, taking advantage of the object-oriented structure to factor out the common parts for each model while enabling them to evolve depending on their specificities. The code is designed to be both readable and efficient, with a single implementation of the Metropolis algorithm shared by the different models. Its structure is presented in \Cref{fig:architecture}. Once the dynamics is simulated, the outputs are analyzed through python scripts.
 \nolinenumbers
 \begin{figure}[t]
 \centering
@@ -37,7 +37,7 @@ The code is built around hierarchical classes. We first implement the topology o
           }{
               \tcp{Conditional flip: draw Poisson threshold}
               Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
-              \If{$m \geq \Delta_k^{(r)}$}{
+              \If{$q \geq \Delta_k^{(r)}$}{
                   $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
               }
           }
@@ -45,4 +45,34 @@ The code is built around hierarchical classes. We first implement the topology o
     }
 }
 \label{alg:ising_classic_naive}
+\end{algorithm}
+
+\subsection{Shared random number implementation of the classic Metropolis algorithm}
+\begin{algorithm}[htbp]
+\DontPrintSemicolon
+\caption{Standard Metropolis implementation}
+\KwIn{Lattice spins $\{S_i\}$, coupling $J$, inverse temperature $\beta$}
+\KwOut{Updated lattice spins $\{S_i\}$}
+\BlankLine
+\BlankLine
+\For{$\mathrm{sweep} = 1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$k = 1$ \KwTo $N$}{
+      Draw $q$ with $\theta \sim \mathcal{E}(\beta \kappa)$\;
+      \eIf{$q \geq \Delta_k^\text{max}$}{
+        \For{$r = 1$ \KwTo $n_\text{bits}$}{
+            $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+            }
+        }{
+            \For{$r = 1$ \KwTo $n_\text{bits}$}{
+                Compute $\Delta_k^{(r)} $\;
+                \If{$\Delta_k^{(r)} \leq 0$ \textbf{or} $q \geq \Delta_k^{(r)}$}{
+                    \BlankLine
+                    \tcp{the test $\Delta_k^{(r)} \leq 0$ is not necessary as $q$ has already been drawn, but is shown for pedagogy}
+                    $s_k^{(r)} \leftarrow -s_k^{(r)}$\;
+                }
+            }
+        }
+    }
+}
+\label{alg:ising_classic}
 \end{algorithm}

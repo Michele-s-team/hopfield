@@ -63,11 +63,16 @@
 \usepackage{lineno}
 
 % --- References (hyperref avant cleveref) ---
+\usepackage{xr-hyper}   % cross-references to the main article
 \usepackage{hyperref}
 \usepackage{cleveref}
+% Number Supplementary Material objects as S1, S2, ...
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\theequation}{S\arabic{equation}}
+\renewcommand{\thealgocf}{S\arabic{algocf}}
 \crefname{algocf}{algorithm}{algorithms}
 \Crefname{algocf}{Algorithm}{Algorithms}
-\bibliographystyle{apsrev4-2}
 
 % --- Macros : annotations (à retirer avant soumission) ---
 \newcommand{\note}[1]{\textcolor{blue}{#1}}
@@ -82,11 +87,13 @@
 \newcommand{\BitSets}{\texttt{BitSets}\xspace}
 \newcommand{\Bits}{\texttt{Bits}\xspace}
 
+\externaldocument{article}
+
 \begin{document}
 
 \linenumbers
 
-\title{Dynamical properties of the Hopfield model\\through bitwise arithmetic}
+\title{Supplementary Material for:\\When does multi-spin coding pay off for simulating sparse spin glasses or dense Hopfield networks?}
 
 \author{Bastien Dumont}
  \affiliation{Aix-Marseille Universit\'e, Marseille, France}
@@ -108,13 +115,13 @@ This document contains additional information to the main paper. The content is 
 \tableofcontents
 \input{supp_info_method}
 \FloatBarrier
-\input{ising}
+\input{Ising}
 \FloatBarrier
 \input{Spinglass}
 \FloatBarrier
 \input{supp_info_hopfield}
 \FloatBarrier
-\bibliographystyle{unsrt}
+\bibliographystyle{apsrev4-2}
 \bibliography{references}
 
 \end{document}

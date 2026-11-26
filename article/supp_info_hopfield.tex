@@ -1,4 +1,72 @@
 \section{The Hopfield model}
+\subsection{Bitwise implementation of the Metropolis algorithm}
+\begin{algorithm}[htbp]
+\DontPrintSemicolon
+\caption{Bitwise Hopfield Metropolis}
+
+\KwIn{Bit-replicated spins $\{B_i\}$, couplings $\texttt{Couplings}$, neighbor lists $\partial i$, number of patterns $p$}
+\KwOut{Updated spin configurations $\{B_i\}$}
+
+\BlankLine
+\textbf{Preallocated variables:}
+$\mathtt{Bits}\ c_{ij},\ \mathtt{mask}$\;
+$\mathtt{UnsignedInt}\ \Sigma_c,\ \Sigma_{cg},\ \Sigma_g,\ \mathrm{LHS},\ \mathrm{RHS},\ tmp$\;
+
+\BlankLine
+
+\For{$i=1$ \KwTo $N$}{
+    $\Sigma_g(i)\leftarrow 0$\;
+    \For{$j\in\partial i$}{
+        $\Sigma_g(i)\mathrel{+}=G_{ij}$
+    }
+}
+\tcp*{Precompute coupling sums}
+
+\BlankLine
+
+\For{$\mathrm{sweep}=1$ \KwTo $N_{\mathrm{sweeps}}$}{
+    \For{$\mathrm{step}=1$ \KwTo $N$}{
+
+        Draw a random neuron $i$\;
+
+        Draw $q$ with $\theta \sim \mathcal{E}(2\beta/N)$\;
+
+        \eIf{$q \geq  \Delta_k^\text{esc}$}{
+            $B_i\leftarrow\neg B_i$
+            \tcp*{Unconditional flip}
+        }{
+
+            $\Sigma_c\leftarrow0$\;
+            $\Sigma_{cg}\leftarrow0$\;
+
+            \For{$j\in\partial i$}{
+
+                $c_{ij}\leftarrow B_i\odot B_j$
+                \tcp*{Replica-wise agreement}
+
+                $\Sigma_c\mathrel{+}=c_{ij}$\;
+
+                $tmp\leftarrow G_{ij}$\;
+
+                $tmp\leftarrow tmp\wedge c_{ij}$\;
+
+                $\Sigma_{cg}\mathrel{+}=tmp$\;
+            }
+
+            $\mathrm{RHS}\leftarrow p\,n_i+2\,\Sigma_{cg}$\;
+
+            $\mathrm{LHS}\leftarrow \Sigma_g(i)+r+2P\,\Sigma_c$\;
+
+            $\mathtt{mask}\leftarrow(\mathrm{RHS}\le\mathrm{LHS})$
+            \tcp*{Replica-wise acceptance test}
+
+            $B_i\leftarrow B_i\oplus\mathtt{mask}$\;
+        }
+    }
+}
+\label{alg:Hopfield_bitwise}
+\end{algorithm}
+\FloatBarrier
 \subsubsection{Naive implementation}
 A first naive implementation would be to unfold $G_{ki}$ into its pattern components in order to deal with \Bits only objects. The flip condition would then be:
 
@@ -13,7 +81,7 @@ However, it requires summing over the patterns, thus introducing  an additional 
 \DontPrintSemicolon
 \caption{Bitwise Hopfield Metropolis using shifted overlaps}
 
-\KwIn{Bit-replicated spins $\{B_i\}$, patterns $\{X_i^\mu\}$, shifted overlaps $\{\tilde{M}^\mu\}$, shifted couplings $\{\tilde{G}_{ij}\}$, neighbor lists $\partial i$, number of patterns $P$}
+\KwIn{Bit-replicated spins $\{B_i\}$, patterns $\{X_i^\mu\}$, shifted overlaps $\{\tilde{M}^\mu\}$, shifted couplings $\{\tilde{G}_{ij}\}$, neighbor lists $\partial i$, number of patterns $p$}
 \KwOut{Updated spin configurations $\{B_i\}$}
 
 \BlankLine
@@ -32,7 +100,7 @@ $\mathtt{UnsignedInt}\
 
 \BlankLine
 
-\For{$\mu=1$ \KwTo $P$}{
+\For{$\mu=1$ \KwTo $p$}{
     $\Sigma_M\leftarrow\Sigma_M+\tilde{M}^\mu$
 }
 \tcp*{Precompute shifted overlap sum}
@@ -58,9 +126,9 @@ $\mathtt{UnsignedInt}\
     Draw $q$ with $\theta\sim\mathcal{E}(2\beta/N)$\;\;
 
 
-    \eIf{$m \geq p n_k$}{
+    \eIf{$q \geq p n_k$}{
 
-        \For{$\mu=1$ \KwTo $P$}{
+        \For{$\mu=1$ \KwTo $p$}{
 
             $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
 
@@ -72,8 +140,8 @@ $\mathtt{UnsignedInt}\
         $\Sigma_M
         \leftarrow
         \Sigma_M
-        + 2P
-        - 4\sum_{\mu=1}^{P} C_k^\mu$
+        + 2p
+        - 4\sum_{\mu=1}^{p} C_k^\mu$
         \tcp*{Update shifted overlaps}
         $B_k\leftarrow\neg B_k$\;\;
 
@@ -93,26 +161,26 @@ $\mathtt{UnsignedInt}\
             $\Sigma_{CG}
             \leftarrow
             \Sigma_{CG}
-            +C_{ik}\odot\tilde{G}_{ki}$
+            +C_{ik}\wedge\tilde{G}_{ki}$
         }
 
 
         $\Sigma_{CM}\leftarrow0$\;
 
-        \For{$\mu=1$ \KwTo $P$}{
+        \For{$\mu=1$ \KwTo $p$}{
 
             $C_k^\mu\leftarrow B_k\odot X_k^\mu$\;
 
             $\Sigma_{CM}
             \leftarrow
             \Sigma_{CM}
-            +C_k^\mu\odot\tilde{M}^\mu$
+            +C_k^\mu\wedge\tilde{M}^\mu$
         }
 
 
         $\mathrm{LHS}
         \leftarrow
-        m
+        q
         +2N\Sigma_C
         +\Sigma_M
         +2\Sigma_{CG}$\;
@@ -132,11 +200,11 @@ $\mathtt{UnsignedInt}\
         \tcp*{Bitwise evaluation of Eq.~\eqref{eq:bitwise_flip_overlap}}
 
 
-        \For{$\mu=1$ \KwTo $P$}{
+        \For{$\mu=1$ \KwTo $p$}{
 
             $C_k^\mu
             \leftarrow
-            C_k^\mu\land\mathtt{mask}$\;
+            C_k^\mu\wedge\mathtt{mask}$\;
 
             $\tilde{M}^{\mu}
             \leftarrow
@@ -146,7 +214,7 @@ $\mathtt{UnsignedInt}\
         }
         $\Sigma_M \leftarrow \Sigma_M
         + 2P\mathtt{mask}
-        - 4\sum_{\mu=1}^{P}C_k^\mu\mathtt{mask}$\;
+        - 4\sum_{\mu=1}^{p}C_k^\mu\mathtt{mask}$\;
 
         $B_k
         \leftarrow
@@ -158,17 +226,28 @@ $\mathtt{UnsignedInt}\
 \end{algorithm}
 \linenumbers
 \subsection{Probability of the escape condition}
-With $q=\lfloor \theta \rfloor$ and $\theta \sim \mathcal{E}(\beta \kappa)$, $P(q \leq \Delta_k^\text{esc}) = 1 - e^{-\beta \kappa \Delta_k^\text{esc}}$. In the case of the Hopfield model, $\kappa = 2/N$. One can approximate the threshold:
+With $q=\lfloor \theta \rfloor$ and $\theta \sim \mathcal{E}(\beta \kappa)$, and since $\Delta_k^\text{esc}$ is an integer, the escape probability is $P(q \geq \Delta_k^\text{esc}) = P(\theta \geq \Delta_k^\text{esc}) = e^{-\beta \kappa \Delta_k^\text{esc}}$, with $\kappa = 2/N$ in the case of the Hopfield model.
+For independent random patterns, each coupling $G_{ki}=\sum_{\mu=1}^{p}\xi_k^\mu \xi_i^\mu$ is a sum of $p$ independent $\pm 1$ variables, and the couplings $G_{ki}$ of the different neighbors $i$ of $k$ are independent. The mean absolute value of such a sum is known exactly,
 \begin{equation}
-    \sum_{i \in \partial k}|G_{ki}^{(r)}| \sim d_k \sqrt{\frac{2p}{\pi}}
+    \mathbb{E}\,|G_{ki}| = \frac{p}{2^{p-1}}\binom{p-1}{\lfloor (p-1)/2 \rfloor} \underset{p \gg 1}{\simeq} \sqrt{\frac{2p}{\pi}},
 \end{equation}
-with $d_k$ the degree of spin $k$.
-\noteBastien{$G_{ki}$ etant une somme de gaussiennes si patterns indépendants}
-The maximum over the replicas only brings a correction of order $\mathcal{o}\bigl(\log(n_\text{bits}/d_k)\bigr)$, the asymptotic dependence of $ \Delta_k^\text{esc}=\max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr)$ is thus
+and its variance is $p-\left(\mathbb{E}\,|G_{ki}|\right)^2 \simeq p\,(1-2/\pi)$. In each replica $r$, the sum $\sum_{i \in \partial k}|G_{ki}^{(r)}|$ therefore has mean $d_k\,\mathbb{E}|G_{ki}|$, with $d_k$ the degree of spin $k$, and fluctuations of order $\sqrt{d_k\, p}$. Taking the maximum over the $n_\text{bits}$ independent replicas shifts it by at most a few standard deviations, of order $\sqrt{2 \ln n_\text{bits}}\,\sqrt{d_k\, p\,(1-2/\pi)}$. This is a relative correction of order $\sqrt{\ln (n_\text{bits})/d_k}$, i.e. $\mathcal{O}(1/\sqrt{d_k})$ at fixed $n_\text{bits}$. To leading order, the escape threshold $\Delta_k^\text{esc}=\max_r \Bigl(\sum_{i \in \partial k}\bigl|G_{ki}^{(r)}\bigr|\Bigr)$ is thus
 \begin{equation}
-    \Delta_k^\text{esc} \sim d_k \sqrt{\frac{2p}{\pi}}
+    \Delta_k^\text{esc} \simeq d_k \sqrt{\frac{2p}{\pi}}.
 \end{equation}
 With $p=\alpha N$ the number of stored patterns, this leads to the escape probability approximation:
 \begin{equation}
     P_{\text{esc},k}=P\left(q \geq \Delta_k^\text{esc}\right) \sim e^{-2 \beta \frac{d_k}{N} \sqrt{\frac{2\alpha N}{\pi}}},
 \end{equation}
+
+\FloatBarrier
+\subsection{Evolution of the maximum overlap of all replicas}
+We show in \Cref{fig:mu_star_all_replica} the evolution of the maximum overlap $m^*$ of each of the $n_\text{bits}$ replicas, for a network of $N=1024$ neurons at $\beta=5$ and storage load $\alpha=0.03$, initialized from random states.
+\nolinenumbers
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{mu_star_all_runs_N1024_beta=5.0_alpha0.030.pdf}
+\caption{Evolution of the maximum overlap of each replica for $\alpha=0.03$.}
+\label{fig:mu_star_all_replica}
+\end{figure}
+\linenumbers
